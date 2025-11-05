@@ -1,9 +1,11 @@
-package migration
+package migration_test
 
 import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/gookit/miglite/pkg/migration"
 )
 
 func TestCreateMigration(t *testing.T) {
@@ -14,7 +16,7 @@ func TestCreateMigration(t *testing.T) {
 
 	// Test creating a migration
 	name := "test-migration"
-	filePath, err := CreateMigration(tempDir, name)
+	filePath, err := migration.CreateMigration(tempDir, name)
 	if err != nil {
 		t.Fatalf("Failed to create migration: %v", err)
 	}

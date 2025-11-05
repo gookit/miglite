@@ -3,12 +3,11 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"log"
 
 	// Register database drivers
-	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/lib/pq"
-	_ "github.com/mattn/go-sqlite3"
+	// _ "github.com/go-sql-driver/mysql"
+	// _ "github.com/lib/pq"
+	// _ "modernc.org/sqlite"
 )
 
 // DB represents a database connection
@@ -25,8 +24,8 @@ func Connect(driver, dsn string) (*DB, error) {
 	}
 
 	// Test the connection
-	if err := db.Ping(); err != nil {
-		return nil, err
+	if err1 := db.Ping(); err1 != nil {
+		return nil, err1
 	}
 
 	return &DB{DB: db, driver: driver}, nil

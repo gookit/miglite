@@ -4,19 +4,23 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/goccy/go-yaml"
 	"github.com/gookit/goutil/fsutil"
-	"gopkg.in/yaml.v3"
 )
+
+type Database struct {
+	Driver string `yaml:"driver"`
+	DSN    string `yaml:"dsn"`
+}
+
+type Migrations struct {
+	Path string `yaml:"path"`
+}
 
 // Config holds the application configuration
 type Config struct {
-	Database struct {
-		Driver string `yaml:"driver"`
-		DSN    string `yaml:"dsn"`
-	} `yaml:"database"`
-	Migrations struct {
-		Path string `yaml:"path"`
-	} `yaml:"migrations"`
+	Database   Database   `yaml:"database"`
+	Migrations Migrations `yaml:"migrations"`
 }
 
 // Load loads configuration from YAML file and environment variables
