@@ -14,6 +14,8 @@ Go 极简的数据库迁移工具。
 - 每个迁移是一个 SQL 文件 参考 [20251023-user-add-field.sql](testdata/20251023-user-add-field.sql)
   - 根据文件名排序执行 推荐格式 `YYYYMMDD-migration-name.sql`
   - 内容通过固定的 `-- Migrate:UP --` `-- Migrate:DOWN --` 格式进行解析
+  - 默认放在 `migrations` 目录下
+- 迁移 SQL 都在事物中执行，确保数据一致性
 
 ## Usage
 
@@ -37,6 +39,7 @@ Commands:
 ```ini
 # 会根据 DATABASE_URL 环境变量自动识别数据库驱动
 DATABASE_URL=postgres://pguser1:pg1234abcd@localhost:5432/app_upgrade_admin
+MIGRATIONS_PATH=./migrations
 ```
 
 ### `miglite.yaml` 配置
