@@ -3,9 +3,11 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/goccy/go-yaml"
 	"github.com/gookit/goutil/fsutil"
+	"github.com/gookit/miglite/pkg/util"
 )
 
 type Database struct {
@@ -21,6 +23,19 @@ type Migrations struct {
 type Config struct {
 	Database   Database   `yaml:"database"`
 	Migrations Migrations `yaml:"migrations"`
+}
+
+// Default returns the default configuration
+func Default() *Config {
+	return &Config{
+		Database: Database{
+			Driver: "sqlite",
+			DSN:    "migrations.db",
+		},
+		Migrations: Migrations{
+			Path: "./migrations",
+		},
+	}
 }
 
 // Load loads configuration from YAML file and environment variables
@@ -40,23 +55,8 @@ func Load(configPath string) (*Config, error) {
 	}
 
 	// Override with environment variables
-	if driver := os.Getenv("DATABASE_DRIVER"); driver != "" {
-		config.Database.Driver = driver
-	}
-	if dsn := os.Getenv("DATABASE_DSN"); dsn != "" {
-		config.Database.DSN = dsn
-	}
-	if dbURL := os.Getenv("DATABASE_URL"); dbURL != "" {
-		// Infer driver from DATABASE_URL
-		driver, dsn, err := parseDatabaseURL(dbURL)
-		if err != nil {
-			return nil, err
-		}
-		config.Database.Driver = driver
-		config.Database.DSN = dsn
-	}
-	if path := os.Getenv("MIGRATIONS_PATH"); path != "" {
-		config.Migrations.Path = path
+	if err := loadFromENV(config); err != nil {
+		return nil, err
 	}
 
 	// Set defaults if not defined
@@ -75,20 +75,52 @@ func Load(configPath string) (*Config, error) {
 	return config, nil
 }
 
+func loadFromENV(config *Config) error {
+	if driver := os.Getenv("DATABASE_DRIVER"); driver != "" {
+		driver1, err := util.ResolveDriver(driver)
+		if err != nil {
+			return err
+		}
+		config.Database.Driver = driver1
+	}
+
+	if dsn := os.Getenv("DATABASE_DSN"); dsn != "" {
+		config.Database.DSN = dsn
+	}
+
+	if dbURL := os.Getenv("DATABASE_URL"); dbURL != "" {
+		// Infer driver from DATABASE_URL
+		driver, dsn, err := parseDatabaseURL(dbURL)
+		if err != nil {
+			return err
+		}
+		config.Database.Driver = driver
+		config.Database.DSN = dsn
+	}
+
+	if path := os.Getenv("MIGRATIONS_PATH"); path != "" {
+		config.Migrations.Path = path
+	}
+	return nil
+}
+
 // parseDatabaseURL infers the database driver and DSN from a DATABASE_URL
 func parseDatabaseURL(url string) (string, string, error) {
 	if url == "" {
 		return "", "", fmt.Errorf("DATABASE_URL is empty")
 	}
 
-	switch {
-	case len(url) > 5 && url[:5] == "mysql":
-		return "mysql", url[8:], nil
-	case len(url) > 8 && url[:8] == "postgres":
-		return "postgres", url[11:], nil
-	case len(url) > 6 && url[:6] == "sqlite":
-		return "sqlite3", url[9:], nil
-	default:
-		return "", "", fmt.Errorf("unsupported database URL: %s", url)
+	// url eg: mysql://user:password@localhost:3306/dbname
+	sepIdx := strings.Index(url, "://")
+	if sepIdx < 1 {
+		return "", "", fmt.Errorf("invalid DATABASE_URL: %s", url)
 	}
+
+	driver, err := util.ResolveDriver(url[:sepIdx])
+	if err != nil {
+		return "", "", err
+	}
+
+	dsnIndex := sepIdx + 3
+	return driver, url[dsnIndex:], nil
 }

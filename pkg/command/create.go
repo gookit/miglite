@@ -15,7 +15,7 @@ func CreateCommand() *cflag.Cmd {
 	c.BoolVar(&showVerbose, "verbose", false, "Enable verbose output;;v")
 	c.StringVar(&configFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
 
-	c.AddArg("name", "Migration name", true, "")
+	c.AddArg("name", "Migration name", true, nil)
 
 	return c
 }
@@ -27,14 +27,7 @@ func handleCreate(c *cflag.Cmd) error {
 	// Load configuration
 	cfg, err := config.Load(configFile)
 	if err != nil {
-		// If config file doesn't exist, use defaults
-		cfg = &config.Config{
-			Migrations: struct {
-				Path string `yaml:"path"`
-			}{
-				Path: "./migrations",
-			},
-		}
+		cfg = config.Default()
 	}
 
 	// Create the migration

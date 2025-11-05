@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/gookit/miglite"
 	"github.com/gookit/miglite/pkg/command"
 
 	// Register database drivers
@@ -11,15 +12,7 @@ import (
 
 func main() {
 	// Create the CLI application
-	app := command.NewApp("miglite", "1.0.0", "Go minimal database migration tool")
-
-	// Add commands to the app
-	app.Add(
-		command.NewUpCommand(),
-		command.StatusCommand(),
-		command.CreateCommand(),
-		command.DownCommand(),
-	)
+	app := command.NewApp("miglite", miglite.Version, "Go minimal database migration tool")
 
 	// Run the application
 	app.Run()

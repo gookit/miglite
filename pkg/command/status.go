@@ -4,8 +4,6 @@ import (
 	"fmt"
 
 	"github.com/gookit/goutil/cflag"
-	"github.com/gookit/miglite/pkg/config"
-	"github.com/gookit/miglite/pkg/database"
 	"github.com/gookit/miglite/pkg/migration"
 )
 
@@ -21,14 +19,8 @@ func StatusCommand() *cflag.Cmd {
 }
 
 func handleStatus(c *cflag.Cmd) error {
-	// Load configuration
-	cfg, err := config.Load(configFile)
-	if err != nil {
-		return fmt.Errorf("failed to load config: %v", err)
-	}
-
-	// Connect to database
-	db, err := database.Connect(cfg.Database.Driver, cfg.Database.DSN)
+	// Load configuration and connect to database
+	cfg, db, err := loadConfigAndDB()
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %v", err)
 	}

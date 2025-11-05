@@ -56,16 +56,16 @@ func GetMigrationStatus(db *database.DB, allMigrations []*Migration) ([]Status, 
 }
 
 // GetAppliedMigrations retrieves only the applied migrations
-func GetAppliedMigrations(db *database.DB) ([]MigrationRecord, error) {
+func GetAppliedMigrations(db *database.DB) ([]Record, error) {
 	rows, err := db.Query("SELECT version, applied_at, status FROM db_schema_migrations ORDER BY applied_at")
 	if err != nil {
 		return nil, fmt.Errorf("failed to query applied migrations: %v", err)
 	}
 	defer rows.Close()
 
-	var records []MigrationRecord
+	var records []Record
 	for rows.Next() {
-		var record MigrationRecord
+		var record Record
 		err := rows.Scan(&record.Version, &record.AppliedAt, &record.Status)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan migration record: %v", err)
@@ -120,16 +120,16 @@ func GetPendingMigrations(db *database.DB, allMigrations []*Migration) ([]*Migra
 }
 
 // GetAppliedMigrationsSortedByDate returns applied migrations sorted by application date (most recent first)
-func GetAppliedMigrationsSortedByDate(db *database.DB) ([]MigrationRecord, error) {
+func GetAppliedMigrationsSortedByDate(db *database.DB) ([]Record, error) {
 	rows, err := db.Query("SELECT version, applied_at, status FROM db_schema_migrations ORDER BY applied_at DESC")
 	if err != nil {
 		return nil, fmt.Errorf("failed to query applied migrations: %v", err)
 	}
 	defer rows.Close()
 
-	var records []MigrationRecord
+	var records []Record
 	for rows.Next() {
-		var record MigrationRecord
+		var record Record
 		err := rows.Scan(&record.Version, &record.AppliedAt, &record.Status)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan migration record: %v", err)

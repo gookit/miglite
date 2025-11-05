@@ -1,19 +1,12 @@
 # MigLite
 
-Go 极简的数据库迁移工具。
+`miglite` Go实现的极简的数据库迁移工具。
 
 ## 安装
 
 ```bash
-# Clone the repository
-git clone https://github.com/gookit/miglite.git
-cd miglite
-
-# Build the tool
-go build -o miglite ./cmd/miglite
-
-# Or install it
-go install ./cmd/miglite
+# install it by go
+go install github.com/gookit/miglite/cmd/miglitex
 ```
 
 ## 快速开始
@@ -31,7 +24,7 @@ Commands:
 
 ## 配置
 
-MigLite 支持通过 `miglite.yaml` 文件或环境变量进行配置。
+`miglite` 支持通过 `miglite.yaml` 文件或环境变量进行配置。
 
 ### miglite.yaml 示例
 

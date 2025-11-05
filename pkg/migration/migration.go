@@ -1,7 +1,6 @@
 package migration
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,6 +8,11 @@ import (
 	"sort"
 	"strings"
 	"time"
+)
+
+const (
+	MarkUp   = "-- Migrate:UP"
+	MarkDown = "-- Migrate:DOWN"
 )
 
 // Migration represents a single migration file
@@ -31,16 +35,16 @@ func ParseMigration(filePath string) (*Migration, error) {
 	text := string(content)
 
 	// Extract UP section
-	upStart := strings.Index(text, "-- Migrate:UP --")
+	upStart := strings.Index(text, MarkUp)
 	if upStart == -1 {
-		return nil, fmt.Errorf("migration file %s does not contain -- Migrate:UP -- marker", filePath)
+		return nil, fmt.Errorf("migration file %s does not contain '-- Migrate:UP' marker", filePath)
 	}
-	
-	upEnd := strings.Index(text[upStart:], "-- Migrate:DOWN --")
+
+	upEnd := strings.Index(text[upStart:], MarkDown)
 	var upContent string
 	if upEnd == -1 {
 		// No DOWN section, take everything after UP marker
-		upContent = strings.TrimSpace(text[upStart+15:]) // 15 is len("-- Migrate:UP --")
+		upContent = strings.TrimSpace(text[upStart+15:]) // 15 is len("-- Migrate:UP")
 	} else {
 		// Take content between UP and DOWN markers
 		upContent = strings.TrimSpace(text[upStart+15 : upStart+upEnd])
@@ -49,7 +53,7 @@ func ParseMigration(filePath string) (*Migration, error) {
 	// Extract DOWN section if it exists
 	var downContent string
 	if upEnd != -1 {
-		downStart := upStart + upEnd + 18 // 18 is len("-- Migrate:DOWN --")
+		downStart := upStart + upEnd + 18 // 18 is len("-- Migrate:DOWN")
 		downContent = strings.TrimSpace(text[downStart:])
 	}
 
@@ -128,6 +132,40 @@ func FindMigrations(migrationsDir string) ([]*Migration, error) {
 // DiscoverMigrations discovers all migration files, parses them, and returns them sorted by timestamp
 func DiscoverMigrations(migrationsDir string) ([]*Migration, error) {
 	migrations, err := FindMigrations(migrationsDir)
+	if err != nil {
+		return nil, err
+	}
+
+	// Sort migrations by timestamp
+	sort.Slice(migrations, func(i, j int) bool {
+		return migrations[i].Timestamp.Before(migrations[j].Timestamp)
+	})
+
+	return migrations, nil
+}
+
+// DiscoverMigrations1 finds and parses all migration files in the specified directory
+func DiscoverMigrations1(migrationsPath string) ([]*Migration, error) {
+	var migrations []*Migration
+
+	// Walk through the migrations directory
+	err := filepath.Walk(migrationsPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Only process .sql files
+		if !info.IsDir() && strings.HasSuffix(strings.ToLower(path), ".sql") {
+			migration, err := ParseMigration(path)
+			if err != nil {
+				return err
+			}
+			migrations = append(migrations, migration)
+		}
+
+		return nil
+	})
+
 	if err != nil {
 		return nil, err
 	}

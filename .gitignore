@@ -15,4 +15,4 @@ vendor/
 .env.test.local
 .env.production.local
 .DS_Store
-Thumbs.db
+*.db

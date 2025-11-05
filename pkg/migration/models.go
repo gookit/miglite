@@ -4,17 +4,17 @@ import (
 	"time"
 )
 
-// MigrationRecord represents a record in the database migrations table
-type MigrationRecord struct {
-	Version   string    `db:"version"`
+// Record represents a record in the database migrations table
+type Record struct {
+	Version string `db:"version"` // is migration filename
 	AppliedAt time.Time `db:"applied_at"`
 	Status    string    `db:"status"` // up, skip, down
 	Hash      string    `db:"hash"`   // optional hash of migration content
 }
 
-// NewMigrationRecord creates a new migration record
-func NewMigrationRecord(version string, status string) *MigrationRecord {
-	return &MigrationRecord{
+// NewRecord creates a new migration record
+func NewRecord(version string, status string) *Record {
+	return &Record{
 		Version:   version,
 		AppliedAt: time.Now(),
 		Status:    status,
@@ -22,7 +22,7 @@ func NewMigrationRecord(version string, status string) *MigrationRecord {
 }
 
 // SetStatus updates the status of the migration record
-func (mr *MigrationRecord) SetStatus(status string) {
+func (mr *Record) SetStatus(status string) {
 	mr.Status = status
 	mr.AppliedAt = time.Now()
 }

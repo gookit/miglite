@@ -37,36 +37,34 @@ func WrapError(err error, code, message string) *AppError {
 
 // Logger interface for logging
 type Logger interface {
-	Debug(msg string, args ...interface{})
-	Info(msg string, args ...interface{})
-	Warn(msg string, args ...interface{})
-	Error(msg string, args ...interface{})
+	Debug(msg string, args ...any)
+	Info(msg string, args ...any)
+	Warn(msg string, args ...any)
+	Error(msg string, args ...any)
 }
 
 // DefaultLogger is a simple logger implementation
 type DefaultLogger struct{}
 
 // Debug logs a debug message
-func (l *DefaultLogger) Debug(msg string, args ...interface{}) {
+func (l *DefaultLogger) Debug(msg string, args ...any) {
 	log.Printf("[DEBUG] "+msg, args...)
 }
 
 // Info logs an info message
-func (l *DefaultLogger) Info(msg string, args ...interface{}) {
+func (l *DefaultLogger) Info(msg string, args ...any) {
 	log.Printf("[INFO] "+msg, args...)
 }
 
 // Warn logs a warning message
-func (l *DefaultLogger) Warn(msg string, args ...interface{}) {
+func (l *DefaultLogger) Warn(msg string, args ...any) {
 	log.Printf("[WARN] "+msg, args...)
 }
 
 // Error logs an error message
-func (l *DefaultLogger) Error(msg string, args ...interface{}) {
+func (l *DefaultLogger) Error(msg string, args ...any) {
 	log.Printf("[ERROR] "+msg, args...)
 }
 
-// GetDefaultLogger returns a default logger instance
-func GetDefaultLogger() Logger {
-	return &DefaultLogger{}
-}
+// Log default Logger instance
+var Log = &DefaultLogger{}

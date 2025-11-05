@@ -4,8 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gookit/goutil/cflag"
-	"github.com/gookit/miglite/pkg/config"
-	"github.com/gookit/miglite/pkg/database"
+	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/miglite/pkg/migration"
 )
 
@@ -14,11 +13,10 @@ var upCmdOpt = struct {
 
 // NewUpCommand executes pending migrations
 func NewUpCommand() *cflag.Cmd {
-	c := &cflag.Cmd{
-		Name: "up",
-		Desc: "Execute pending migrations",
-		Func: handleUp,
-	}
+	// migrate
+	c := cflag.NewCmd("up", "Execute pending migrations", func(c *cflag.Cmd) error {
+		return handleUp()
+	})
 
 	c.BoolVar(&showVerbose, "verbose", false, "Enable verbose output;;v")
 	c.StringVar(&configFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
@@ -26,19 +24,12 @@ func NewUpCommand() *cflag.Cmd {
 	return c
 }
 
-func handleUp(c *cflag.Cmd) error {
-	// Load configuration
-	cfg, err := config.Load(configFile)
-	if err != nil {
-		return fmt.Errorf("failed to load config: %v", err)
-	}
-
-	// Connect to database
-	db, err := database.Connect(cfg.Database.Driver, cfg.Database.DSN)
+func handleUp() error {
+	// Load configuration and connect to database
+	cfg, db, err := loadConfigAndDB()
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %v", err)
 	}
-	defer db.Close()
 
 	// Initialize schema if needed
 	if err := db.InitSchema(); err != nil {
@@ -49,6 +40,11 @@ func handleUp(c *cflag.Cmd) error {
 	migrations, err := migration.DiscoverMigrations(cfg.Migrations.Path)
 	if err != nil {
 		return fmt.Errorf("failed to discover migrations: %v", err)
+	}
+
+	if len(migrations) == 0 {
+		ccolor.Infoln("No migrations found")
+		return nil
 	}
 
 	// Get executor

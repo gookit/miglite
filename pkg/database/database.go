@@ -3,11 +3,12 @@ package database
 import (
 	"database/sql"
 	"fmt"
+)
 
-	// Register database drivers
-	// _ "github.com/go-sql-driver/mysql"
-	// _ "github.com/lib/pq"
-	// _ "modernc.org/sqlite"
+const (
+	DriverMySQL    = "mysql"
+	DriverPostgres = "postgres"
+	DriverSQLite   = "sqlite"
 )
 
 // DB represents a database connection
@@ -29,6 +30,11 @@ func Connect(driver, dsn string) (*DB, error) {
 	}
 
 	return &DB{DB: db, driver: driver}, nil
+}
+
+// SqlDrivers returns a list of supported SQL drivers
+func SqlDrivers() []string {
+	return sql.Drivers()
 }
 
 // Close closes the database connection
@@ -59,7 +65,7 @@ CREATE TABLE IF NOT EXISTS db_schema_migrations (
     applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status VARCHAR(24) -- up,skip,down
 );`
-	case "sqlite3":
+	case "sqlite":
 		sqlStmt = `
 CREATE TABLE IF NOT EXISTS db_schema_migrations (
     version VARCHAR(160) PRIMARY KEY,
