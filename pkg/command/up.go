@@ -2,8 +2,10 @@ package command
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/gookit/goutil/cflag/capp"
+	"github.com/gookit/goutil/cliutil"
 	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/miglite/pkg/migration"
 )
@@ -13,6 +15,10 @@ var upCmdOpt = struct {
 	yes bool
 	// 跳过错误迁移并继续执行
 	skipErr bool
+	// 只执行指定数量的迁移
+	number int
+	// 查找迁移开始时间，默认只查找最近6个月的迁移文件
+	startTime string
 }{}
 
 // NewUpCommand executes pending migrations
@@ -32,9 +38,9 @@ func NewUpCommand() *capp.Cmd {
 
 func handleUp() error {
 	// Load configuration and connect to database
-	cfg, db, err := initConfigAndDB()
-	if err != nil {
-		return fmt.Errorf("failed to connect to database: %v", err)
+	cfg, db, err1 := initConfigAndDB()
+	if err1 != nil {
+		return fmt.Errorf("failed to connect to database: %v", err1)
 	}
 
 	// Initialize schema if needed
@@ -43,37 +49,50 @@ func handleUp() error {
 	}
 
 	// Discover migrations
-	migrations, err := migration.DiscoverMigrations(cfg.Migrations.Path)
-	if err != nil {
-		return fmt.Errorf("failed to discover migrations: %v", err)
+	ccolor.Println("🔎 Discovering migrations from", cfg.Migrations.Path)
+	migrations, err2 := migration.FindMigrations(cfg.Migrations.Path)
+	if err2 != nil {
+		return fmt.Errorf("failed to discover migrations: %v", err2)
 	}
 
 	if len(migrations) == 0 {
-		ccolor.Infoln("No migrations found")
+		ccolor.Infoln("🔎 No migrations found.")
 		return nil
 	}
 
 	// Get executor
 	executor := migration.NewExecutor(db)
+	startTime := time.Now()
+	confirmTip := "Are you sure you want to execute this migration?"
+	ccolor.Printf("🔀 Starting execution migrations(%d) at: %s\n", len(migrations), startTime)
 
 	// Execute pending migrations
-	for _, mig := range migrations {
+	for idx, mig := range migrations {
 		// Check if migration is already applied
-		applied, status, err := migration.IsMigrationApplied(db, mig.Version)
+		applied, status, err := migration.IsApplied(db, mig.FileName)
 		if err != nil {
 			return fmt.Errorf("failed to check migration status: %v", err)
 		}
 
-		if !applied || status == "down" {
-			fmt.Printf("Executing migration: %s\n", mig.FileName)
+		if !applied || status == migration.StatusDown {
+			ccolor.Printf("%d. Executing migration file: %s\n", idx+1, mig.FileName)
+			if !upCmdOpt.yes && !cliutil.Confirm(confirmTip) {
+				ccolor.Warnln("Skipping current migration!")
+				continue
+			}
+
+			if err := mig.Parse(); err != nil {
+				return err
+			}
 			if err := executor.ExecuteUp(mig); err != nil {
 				return fmt.Errorf("failed to execute migration %s: %v", mig.FileName, err)
 			}
+			ccolor.Printf("Successfully executed migration: %s", mig.FileName)
 		} else {
-			fmt.Printf("Skipping already applied migration: %s\n", mig.FileName)
+			ccolor.Printf("Skipping already applied migration: %s\n", mig.FileName)
 		}
 	}
 
-	fmt.Println("All migrations applied successfully")
+	ccolor.Successln("🎉 All migrations applied successfully! ⏱️ costTime:", time.Since(startTime))
 	return nil
 }

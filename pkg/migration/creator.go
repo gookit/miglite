@@ -48,7 +48,8 @@ func CreateMigration(migrationsDir, name string) (string, error) {
 	// Create the migration template
 	content := fmt.Sprintf(`--
 -- name: %s%s
--- created at: %s
+-- created_at: %s
+--
 
 %s
 -- Add your migration SQL here

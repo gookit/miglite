@@ -16,3 +16,6 @@ vendor/
 .env.production.local
 .DS_Store
 *.db
+
+.qwen/
+.specify/

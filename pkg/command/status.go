@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/gookit/goutil/cflag/capp"
 	"github.com/gookit/goutil/x/ccolor"
@@ -28,29 +29,30 @@ func handleStatus(c *capp.Cmd) error {
 	defer db.Close()
 
 	// Discover migrations
-	migrations, err := migration.DiscoverMigrations(cfg.Migrations.Path)
+	ccolor.Println("Discovering migrations from", cfg.Migrations.Path)
+	migrations, err := migration.FindMigrations(cfg.Migrations.Path)
 	if err != nil {
 		return fmt.Errorf("failed to discover migrations: %v", err)
 	}
 
 	// Get migration statuses
-	statuses, err := migration.GetMigrationStatus(db, migrations)
+	statuses, err := migration.GetMigrationsStatus(db, migrations)
 	if err != nil {
 		return fmt.Errorf("failed to get migration status: %v", err)
 	}
 
 	// Print status table
-	ccolor.Cyanln("Migration Status:")
-	fmt.Println("=================")
-	fmt.Println(" Status  | Version | Operate Time ")
+	ccolor.Cyanf("\nMigration Status:(total=%d)\n", len(statuses))
+	fmt.Println(strings.Repeat("==", 41))
+	fmt.Printf("   Status   | %12sVersion(migration file)%12s    |   Operate Time \n", "", "")
 	for _, status := range statuses {
-		statusIcon := "[ ]" // pending
+		statusIcon := "[pending]" // pending
 		if status.Status == "up" {
-			statusIcon = "[<green>X</>]" // applied
+			statusIcon = "[<green>applied</>]" // applied
 		} else if status.Status == "down" {
-			statusIcon = "[<ylw>R</>]" // rolled back
+			statusIcon = "[<ylw>rolled</>]" // rolled back
 		}
-		ccolor.Printf("%s | %s\n", statusIcon, status.Version)
+		ccolor.Printf("  %s | %-50s | \n", statusIcon, status.Version)
 	}
 
 	return nil

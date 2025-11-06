@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 )
@@ -13,167 +12,123 @@ import (
 const (
 	MarkUp   = "-- Migrate:UP"
 	MarkDown = "-- Migrate:DOWN"
+	// DateLayout defines the layout for migration filename
+	DateLayout   = "20060102-150405"
+	PrefixFormat = "YYYYMMDD-HHMMSS"
 )
+
+// defines the regex pattern for extracting the date prefix from a filename
+//
+// format: YYYYMMDD-HHMMSS-{name}.sql
+var regexFilename = regexp.MustCompile(`^(\d{8}-\d{6})-([\w-]+)\.sql$`)
 
 // Migration represents a single migration file
 type Migration struct {
-	FileName    string
-	Content     string
-	UpMigration string
-	DownMigration string
-	Timestamp   time.Time
-	Version     string
+	FileName string
+	FilePath string
+	// time from filename
+	Timestamp time.Time
+	// Version Use datetime(from filename) as version
+	Version string
+	// Contents of migration file
+	Contents    string
+	UpSection   string
+	DownSection string
 }
 
-// ParseMigration parses a migration file to extract UP and DOWN sections
-func ParseMigration(filePath string) (*Migration, error) {
-	content, err := os.ReadFile(filePath)
+// ParseFile parses a migration file to extract UP and DOWN sections
+func ParseFile(filePath string) (*Migration, error) {
+	migFile, err := NewMigration(filePath)
 	if err != nil {
 		return nil, err
 	}
 
-	text := string(content)
-
-	// Extract UP section
-	upStart := strings.Index(text, MarkUp)
-	if upStart == -1 {
-		return nil, fmt.Errorf("migration file %s does not contain '-- Migrate:UP' marker", filePath)
+	if err1 := migFile.Parse(); err1 != nil {
+		return nil, err1
 	}
+	return migFile, nil
+}
 
-	upEnd := strings.Index(text[upStart:], MarkDown)
-	var upContent string
-	if upEnd == -1 {
-		// No DOWN section, take everything after UP marker
-		upContent = strings.TrimSpace(text[upStart+15:]) // 15 is len("-- Migrate:UP")
-	} else {
-		// Take content between UP and DOWN markers
-		upContent = strings.TrimSpace(text[upStart+15 : upStart+upEnd])
-	}
-
-	// Extract DOWN section if it exists
-	var downContent string
-	if upEnd != -1 {
-		downStart := upStart + upEnd + 18 // 18 is len("-- Migrate:DOWN")
-		downContent = strings.TrimSpace(text[downStart:])
-	}
-
+func NewMigration(filePath string) (*Migration, error) {
 	// Extract timestamp from filename
 	fileName := filepath.Base(filePath)
-	timestamp, err := extractTimestamp(fileName)
+	fi, err := parseFilename(fileName)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Migration{
-		FileName:    fileName,
-		Content:     text,
-		UpMigration: upContent,
-		DownMigration: downContent,
-		Timestamp:   timestamp,
-		Version:     fileName, // Use filename as version
+		FileName:  fileName,
+		FilePath:  filePath,
+		Timestamp: fi.Time,
+		Version:   fi.Date, // Use date as version
 	}, nil
 }
 
-// extractTimestamp extracts the timestamp from a filename in YYYYMMDD format
-func extractTimestamp(filename string) (time.Time, error) {
-	// Match YYYYMMDD part from filename
-	re := regexp.MustCompile(`^(\d{8})`)
-	matches := re.FindStringSubmatch(filename)
-	if len(matches) < 2 {
-		return time.Time{}, fmt.Errorf("invalid migration filename format: %s, expected YYYYMMDD-...", filename)
-	}
-
-	dateStr := matches[1]
-	timestamp, err := time.Parse("20060102", dateStr)
+// Parse reads migration file and parse it contents.
+func (m *Migration) Parse() error {
+	contents, err := os.ReadFile(m.FilePath)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("invalid date in filename: %s", filename)
+		return fmt.Errorf("failed to read migration file: %s", err)
 	}
 
-	return timestamp, nil
+	m.Contents = string(contents)
+	return m.ParseContents()
 }
 
-// FindMigrations finds all migration files in the specified directory
-func FindMigrations(migrationsDir string) ([]*Migration, error) {
-	var migrations []*Migration
-
-	err := filepath.Walk(migrationsDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if info.IsDir() {
-			return nil
-		}
-
-		// Only process .sql files
-		if strings.HasSuffix(strings.ToLower(info.Name()), ".sql") {
-			migration, err := ParseMigration(path)
-			if err != nil {
-				return err
-			}
-			migrations = append(migrations, migration)
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
+// ParseContents parses migration file contents, extracting UP and DOWN sections
+func (m *Migration) ParseContents() error {
+	if m.Contents == "" {
+		return fmt.Errorf("migration file contents is empty. file: %s", m.FilePath)
 	}
 
-	// Sort migrations by timestamp
-	sort.Slice(migrations, func(i, j int) bool {
-		return migrations[i].Timestamp.Before(migrations[j].Timestamp)
-	})
+	// 使用按行解析处理
+	lines := strings.Split(m.Contents, "\n")
+	var upLines, downLines []string
+	// "" for none, "up" for up section, "down" for down section
+	currentSection := ""
 
-	return migrations, nil
+	// TODO 后续支持在前几行设置选项。格式：-- Migrate-option:OPTION=VALUE,OPTION1=VALUE1,
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" {
+			continue
+		}
+
+		// TODO 后续支持 UP, DOWN 后面跟自定义设置: -- Migrate:UP(option=value,)
+		if strings.HasSuffix(trimmed, MarkUp) {
+			currentSection = "up"
+			continue
+		} else if strings.HasSuffix(trimmed, MarkDown) {
+			currentSection = "down"
+			continue
+		}
+
+		// 根据当前部分添加行内容
+		switch currentSection {
+		case "up":
+			upLines = append(upLines, line)
+		case "down":
+			downLines = append(downLines, line)
+		}
+	}
+
+	// 设置解析结果
+	m.UpSection = strings.Join(upLines, "\n")
+	if len(downLines) > 0 {
+		m.DownSection = strings.Join(downLines, "\n")
+	}
+
+	// 验证必须包含 UP 部分
+	if m.UpSection == "" {
+		return fmt.Errorf("migration file %s does not contain valid '-- Migrate:UP' section", m.FilePath)
+	}
+	return nil
 }
 
-// DiscoverMigrations discovers all migration files, parses them, and returns them sorted by timestamp
-func DiscoverMigrations(migrationsDir string) ([]*Migration, error) {
-	migrations, err := FindMigrations(migrationsDir)
-	if err != nil {
-		return nil, err
-	}
-
-	// Sort migrations by timestamp
-	sort.Slice(migrations, func(i, j int) bool {
-		return migrations[i].Timestamp.Before(migrations[j].Timestamp)
-	})
-
-	return migrations, nil
-}
-
-// DiscoverMigrations1 finds and parses all migration files in the specified directory
-func DiscoverMigrations1(migrationsPath string) ([]*Migration, error) {
-	var migrations []*Migration
-
-	// Walk through the migrations directory
-	err := filepath.Walk(migrationsPath, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		// Only process .sql files
-		if !info.IsDir() && strings.HasSuffix(strings.ToLower(path), ".sql") {
-			migration, err := ParseMigration(path)
-			if err != nil {
-				return err
-			}
-			migrations = append(migrations, migration)
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	// Sort migrations by timestamp
-	sort.Slice(migrations, func(i, j int) bool {
-		return migrations[i].Timestamp.Before(migrations[j].Timestamp)
-	})
-
-	return migrations, nil
+// ResetContents 重置迁移文件内容字段
+func (m *Migration) ResetContents() {
+	m.Contents = ""
+	m.UpSection = ""
+	m.DownSection = ""
 }

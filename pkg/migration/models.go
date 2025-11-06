@@ -4,11 +4,22 @@ import (
 	"time"
 )
 
+const (
+	// StatusUp represents an up migration status
+	StatusUp = "up"
+	// StatusDown represents a down migration status
+	StatusDown = "down"
+	// StatusSkip represents a skipped migration status
+	StatusSkip = "skip"
+	// StatusPending represents a pending migration status
+	StatusPending = "pending"
+)
+
 // Record represents a record in the database migrations table
 type Record struct {
 	Version string `db:"version"` // is migration filename
 	AppliedAt time.Time `db:"applied_at"`
-	Status    string    `db:"status"` // up, skip, down
+	Status string `db:"status"`       // up, skip, down.
 	Hash      string    `db:"hash"`   // optional hash of migration content
 }
 

@@ -9,7 +9,7 @@ import (
 
 // Executor handles the execution of migrations
 type Executor struct {
-	db    *database.DB
+	db *database.DB
 	tracker *database.MigrationTracker
 }
 
@@ -35,7 +35,7 @@ func (e *Executor) ExecuteUp(migration *Migration) error {
 	}()
 
 	// Execute the UP migration
-	if _, err := tx.Exec(migration.UpMigration); err != nil {
+	if _, err := tx.Exec(migration.UpSection); err != nil {
 		return fmt.Errorf("failed to execute UP migration: %v", err)
 	}
 
@@ -43,13 +43,12 @@ func (e *Executor) ExecuteUp(migration *Migration) error {
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("failed to commit transaction: %v", err)
 	}
-	
+
 	// Now record the migration status after successful commit
 	if err := e.tracker.RecordMigration(migration.Version, "up"); err != nil {
 		return fmt.Errorf("failed to record migration: %v", err)
 	}
 
-	log.Printf("Successfully executed migration: %s", migration.FileName)
 	return nil
 }
 
@@ -66,18 +65,16 @@ func (e *Executor) ExecuteDown(migration *Migration) error {
 		}
 	}()
 
-	// Execute the DOWN migration if it exists
-	if migration.DownMigration != "" {
-		if _, err := tx.Exec(migration.DownMigration); err != nil {
-			return fmt.Errorf("failed to execute DOWN migration: %v", err)
-		}
+	// Execute the DOWN migration
+	if _, err := tx.Exec(migration.DownSection); err != nil {
+		return fmt.Errorf("failed to execute DOWN migration: %v", err)
 	}
 
 	// Record the migration rollback in the database
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("failed to commit transaction: %v", err)
 	}
-	
+
 	// Now record the migration status after successful commit
 	if err := e.tracker.RecordMigration(migration.Version, "down"); err != nil {
 		return fmt.Errorf("failed to record migration rollback: %v", err)

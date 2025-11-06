@@ -19,6 +19,8 @@ type Migrations struct {
 	// Path to the migrations directory.
 	//  - allow use string-vars: {driver}
 	Path string `yaml:"path"`
+	// Use date(YYYY) as directory TODO
+	DateDir bool `yaml:"date_dir"`
 }
 
 // Config holds the application configuration
@@ -39,7 +41,6 @@ func Load(configPath string) (*Config, error) {
 		if err != nil {
 			return nil, err
 		}
-
 		if err := yaml.Unmarshal(data, config); err != nil {
 			return nil, err
 		}
@@ -56,12 +57,14 @@ func Load(configPath string) (*Config, error) {
 	}
 
 	// Set defaults if not defined
-	if config.Migrations.Path == "" {
-		config.Migrations.Path = "./migrations"
+	filePath := config.Migrations.Path
+	if filePath == "" {
+		filePath = "./migrations"
 	}
-	if strings.Contains(config.Migrations.Path, "{driver}") {
-		config.Migrations.Path = strings.Replace(config.Migrations.Path, "{driver}", config.Database.Driver, 1)
+	if strings.Contains(filePath, "{driver}") {
+		filePath = strings.Replace(filePath, "{driver}", config.Database.Driver, 1)
 	}
+	config.Migrations.Path = filePath
 
 	return config, nil
 }

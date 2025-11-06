@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gookit/goutil/cflag/capp"
+	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/miglite/pkg/migration"
 )
 
@@ -31,7 +32,7 @@ func handleDown(c *capp.Cmd) error {
 	defer db.Close()
 
 	// Discover migrations
-	migrations, err := migration.DiscoverMigrations(cfg.Migrations.Path)
+	migrations, err := migration.FindMigrations(cfg.Migrations.Path)
 	if err != nil {
 		return fmt.Errorf("failed to discover migrations: %v", err)
 	}
@@ -43,19 +44,19 @@ func handleDown(c *capp.Cmd) error {
 	}
 
 	// Get applied migrations sorted by date (most recent first)
-	appliedMigrations, err := migration.GetAppliedMigrationsSortedByDate(db)
+	appliedList, err := migration.GetAppliedSortedByDate(db)
 	if err != nil {
 		return fmt.Errorf("failed to get applied migrations: %v", err)
 	}
 
-	if len(appliedMigrations) == 0 {
+	if len(appliedList) == 0 {
 		fmt.Println("No applied migrations to rollback")
 		return nil
 	}
 
 	// Limit the number of rollbacks to the available applied migrations
-	if count > len(appliedMigrations) {
-		count = len(appliedMigrations)
+	if count > len(appliedList) {
+		count = len(appliedList)
 	}
 
 	// Get executor
@@ -64,21 +65,31 @@ func handleDown(c *capp.Cmd) error {
 	// Roll back the specified number of migrations
 	for i := 0; i < count; i++ {
 		// Find the corresponding migration file
-		var targetMigration *migration.Migration
+		var targetMig *migration.Migration
 		for _, mig := range migrations {
-			if mig.Version == appliedMigrations[i].Version {
-				targetMigration = mig
+			if mig.Version == appliedList[i].Version {
+				targetMig = mig
 				break
 			}
 		}
 
-		if targetMigration == nil {
-			return fmt.Errorf("migration file not found for version: %s", appliedMigrations[i].Version)
+		if targetMig == nil {
+			return fmt.Errorf("migration file not found for version: %s", appliedList[i].Version)
 		}
 
-		fmt.Printf("Rolling back migration: %s\n", targetMigration.FileName)
-		if err := executor.ExecuteDown(targetMigration); err != nil {
-			return fmt.Errorf("failed to execute rollback for migration %s: %v", targetMigration.FileName, err)
+		fmt.Printf("Rolling back migration: %s\n", targetMig.FileName)
+		if err := targetMig.Parse(); err != nil {
+			return err
+		}
+
+		// if down section is empty, skip
+		if targetMig.DownSection == "" {
+			ccolor.Warnln("Skipping empty down migration!")
+			continue
+		}
+
+		if err := executor.ExecuteDown(targetMig); err != nil {
+			return fmt.Errorf("failed to execute rollback for migration %s: %v", targetMig.FileName, err)
 		}
 	}
 
