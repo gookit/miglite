@@ -15,11 +15,20 @@ const (
 type DB struct {
 	*sql.DB
 	driver string
+	debug bool
 }
 
 // Connect establishes a database connection
+//
+//  driver: mysql, postgres, sqlite
+//  dsn:
+//   - mysql: username:password@tcp(host:port)/dbname?charset=utf8mb4&parseTime=True&loc=Local
+//   - postgres: host=localhost port=5432 user=username password=password dbname=dbname sslmode=disable
+//   - sqlite: filepath
 func Connect(driver, dsn string) (*DB, error) {
-	db, err := sql.Open(driver, dsn)
+	// get the register driver name
+	regName := sqlDriver(driver)
+	db, err := sql.Open(regName, dsn)
 	if err != nil {
 		return nil, err
 	}
@@ -28,44 +37,53 @@ func Connect(driver, dsn string) (*DB, error) {
 	if err1 := db.Ping(); err1 != nil {
 		return nil, err1
 	}
-
 	return &DB{DB: db, driver: driver}, nil
 }
 
-// SqlDrivers returns a list of supported SQL drivers
-func SqlDrivers() []string {
-	return sql.Drivers()
+func sqlDriver(driver string) string {
+	if driver == DriverSQLite {
+		// returns a list of supported SQL drivers
+		registered := sql.Drivers()
+		for _, name := range registered {
+			if name == "sqlite3" { // for github.com/mattn/go-sqlite3
+				driver = "sqlite3"
+				break
+			}
+		}
+	}
+	return driver
 }
+
+// SetDebug sets the debug mode
+func (db *DB) SetDebug(debug bool) { db.debug = debug }
+
+// Driver returns the database driver name
+func (db *DB) Driver() string { return db.driver }
 
 // Close closes the database connection
 func (db *DB) Close() error {
 	return db.DB.Close()
 }
 
-// GetDriver returns the database driver
-func (db *DB) GetDriver() string {
-	return db.driver
-}
-
 // InitSchema creates the migrations table if it doesn't exist
 func (db *DB) InitSchema() error {
 	var sqlStmt string
 	switch db.driver {
-	case "mysql":
+	case DriverMySQL:
 		sqlStmt = `
 CREATE TABLE IF NOT EXISTS db_schema_migrations (
     version VARCHAR(160) PRIMARY KEY,
     applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status VARCHAR(24) -- up,skip,down
 );`
-	case "postgres", "postgresql":
+	case DriverPostgres:
 		sqlStmt = `
 CREATE TABLE IF NOT EXISTS db_schema_migrations (
     version VARCHAR(160) PRIMARY KEY,
     applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status VARCHAR(24) -- up,skip,down
 );`
-	case "sqlite":
+	case DriverSQLite:
 		sqlStmt = `
 CREATE TABLE IF NOT EXISTS db_schema_migrations (
     version VARCHAR(160) PRIMARY KEY,
@@ -76,6 +94,9 @@ CREATE TABLE IF NOT EXISTS db_schema_migrations (
 		return fmt.Errorf("unsupported database driver: %s", db.driver)
 	}
 
+	if db.debug {
+		fmt.Println("[DEBUG] database.InitSchema:\n", sqlStmt)
+	}
 	_, err := db.Exec(sqlStmt)
 	return err
 }

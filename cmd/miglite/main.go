@@ -10,6 +10,9 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+// DEV
+//  run: go run .\cmd\miglite
+//  install: go install .\cmd\miglite
 func main() {
 	// Create the CLI application
 	app := command.NewApp("miglite", miglite.Version, "Go minimal database migration tool")

@@ -13,8 +13,8 @@ Go 极简的数据库迁移工具。
 - 使用 `github.com/gookit/goutil/testutil/assert` 编写断言测试
 - 每个迁移是一个 SQL 文件 参考 [20251023-user-add-field.sql](testdata/20251023-user-add-field.sql)
   - 根据文件名排序执行 推荐格式 `YYYYMMDD-migration-name.sql`
-  - 内容通过固定的 `-- Migrate:UP --` `-- Migrate:DOWN --` 格式进行解析
-  - 默认放在 `migrations` 目录下
+  - 内容通过固定的 `-- Migrate:UP` `-- Migrate:DOWN` 格式进行解析
+  - 默认放在 `./migrations` 目录下
 - 迁移 SQL 都在事物中执行，确保数据一致性
 
 ## Usage

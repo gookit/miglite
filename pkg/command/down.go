@@ -24,9 +24,9 @@ func DownCommand() *cflag.Cmd {
 
 func handleDown(c *cflag.Cmd) error {
 	// Load configuration and connect to database
-	cfg, db, err := loadConfigAndDB()
+	cfg, db, err := initConfigAndDB()
 	if err != nil {
-		return fmt.Errorf("failed to connect to database: %v", err)
+		return err
 	}
 	defer db.Close()
 

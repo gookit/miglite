@@ -27,7 +27,7 @@ func handleCreate(c *cflag.Cmd) error {
 	// Load configuration
 	cfg, err := config.Load(configFile)
 	if err != nil {
-		cfg = config.Default()
+		return err
 	}
 
 	// Create the migration

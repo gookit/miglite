@@ -2,24 +2,37 @@
 
 `miglite` Go实现的极简的数据库迁移工具。
 
+- 配置文件默认为 `./miglite.yaml`
+- 基于 `database/sql` 进行开发，默认不添加任何驱动依赖包
+- 支持 mysql, sqlite3, postgresql. 需要自己添加驱动依赖
+- 迁移 SQL 都在事物中执行，确保数据一致性
+
 ## 安装
 
 ```bash
 # install it by go
-go install github.com/gookit/miglite/cmd/miglitex
+go install github.com/gookit/miglite/cmd/miglite@latest
 ```
 
 ## 快速开始
 
 ```bash
-miglite --help
+miglite - Go minimal database migration tool(Version: 0.0.1)
 
-Usage: miglite [command]
+Usage: miglite COMMAND [--Options...] [...Arguments]
+Options:
+  -h, --help                Display application help
+  --version, -v             Show version and exit
+
 Commands:
-  up      Run migrations
-  down    Rollback migrations
-  status  Show migrations status
-  create  Create a new migration
+  create          Create a new migration
+  down            Rollback the most recent migration
+  init            Initialize the migration schema on db
+  status          Show the status of migrations
+  up              Execute pending migrations
+  help            Display application help
+
+Use "miglite COMMAND --help" for about a command
 ```
 
 ## 配置
@@ -72,4 +85,22 @@ miglite down --count 3
 
 # 查看迁移状态
 miglite status
+```
+
+## 作为库使用
+
+`miglite` 本身不依赖任何三方驱动库，你可以将其作为库使用。搭配你当前的数据库驱动库使用。
+
+- Sqlite 驱动:
+  - `modernc.org/sqlite` **CGO-free driver**
+  - `github.com/ncruces/go-sqlite3` **CGO-free** Base on Wasm(wazero)
+  - `github.com/mattn/go-sqlite3`  **NEED cgo**
+  - `github.com/glebarez/go-sqlite`  Base on `modernc.org/sqlite`
+- MySQL 驱动:
+  - github.com/go-sql-driver/mysql
+- PostgreSQL 驱动:
+  - github.com/lib/pq
+
+```go
+
 ```

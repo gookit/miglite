@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// ResolveDriver resolves the database driver name
 func ResolveDriver(driver string) (string, error) {
 	driver = strings.ToLower(driver)
 	switch driver {
@@ -18,3 +19,4 @@ func ResolveDriver(driver string) (string, error) {
 		return "", fmt.Errorf("unsupported database driver: %s", driver)
 	}
 }
+

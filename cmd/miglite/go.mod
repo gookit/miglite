@@ -1,4 +1,4 @@
-module github.com/gookit/miglitex
+module github.com/gookit/miglite/cmd/miglite
 
 go 1.24.0
 

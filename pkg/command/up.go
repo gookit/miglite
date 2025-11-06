@@ -9,6 +9,10 @@ import (
 )
 
 var upCmdOpt = struct {
+	// 默认每执行一个都需要确认
+	yes bool
+	// 跳过错误迁移并继续执行
+	skipErr bool
 }{}
 
 // NewUpCommand executes pending migrations
@@ -20,13 +24,15 @@ func NewUpCommand() *cflag.Cmd {
 
 	c.BoolVar(&showVerbose, "verbose", false, "Enable verbose output;;v")
 	c.StringVar(&configFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
+	c.BoolVar(&upCmdOpt.yes, "yes", false, "Skip confirmation prompt;;y")
+	c.BoolVar(&upCmdOpt.skipErr, "skip-err", false, "Skip the error migration and continue with the execution;;s")
 
 	return c
 }
 
 func handleUp() error {
 	// Load configuration and connect to database
-	cfg, db, err := loadConfigAndDB()
+	cfg, db, err := initConfigAndDB()
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %v", err)
 	}

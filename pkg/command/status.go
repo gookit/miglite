@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gookit/goutil/cflag"
+	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/miglite/pkg/migration"
 )
 
@@ -20,9 +21,9 @@ func StatusCommand() *cflag.Cmd {
 
 func handleStatus(c *cflag.Cmd) error {
 	// Load configuration and connect to database
-	cfg, db, err := loadConfigAndDB()
+	cfg, db, err := initConfigAndDB()
 	if err != nil {
-		return fmt.Errorf("failed to connect to database: %v", err)
+		return err
 	}
 	defer db.Close()
 
@@ -39,16 +40,17 @@ func handleStatus(c *cflag.Cmd) error {
 	}
 
 	// Print status table
-	fmt.Println("Migration Status:")
+	ccolor.Cyanln("Migration Status:")
 	fmt.Println("=================")
+	fmt.Println(" Status  | Version | Operate Time ")
 	for _, status := range statuses {
 		statusIcon := "[ ]" // pending
 		if status.Status == "up" {
-			statusIcon = "[X]" // applied
+			statusIcon = "[<green>X</>]" // applied
 		} else if status.Status == "down" {
-			statusIcon = "[R]" // rolled back
+			statusIcon = "[<ylw>R</>]" // rolled back
 		}
-		fmt.Printf("%s %s\n", statusIcon, status.Version)
+		ccolor.Printf("%s | %s\n", statusIcon, status.Version)
 	}
 
 	return nil

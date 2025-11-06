@@ -10,7 +10,7 @@ import (
 // Status represents the status of a migration
 type Status struct {
 	Version string
-	Status  string // up, down, pending
+	Status string // up, down, pending, skip
 }
 
 // GetMigrationStatus retrieves the status of all migrations

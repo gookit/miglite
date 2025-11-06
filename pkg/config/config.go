@@ -16,6 +16,8 @@ type Database struct {
 }
 
 type Migrations struct {
+	// Path to the migrations directory.
+	//  - allow use string-vars: {driver}
 	Path string `yaml:"path"`
 }
 
@@ -23,19 +25,6 @@ type Migrations struct {
 type Config struct {
 	Database   Database   `yaml:"database"`
 	Migrations Migrations `yaml:"migrations"`
-}
-
-// Default returns the default configuration
-func Default() *Config {
-	return &Config{
-		Database: Database{
-			Driver: "sqlite",
-			DSN:    "migrations.db",
-		},
-		Migrations: Migrations{
-			Path: "./migrations",
-		},
-	}
 }
 
 // Load loads configuration from YAML file and environment variables
@@ -59,29 +48,44 @@ func Load(configPath string) (*Config, error) {
 		return nil, err
 	}
 
+	// Validate db configuration
+	if err := checkDatabaseConfig(config); err != nil {
+		return nil, err
+	}
+
 	// Set defaults if not defined
 	if config.Migrations.Path == "" {
 		config.Migrations.Path = "./migrations"
 	}
-
-	// Validate configuration
-	if config.Database.Driver == "" {
-		return nil, fmt.Errorf("database driver is required")
-	}
-	if config.Database.DSN == "" {
-		return nil, fmt.Errorf("database DSN is required")
+	if strings.Contains(config.Migrations.Path, "{driver}") {
+		config.Migrations.Path = strings.Replace(config.Migrations.Path, "{driver}", config.Database.Driver, 1)
 	}
 
 	return config, nil
 }
 
+func checkDatabaseConfig(config *Config) error {
+	// Validate configuration
+	if config.Database.Driver == "" {
+		return fmt.Errorf("database driver is required")
+	}
+	if config.Database.DSN == "" {
+		return fmt.Errorf("database DSN is required")
+	}
+
+	// format driver name
+	driver, err := util.ResolveDriver(config.Database.Driver)
+	if err != nil {
+		return err
+	}
+
+	config.Database.Driver = driver
+	return nil
+}
+
 func loadFromENV(config *Config) error {
 	if driver := os.Getenv("DATABASE_DRIVER"); driver != "" {
-		driver1, err := util.ResolveDriver(driver)
-		if err != nil {
-			return err
-		}
-		config.Database.Driver = driver1
+		config.Database.Driver = driver
 	}
 
 	if dsn := os.Getenv("DATABASE_DSN"); dsn != "" {
