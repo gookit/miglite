@@ -23,6 +23,7 @@ type Migrations struct {
 
 // Config holds the application configuration
 type Config struct {
+	ConfigFile string `yaml:"-"` // internal use
 	Database   Database   `yaml:"database"`
 	Migrations Migrations `yaml:"migrations"`
 }
@@ -33,6 +34,7 @@ func Load(configPath string) (*Config, error) {
 
 	// Load from YAML file if it exists
 	if fsutil.FileExist(configPath) {
+		config.ConfigFile = configPath
 		data, err := os.ReadFile(configPath)
 		if err != nil {
 			return nil, err

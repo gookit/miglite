@@ -15,11 +15,28 @@ var (
 	configFile string
 )
 
-func initConfigAndDB() (*config.Config, *database.DB, error) {
+func initLoadConfig() (*config.Config, error) {
 	// Load configuration
 	cfg, err := config.Load(configFile)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to load config: %v", err)
+		return nil, fmt.Errorf("failed to load config: %v", err)
+	}
+
+	if cfg.ConfigFile != "" {
+		ccolor.Printf("Loaded config file: %s\n", cfg.ConfigFile)
+	}
+	if showVerbose {
+		dump.NoLoc(cfg)
+	}
+
+	return cfg, nil
+}
+
+func initConfigAndDB() (*config.Config, *database.DB, error) {
+	// Load configuration
+	cfg, err := initLoadConfig()
+	if err != nil {
+		return nil, nil, err
 	}
 
 	ccolor.Printf("Loaded config file: %s\n", configFile)
