@@ -39,12 +39,6 @@ func initConfigAndDB() (*config.Config, *database.DB, error) {
 		return nil, nil, err
 	}
 
-	ccolor.Printf("Loaded config file: %s\n", configFile)
-	if showVerbose {
-		fmt.Println("Config:")
-		dump.NoLoc(cfg)
-	}
-
 	// Connect to database
 	db, err := database.Connect(cfg.Database.Driver, cfg.Database.DSN)
 	if err != nil {

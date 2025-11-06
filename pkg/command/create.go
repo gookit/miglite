@@ -11,6 +11,7 @@ import (
 // CreateCommand creates a new migration file
 func CreateCommand() *cflag.Cmd {
 	c := cflag.NewCmd("create", "Create new migration SQL files", handleCreate)
+	c.Aliases = []string{"new"}
 
 	c.BoolVar(&showVerbose, "verbose", false, "Enable verbose output;;v")
 	c.StringVar(&configFile, "config", "./miglite.yaml", "Path to the configuration file;;c")

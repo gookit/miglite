@@ -21,6 +21,7 @@ func NewUpCommand() *cflag.Cmd {
 	c := cflag.NewCmd("up", "Execute pending migrations", func(c *cflag.Cmd) error {
 		return handleUp()
 	})
+	c.Aliases = []string{"migrate", "run"}
 
 	c.BoolVar(&showVerbose, "verbose", false, "Enable verbose output;;v")
 	c.StringVar(&configFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
