@@ -3,7 +3,7 @@ package command
 import (
 	"fmt"
 
-	"github.com/gookit/goutil/cflag"
+	"github.com/gookit/goutil/cflag/capp"
 	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/miglite/pkg/migration"
 )
@@ -16,9 +16,8 @@ var upCmdOpt = struct {
 }{}
 
 // NewUpCommand executes pending migrations
-func NewUpCommand() *cflag.Cmd {
-	// migrate
-	c := cflag.NewCmd("up", "Execute pending migrations", func(c *cflag.Cmd) error {
+func NewUpCommand() *capp.Cmd {
+	c := capp.NewCmd("up", "Execute pending migrations", func(c *capp.Cmd) error {
 		return handleUp()
 	})
 	c.Aliases = []string{"migrate", "run"}

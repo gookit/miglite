@@ -3,7 +3,7 @@ package command
 import (
 	"fmt"
 
-	"github.com/gookit/goutil/cflag"
+	"github.com/gookit/goutil/cflag/capp"
 	"github.com/gookit/miglite/pkg/migration"
 )
 
@@ -12,8 +12,8 @@ var downCmdOpt = struct {
 }{}
 
 // DownCommand rolls back the last migration or a specific one
-func DownCommand() *cflag.Cmd {
-	c := cflag.NewCmd("down", "Rollback the most recent migration", handleDown)
+func DownCommand() *capp.Cmd {
+	c := capp.NewCmd("down", "Rollback the most recent migration", handleDown)
 
 	c.BoolVar(&showVerbose, "verbose", false, "Enable verbose output;;v")
 	c.StringVar(&configFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
@@ -22,7 +22,7 @@ func DownCommand() *cflag.Cmd {
 	return c
 }
 
-func handleDown(c *cflag.Cmd) error {
+func handleDown(c *capp.Cmd) error {
 	// Load configuration and connect to database
 	cfg, db, err := initConfigAndDB()
 	if err != nil {

@@ -3,15 +3,15 @@ package command
 import (
 	"fmt"
 
-	"github.com/gookit/goutil/cflag"
+	"github.com/gookit/goutil/cflag/capp"
 	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/miglite/pkg/migration"
 )
 
 // StatusCommand shows the status of migrations
-func StatusCommand() *cflag.Cmd {
+func StatusCommand() *capp.Cmd {
 	// List applied and pending migrations
-	c := cflag.NewCmd("status", "Show the status of migrations", handleStatus)
+	c := capp.NewCmd("status", "Show the status of migrations", handleStatus)
 
 	c.BoolVar(&showVerbose, "verbose", false, "Enable verbose output;;v")
 	c.StringVar(&configFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
@@ -19,7 +19,7 @@ func StatusCommand() *cflag.Cmd {
 	return c
 }
 
-func handleStatus(c *cflag.Cmd) error {
+func handleStatus(c *capp.Cmd) error {
 	// Load configuration and connect to database
 	cfg, db, err := initConfigAndDB()
 	if err != nil {

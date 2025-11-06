@@ -3,15 +3,15 @@ package command
 import (
 	"fmt"
 
-	"github.com/gookit/goutil/cflag"
+	"github.com/gookit/goutil/cflag/capp"
 	"github.com/gookit/goutil/x/ccolor"
 )
 
 // InitCommand initializes the migration schema on db
-func InitCommand() *cflag.Cmd {
-	c := cflag.NewCmd("init", "Initialize the migration schema on db")
+func InitCommand() *capp.Cmd {
+	c := capp.NewCmd("init", "Initialize the migration schema on db")
 
-	c.Func = func(c *cflag.Cmd) error {
+	c.Func = func(c *capp.Cmd) error {
 		_, db, err := initConfigAndDB()
 		if err != nil {
 			return err

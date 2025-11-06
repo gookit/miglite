@@ -3,14 +3,14 @@ package command
 import (
 	"fmt"
 
-	"github.com/gookit/goutil/cflag"
+	"github.com/gookit/goutil/cflag/capp"
 	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/miglite/pkg/migration"
 )
 
 // CreateCommand creates a new migration file
-func CreateCommand() *cflag.Cmd {
-	c := cflag.NewCmd("create", "Create new migration SQL files", handleCreate)
+func CreateCommand() *capp.Cmd {
+	c := capp.NewCmd("create", "Create new migration SQL files", handleCreate)
 	c.Aliases = []string{"new"}
 
 	c.BoolVar(&showVerbose, "verbose", false, "Enable verbose output;;v")
@@ -21,7 +21,7 @@ func CreateCommand() *cflag.Cmd {
 	return c
 }
 
-func handleCreate(c *cflag.Cmd) error {
+func handleCreate(c *capp.Cmd) error {
 	// Load configuration
 	cfg, err := initLoadConfig()
 	if err != nil {

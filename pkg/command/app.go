@@ -1,15 +1,15 @@
 package command
 
 import (
-	"github.com/gookit/goutil/cflag"
+	"github.com/gookit/goutil/cflag/capp"
 	"github.com/gookit/goutil/x/ccolor"
 )
 
 var showVersion bool
 
 // NewApp creates a new CLI application
-func NewApp(name, version, description string) *cflag.App {
-	app := cflag.NewAppWith(name, version, description)
+func NewApp(name, version, description string) *capp.App {
+	app := capp.NewWith(name, version, description)
 
 	// Add global flags
 	// app.BoolVar(&showHelp, "help", false, "Show help message and exit;;h")
@@ -30,7 +30,7 @@ func NewApp(name, version, description string) *cflag.App {
 	return app
 }
 
-func beforeRun(app *cflag.App) bool {
+func beforeRun(app *capp.App) bool {
 	if showVersion {
 		ccolor.Printf(`<green>Version</> : v%s
 <green>Author</>  : https://github.com/inhere
