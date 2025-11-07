@@ -17,5 +17,6 @@ vendor/
 .DS_Store
 *.db
 
+build/
 .qwen/
 .specify/

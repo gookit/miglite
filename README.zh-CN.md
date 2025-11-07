@@ -1,15 +1,16 @@
 # miglite - lite database migration tool
 
-![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/gookit/goutil?style=flat-square)
-[![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/gookit/goutil)](https://github.com/gookit/goutil)
-[![Go Report Card](https://goreportcard.com/badge/github.com/gookit/goutil)](https://goreportcard.com/report/github.com/gookit/goutil)
-[![Unit-Tests](https://github.com/gookit/goutil/workflows/Unit-Tests/badge.svg)](https://github.com/gookit/goutil/actions)
-[![Go Reference](https://pkg.go.dev/badge/github.com/gookit/goutil.svg)](https://pkg.go.dev/github.com/gookit/goutil)
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/gookit/miglite?style=flat-square)
+[![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/gookit/miglite)](https://github.com/gookit/miglite)
+[![Go Report Card](https://goreportcard.com/badge/github.com/gookit/miglite)](https://goreportcard.com/report/github.com/gookit/miglite)
+[![Unit-Tests](https://github.com/gookit/miglite/workflows/Unit-Tests/badge.svg)](https://github.com/gookit/miglite/actions)
+[![Go Reference](https://pkg.go.dev/badge/github.com/gookit/miglite.svg)](https://pkg.go.dev/github.com/gookit/miglite)
 
 `miglite` Golang 实现的极简的数据库迁移工具。
 
 - 使用简单，极简依赖
-- 基于原始 SQL 方式作为迁移文件，固定文件名格式为 `YYYYMMDD-migration-name.sql`
+- 基于原始 SQL 方式作为迁移文件
+  - 固定文件名格式为 `YYYYMMDD-HHMMSS-{migration-name}.sql`
 - 基于 `database/sql` 进行开发，默认不添加任何驱动依赖包
 - 迁移 SQL 都在事物中执行，确保数据一致性
 - 配置文件默认为 `./miglite.yaml`
@@ -39,12 +40,15 @@ go get github.com/gookit/miglite
 ## 快速开始
 
 ```bash
+$ miglite
+
 miglite - Go minimal database migration tool(Version: 0.0.1)
 
 Usage: miglite COMMAND [--Options...] [...Arguments]
 Options:
-  -h, --help                Display application help
-  --version, -v             Show version and exit
+  --help, -h                Display application help
+  --verbose, -v             Enable verbose output
+  --version, -V             Show version and exit
 
 Commands:
   create          Create a new migration

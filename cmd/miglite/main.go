@@ -22,6 +22,7 @@ var (
 	Version   = "0.1.0"
 	BuildTime = "2025-11-05T09:00:00Z"
 	GitCommit = "ab3cd4ef"
+	GoVersion = "go1.20.1" // go version on build
 )
 
 // DEV
