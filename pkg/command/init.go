@@ -7,29 +7,42 @@ import (
 	"github.com/gookit/goutil/x/ccolor"
 )
 
+type InitOption struct {
+	Drop bool
+}
+
 // InitCommand initializes the migration schema on db
 func InitCommand() *capp.Cmd {
-	c := capp.NewCmd("init", "Initialize the migration schema on db")
+	var initOpt = InitOption{}
+	c := capp.NewCmd("init", "Initialize the migration schema on database")
+	c.BoolVar(&initOpt.Drop, "drop", false, "Drop existing schema before create")
 
 	c.Func = func(c *capp.Cmd) error {
-		return HandleInit()
+		return HandleInit(initOpt)
 	}
 	return c
 }
 
 // HandleInit handles the init command logic
-func HandleInit() error {
+func HandleInit(opt InitOption) error {
 	_, db, err := initConfigAndDB()
 	if err != nil {
 		return err
 	}
 	defer db.Close()
 
+	// Drop existing schema if needed
+	if opt.Drop {
+		if err := db.DropSchema(); err != nil {
+			return fmt.Errorf("failed to drop schema: %v", err)
+		}
+	}
+
 	// Initialize schema if needed
 	if err := db.InitSchema(); err != nil {
 		return fmt.Errorf("failed to initialize schema: %v", err)
 	}
 
-	ccolor.Infoln("Migration schema initialized successfully.")
+	ccolor.Infoln("🎉  Migration schema initialized successfully.")
 	return nil
 }

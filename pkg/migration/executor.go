@@ -13,7 +13,7 @@ type Executor struct {
 	db *database.DB
 	// verbose flag
 	verbose bool
-	tracker *database.MigrationTracker
+	tracker *Tracker
 }
 
 // NewExecutor creates a new migration executor
@@ -21,7 +21,7 @@ func NewExecutor(db *database.DB, verbose bool) *Executor {
 	return &Executor{
 		db:      db,
 		verbose: verbose,
-		tracker: database.NewMigrationTracker(db, verbose),
+		tracker: NewTracker(db, verbose),
 	}
 }
 

@@ -9,14 +9,6 @@ import (
 	"time"
 )
 
-const (
-	MarkUp   = "-- Migrate:UP"
-	MarkDown = "-- Migrate:DOWN"
-	// DateLayout defines the layout for migration filename
-	DateLayout   = "20060102-150405"
-	PrefixFormat = "YYYYMMDD-HHMMSS"
-)
-
 // defines the regex pattern for extracting the date prefix from a filename
 //
 // format: YYYYMMDD-HHMMSS-{name}.sql
@@ -91,6 +83,7 @@ func (m *Migration) ParseContents() error {
 	// TODO 后续支持在前几行设置选项。格式：-- Migrate-option:OPTION=VALUE,OPTION1=VALUE1,
 	for _, line := range lines {
 		trimmed := strings.TrimSpace(line)
+		// 跳过空行
 		if trimmed == "" {
 			continue
 		}
@@ -101,6 +94,11 @@ func (m *Migration) ParseContents() error {
 			continue
 		} else if strings.HasSuffix(trimmed, MarkDown) {
 			currentSection = "down"
+			continue
+		}
+
+		// 跳过不需要的注释行
+		if strings.HasPrefix(trimmed, "-- ") {
 			continue
 		}
 

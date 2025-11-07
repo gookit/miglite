@@ -21,7 +21,7 @@ func DownCommand() *capp.Cmd {
 	var downOpt = DownOption{}
 	c := capp.NewCmd("down", "Rollback the most recent migration", func(c *capp.Cmd) error {
 		return HandleDown(downOpt)
-	})
+	}).WithConfigFn(capp.WithAliases("rollback"))
 
 	c.BoolVar(&ShowVerbose, "verbose", false, "Enable verbose output;;v")
 	c.StringVar(&ConfigFile, "config", "./miglite.yaml", "Path to the configuration file;;c")

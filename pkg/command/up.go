@@ -34,8 +34,10 @@ func NewUpCommand() *capp.Cmd {
 	c.BoolVar(&ShowVerbose, "verbose", false, "Enable verbose output;;v")
 	c.StringVar(&ConfigFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
 	c.BoolVar(&upOpt.Yes, "yes", false, "Skip confirmation prompt;;y")
+	c.IntVar(&upOpt.Number, "number", 0, "Execute only the specified number of migrations;;n")
 	c.BoolVar(&upOpt.SkipErr, "skip-err", false, "Skip the error migration and continue with the execution;;s")
 
+	// c.LongHelp = `  <mga>Note</>: if set --number, will auto set --yes=true`
 	return c
 }
 
@@ -66,8 +68,10 @@ func HandleUp(opt UpOption) error {
 	// Get executor
 	executor := migration.NewExecutor(db, ShowVerbose)
 	startTime := time.Now()
+
+	var appliedNum int
 	confirmTip := "Are you sure you want to execute this migration?"
-	ccolor.Printf("🔀 Starting execution migrations(%d). Start at: %s\n\n", len(migrations), formatTime(startTime))
+	ccolor.Printf("🔀  Starting exec migrations(<green>pending=%d</>). Start at: %s\n\n", len(migrations), formatTime(startTime))
 
 	// Execute pending migrations
 	for idx, mig := range migrations {
@@ -76,23 +80,32 @@ func HandleUp(opt UpOption) error {
 		if err != nil {
 			return fmt.Errorf("failed to check migration status: %v", err)
 		}
-
-		if !applied || status == migration.StatusDown {
-			ccolor.Printf("<green>%d.</> Executing migration file: <green>%s</>\n", idx+1, mig.FileName)
-			if !opt.Yes && !cliutil.Confirm(confirmTip) {
-				ccolor.Warnln(" Skipping current migration!")
-				continue
-			}
-
-			if err := mig.Parse(); err != nil {
-				return err
-			}
-			if err := executor.ExecuteUp(mig); err != nil {
-				return fmt.Errorf("failed to execute migration %s: %v", mig.FileName, err)
-			}
-			ccolor.Printf("Successfully executed migration: %s\n", mig.FileName)
-		} else {
+		if applied || status == migration.StatusSkip {
 			ccolor.Printf("<ylw>Skip</>ping applied migration: %s\n", mig.FileName)
+			continue
+		}
+
+		// not applied OR status=down
+		ccolor.Printf("<green>%d.</> Executing migration file: <green>%s</>\n", idx+1, mig.FileName)
+		if !opt.Yes && !cliutil.Confirm(confirmTip) {
+			ccolor.Warnln("Exiting run migrations!")
+			break
+		}
+
+		if err := mig.Parse(); err != nil {
+			return err
+		}
+		if err := executor.ExecuteUp(mig); err != nil {
+			return fmt.Errorf("failed to execute migration %s: %v", mig.FileName, err)
+		}
+
+		// free memory
+		mig.ResetContents()
+		ccolor.Printf("Successfully executed migration: %s\n", mig.FileName)
+
+		appliedNum++
+		if opt.Number > 0 && appliedNum >= opt.Number {
+			break
 		}
 	}
 

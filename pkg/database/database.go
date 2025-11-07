@@ -5,12 +5,6 @@ import (
 	"fmt"
 )
 
-const (
-	DriverMySQL    = "mysql"
-	DriverPostgres = "postgres"
-	DriverSQLite   = "sqlite"
-)
-
 // DB represents a database connection
 type DB struct {
 	*sql.DB
@@ -65,38 +59,37 @@ func (db *DB) Close() error {
 	return db.DB.Close()
 }
 
+// SqlBuilder for database driver
+func (db *DB) SqlBuilder() (SqlBuilder, error) {
+	return GetSqlBuilder(db.driver)
+}
+
 // InitSchema creates the migrations table if it doesn't exist
 func (db *DB) InitSchema() error {
-	var sqlStmt string
-	switch db.driver {
-	case DriverMySQL:
-		sqlStmt = `
-CREATE TABLE IF NOT EXISTS db_schema_migrations (
-    version VARCHAR(160) PRIMARY KEY,
-    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(24) -- up,skip,down
-);`
-	case DriverPostgres:
-		sqlStmt = `
-CREATE TABLE IF NOT EXISTS db_schema_migrations (
-    version VARCHAR(160) PRIMARY KEY,
-    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(24) -- up,skip,down
-);`
-	case DriverSQLite:
-		sqlStmt = `
-CREATE TABLE IF NOT EXISTS db_schema_migrations (
-    version VARCHAR(160) PRIMARY KEY,
-    applied_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(24) -- up,skip,down
-);`
-	default:
-		return fmt.Errorf("unsupported database driver: %s", db.driver)
+	b, err := GetSqlBuilder(db.driver)
+	if err != nil {
+		return err
 	}
 
+	var sqlStmt = b.CreateSchema()
 	if db.debug {
 		fmt.Println("[DEBUG] database.InitSchema:", sqlStmt)
 	}
-	_, err := db.Exec(sqlStmt)
+	_, err = db.Exec(sqlStmt)
+	return err
+}
+
+// DropSchema drops the migrations table
+func (db *DB) DropSchema() error {
+	b, err := GetSqlBuilder(db.driver)
+	if err != nil {
+		return err
+	}
+
+	var sqlStmt = b.DropSchema()
+	if db.debug {
+		fmt.Println("[DEBUG] database.DropSchema:", sqlStmt)
+	}
+	_, err = db.Exec(sqlStmt)
 	return err
 }

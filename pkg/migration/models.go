@@ -15,12 +15,21 @@ const (
 	StatusPending = "pending"
 )
 
+const (
+	MarkUp   = "-- Migrate:UP"
+	MarkDown = "-- Migrate:DOWN"
+	// DateLayout defines the layout for migration filename
+	DateLayout   = "20060102-150405"
+	PrefixFormat = "YYYYMMDD-HHMMSS"
+)
+
 // Record represents a record in the database migrations table
 type Record struct {
-	Version string `db:"version"` // is migration filename
+	// is migration filename
+	Version string `db:"version"`
 	AppliedAt time.Time `db:"applied_at"`
-	Status string `db:"status"`       // up, skip, down.
-	Hash      string    `db:"hash"`   // optional hash of migration content
+	// up, skip, down.
+	Status string `db:"status"`
 }
 
 // NewRecord creates a new migration record

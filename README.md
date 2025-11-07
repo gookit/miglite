@@ -1,4 +1,4 @@
-# miglite - lite database migration tool
+# miglite - lite SQL Schema migration tool
 
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/gookit/miglite?style=flat-square)
 [![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/gookit/miglite)](https://github.com/gookit/miglite)
@@ -6,7 +6,7 @@
 [![Unit-Tests](https://github.com/gookit/miglite/workflows/Unit-Tests/badge.svg)](https://github.com/gookit/miglite/actions)
 [![Go Reference](https://pkg.go.dev/badge/github.com/gookit/miglite.svg)](https://pkg.go.dev/github.com/gookit/miglite)
 
-`miglite` Golang 实现的极简的数据库迁移工具。
+`miglite` Golang 实现的极简的数据库 Schema 迁移工具。
 
 - 使用简单，极简依赖
 - 基于原始 SQL 方式作为迁移文件
@@ -37,7 +37,9 @@ go get github.com/gookit/miglite
 # import "github.com/gookit/miglite"
 ```
 
-## 快速开始
+## CLI直接使用
+
+直接使用 `miglite` 命令行工具。
 
 ```bash
 $ miglite
@@ -61,11 +63,14 @@ Commands:
 Use "miglite COMMAND --help" for about a command
 ```
 
-## 配置
+### 配置
 
 `miglite` 支持通过 `miglite.yaml` 文件或环境变量进行配置。
 
-### miglite.yaml 示例
+- 可以允许没有配置文件，直接使用环境变量 `DATABASE_URL`
+- 配置文件默认为 `./miglite.yaml`，也可以通过 `--config` 参数指定
+
+#### miglite.yaml 示例
 
 ```yaml
 database:
@@ -75,12 +80,12 @@ migrations:
   path: ./migrations
 ```
 
-### 环境变量
+#### 环境变量
 
 - `DATABASE_URL`: 数据库连接 URL (例如: `sqlite://path/to/db.sqlite`, `mysql://user:pass@localhost/dbname`)
 - `MIGRATIONS_PATH`: 迁移文件路径 (默认: `./migrations`)
 
-## 创建迁移
+### 创建迁移
 
 ```bash
 miglite create add-users-table
@@ -88,7 +93,12 @@ miglite create add-users-table
 
 这将在 `./migrations/` 目录下创建一个以当前日期命名的 SQL 文件，格式为 `YYYYMMDD-HHMMSS-add-users-table.sql`。
 
-文件内容包含模板：
+```text
+./migrations/20251105-102325-create-users-table.sql
+```
+
+SQL文件内容包含模板：
+
 ```sql
 -- Migrate:UP
 -- 在这里添加迁移 SQL
@@ -97,7 +107,23 @@ miglite create add-users-table
 -- 在这里添加回滚 SQL (可选)
 ```
 
-## 运行迁移
+示例迁移文件：
+
+```sql
+-- Migrate:UP
+CREATE TABLE post (
+  id int NOT NULL,
+  title text,
+  body text,
+  PRIMARY KEY(id)
+);
+
+-- Migrate:DOWN
+DROP TABLE post;
+```
+
+
+### 运行迁移
 
 ```bash
 # 应用所有待处理的迁移
@@ -128,5 +154,23 @@ miglite status
   - `github.com/lib/pq`
 
 ```go
+package main
 
+import (
+	"github.com/gookit/miglite"
+	
+	// add your database driver
+	_ "github.com/lib/pq"
+)
+
+func main() {
+	
+}
 ```
+
+## 相关的项目
+
+- [golang-migrate](https://github.com/golang-migrate/migrate)
+- [pressly/goose](https://github.com/pressly/goose)
+- [amacneil/dbmate](https://github.com/amacneil/dbmate)
+

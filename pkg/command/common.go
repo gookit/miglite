@@ -54,5 +54,8 @@ func initConfigAndDB() (*config.Config, *database.DB, error) {
 }
 
 func formatTime(t time.Time) string {
+	if t.IsZero() {
+		return "N/A"
+	}
 	return t.Format(TimeLayout)
 }

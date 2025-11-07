@@ -7,20 +7,27 @@ import (
 
 	"github.com/goccy/go-yaml"
 	"github.com/gookit/goutil/fsutil"
-	"github.com/gookit/miglite/pkg/util"
+	"github.com/gookit/miglite/pkg/migutil"
 )
 
+// Database configuration
 type Database struct {
+	// Driver name for database. eg: mysql, postgres, sqlite3, oracle, mssql, ...
+	//
+	// NOTE: 跟使用的数据库驱动库有关
 	Driver string `yaml:"driver"`
 	DSN    string `yaml:"dsn"`
 }
 
+// Migrations configuration
 type Migrations struct {
-	// Path to the migrations directory.
+	// Path to the migrations file directory.
 	//  - allow use string-vars: {driver}
 	Path string `yaml:"path"`
 	// Use date(YYYY) as directory TODO
 	DateDir bool `yaml:"date_dir"`
+	// Table name for migration tracking TODO
+	Table string `yaml:"table"`
 }
 
 // Config holds the application configuration
@@ -79,7 +86,7 @@ func checkDatabaseConfig(config *Config) error {
 	}
 
 	// format driver name
-	driver, err := util.ResolveDriver(config.Database.Driver)
+	driver, err := migutil.ResolveDriver(config.Database.Driver)
 	if err != nil {
 		return err
 	}
@@ -125,7 +132,7 @@ func parseDatabaseURL(url string) (string, string, error) {
 		return "", "", fmt.Errorf("invalid DATABASE_URL: %s", url)
 	}
 
-	driver, err := util.ResolveDriver(url[:sepIdx])
+	driver, err := migutil.ResolveDriver(url[:sepIdx])
 	if err != nil {
 		return "", "", err
 	}
