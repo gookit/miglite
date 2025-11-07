@@ -126,7 +126,7 @@ miglite status
 
 ## 作为库使用
 
-`miglite` 本身不依赖任何三方驱动库，你可以将其作为库使用。搭配你当前的数据库驱动库使用。
+`miglite` 本身不依赖任何三方DB驱动库，你可以将其作为库使用。搭配你当前的数据库驱动库使用。
 
 - Sqlite 驱动:
   - `modernc.org/sqlite` **CGO-free driver**

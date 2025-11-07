@@ -18,5 +18,6 @@ vendor/
 *.db
 
 build/
+specs/
 .qwen/
 .specify/
