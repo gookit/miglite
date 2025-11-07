@@ -31,7 +31,7 @@ func NewApp(name, version, description string) *capp.App {
 
 func beforeRun(app *capp.App) bool {
 	if showVersion {
-		ccolor.Printf(`<green>Version</> : v%s
+		ccolor.Printf(`<green>Version</> : %s
 <green>Author</>  : https://github.com/inhere
 <green>Homepage</>: https://github.com/gookit/miglite
 `, app.Version)

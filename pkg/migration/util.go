@@ -14,7 +14,7 @@ import (
 // FindMigrations finds all migration files in the specified directory, and returns them sorted by timestamp
 func FindMigrations(migrationsDir string) ([]*Migration, error) {
 	var migrations []*Migration
-	ccolor.Printf(" 🔎 Discovering migrations from <green>%s</>\n", migrationsDir)
+	ccolor.Printf("🔎  Discovering migrations from <green>%s</>\n", migrationsDir)
 
 	err := filepath.Walk(migrationsDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {

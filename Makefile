@@ -48,23 +48,23 @@ ins2bin: ## Install to GOPATH/bin
 build-all:linux arm win darwin ## Build for Linux,ARM,OSX,Windows
 
 linux: ## Build for Linux
-	cd cmd/miglite && GOOS=linux GOARCH=amd64 go build $(BUILD_FLAGS) -o miglite-linux-amd64 $(MAIN_SRC_FILE)
-	mv cmd/miglite/miglite-linux-amd64 build/miglite-linux-amd64
+	mkdir -p build
+	GOOS=linux GOARCH=amd64 go build $(BUILD_FLAGS) -o build/miglite-linux-amd64 $(MAIN_SRC_FILE)
 	chmod +x build/miglite-linux-amd64
 
 arm: ## Build for ARM
-	cd cmd/miglite && GOOS=linux GOARCH=arm go build $(BUILD_FLAGS) -o miglite-linux-arm $(MAIN_SRC_FILE)
-	mv cmd/miglite/miglite-linux-arm build/miglite-linux-arm
+	mkdir -p build
+	GOOS=linux GOARCH=arm go build $(BUILD_FLAGS) -o build/miglite-linux-arm $(MAIN_SRC_FILE)
 	chmod +x build/miglite-linux-arm
 
 darwin: ## Build for OSX
-	cd cmd/miglite && GOOS=darwin GOARCH=amd64 go build $(BUILD_FLAGS) -o miglite-darwin-amd64 $(MAIN_SRC_FILE)
-	mv cmd/miglite/miglite-darwin-amd64 build/miglite-darwin-amd64
+	mkdir -p build
+	GOOS=darwin GOARCH=amd64 go build $(BUILD_FLAGS) -o build/miglite-darwin-amd64 $(MAIN_SRC_FILE)
 	chmod +x build/miglite-darwin-amd64
 
 win: ## Build for Windows
-	cd cmd/miglite && GOOS=windows GOARCH=amd64 go build $(BUILD_FLAGS) -o miglite-windows-amd64.exe $(MAIN_SRC_FILE)
-	mv cmd/miglite/miglite-windows-amd64.exe build/miglite-windows-amd64.exe
+	mkdir -p build
+	GOOS=windows GOARCH=amd64 go build $(BUILD_FLAGS) -o build/miglite-windows-amd64.exe $(MAIN_SRC_FILE)
 
   clean:     ## Clean all created artifacts
 clean:

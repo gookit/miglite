@@ -59,16 +59,15 @@ func HandleUp(opt UpOption) error {
 	}
 
 	if len(migrations) == 0 {
-		ccolor.Infoln("🔎 No migrations found.")
+		ccolor.Infoln("🔎  No migrations found.")
 		return nil
 	}
 
 	// Get executor
 	executor := migration.NewExecutor(db, ShowVerbose)
 	startTime := time.Now()
-	startDate := startTime.Format("2006.01.02 15:04:05")
 	confirmTip := "Are you sure you want to execute this migration?"
-	ccolor.Printf("🔀 Starting execution migrations(%d). Start at: %s\n\n", len(migrations), startDate)
+	ccolor.Printf("🔀 Starting execution migrations(%d). Start at: %s\n\n", len(migrations), formatTime(startTime))
 
 	// Execute pending migrations
 	for idx, mig := range migrations {
@@ -93,10 +92,10 @@ func HandleUp(opt UpOption) error {
 			}
 			ccolor.Printf("Successfully executed migration: %s\n", mig.FileName)
 		} else {
-			ccolor.Printf("Skipping already applied migration: %s\n", mig.FileName)
+			ccolor.Printf("<ylw>Skip</>ping applied migration: %s\n", mig.FileName)
 		}
 	}
 
-	ccolor.Successln("\n🎉 All migrations applied successfully! ⏱️ costTime:", time.Since(startTime))
+	ccolor.Successln("\n🎉  All migrations applied successfully! ⏱️ costTime:", time.Since(startTime))
 	return nil
 }

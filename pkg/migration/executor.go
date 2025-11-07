@@ -35,7 +35,7 @@ func (e *Executor) ExecuteUp(migration *Migration) error {
 	defer func() {
 		if err != nil {
 			if err1 := tx.Rollback(); err1 != nil {
-				log.Printf("Failed to rollback transaction: %v", err1)
+				log.Printf("[ERROR] Failed to rollback transaction: %v", err1)
 			}
 		}
 	}()
@@ -69,8 +69,10 @@ func (e *Executor) ExecuteDown(migration *Migration) error {
 		return fmt.Errorf("failed to begin transaction: %v", err)
 	}
 	defer func() {
-		if err1 := tx.Rollback(); err1 != nil {
-			log.Printf("Failed to rollback transaction: %v", err1)
+		if err != nil {
+			if err1 := tx.Rollback(); err1 != nil {
+				log.Printf("[ERROR] Failed to rollback transaction: %v", err1)
+			}
 		}
 	}()
 

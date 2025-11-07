@@ -46,18 +46,18 @@ func HandleStatus() error {
 
 	// Print status table
 	ccolor.Cyanf("\nMigration Status:(total=%d)\n", len(statuses))
-	fmt.Println(strings.Repeat("==", 41))
-	ccolor.Printf("   <b>Status</>   | %12s<b>Version(migration file)</>%12s    |   <b>Operate Time</> \n", "", "")
-	fmt.Println(strings.Repeat("--", 41))
+	fmt.Println(strings.Repeat("==", 45))
+	ccolor.Printf("    <b>Status</>   | %13s<b>Version(migration file)</>%13s    |   <b>Operate Time</> \n", "", "")
+	fmt.Println(strings.Repeat("--", 45))
 
-	for _, status := range statuses {
-		statusIcon := "[<mga>pending</>]" // pending
-		if status.Status == "up" {
-			statusIcon = "[<green>applied</>]" // applied
-		} else if status.Status == "down" {
-			statusIcon = "[<ylw>rolled</>]" // rolled back
+	for _, st := range statuses {
+		statusIcon := "⏳  <mga>pending</>" // pending
+		if st.Status == "up" {
+			statusIcon = "✔️  <green>applied</>" // applied
+		} else if st.Status == "down" {
+			statusIcon = "↪️  <ylw>rolled</> " // rolled back
 		}
-		ccolor.Printf("  %s | %-50s | \n", statusIcon, status.Version)
+		ccolor.Printf("  %s | %-52s | %s\n", statusIcon, st.Version, formatTime(st.AppliedAt))
 	}
 
 	return nil

@@ -2,12 +2,15 @@ package command
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/gookit/goutil/dump"
 	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/miglite/pkg/config"
 	"github.com/gookit/miglite/pkg/database"
 )
+
+const TimeLayout = "2006-01-02 15:04:05"
 
 var (
 	// ShowVerbose flag
@@ -24,7 +27,7 @@ func initLoadConfig() (*config.Config, error) {
 	}
 
 	if cfg.ConfigFile != "" {
-		ccolor.Printf("Loaded config file from <green>%s</>\n", cfg.ConfigFile)
+		ccolor.Printf("📄  Loaded config file from <green>%s</>\n", cfg.ConfigFile)
 	}
 	if ShowVerbose {
 		dump.NoLoc(cfg)
@@ -48,4 +51,8 @@ func initConfigAndDB() (*config.Config, *database.DB, error) {
 
 	db.SetDebug(ShowVerbose)
 	return cfg, db, nil
+}
+
+func formatTime(t time.Time) string {
+	return t.Format(TimeLayout)
 }

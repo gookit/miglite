@@ -35,7 +35,6 @@ jobs:
       - name: Build bin package
         run: |
           make build-all
-          chmod a+x build/miglite-linux-*
           ./build/miglite-linux-amd64 -V
 
       - name: Generate changelog

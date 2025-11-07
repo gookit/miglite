@@ -4,13 +4,16 @@ import (
 	"fmt"
 
 	"github.com/gookit/goutil/cflag/capp"
+	"github.com/gookit/goutil/cliutil"
 	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/miglite/pkg/migration"
 )
 
 // DownOption represents the options for the down command
 type DownOption struct {
-	Count int
+	Number int
+	// Yes 是否跳过确认
+	Yes bool
 }
 
 // DownCommand rolls back the last migration or a specific one
@@ -23,7 +26,7 @@ func DownCommand() *capp.Cmd {
 	c.BoolVar(&ShowVerbose, "verbose", false, "Enable verbose output;;v")
 	c.StringVar(&ConfigFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
 
-	c.IntVar(&downOpt.Count, "count", 1, "Number of migrations to roll back;;c")
+	c.IntVar(&downOpt.Number, "number", 1, "Number of migrations to roll back;;n")
 	return c
 }
 
@@ -43,19 +46,19 @@ func HandleDown(opt DownOption) error {
 	}
 
 	// Get the target number of migrations to rollback (default 1)
-	count := opt.Count
+	count := opt.Number
 	if count <= 0 {
 		return fmt.Errorf("count must be greater than 0")
 	}
 
 	// Get applied migrations sorted by date (most recent first)
-	appliedList, err := migration.GetAppliedSortedByDate(db)
+	appliedList, err := migration.GetAppliedSortedByDate(db, count)
 	if err != nil {
 		return fmt.Errorf("failed to get applied migrations: %v", err)
 	}
 
 	if len(appliedList) == 0 {
-		fmt.Println("No applied migrations to rollback")
+		fmt.Println("🔎  No applied migrations to rollback")
 		return nil
 	}
 
@@ -66,23 +69,31 @@ func HandleDown(opt DownOption) error {
 
 	// Get executor
 	executor := migration.NewExecutor(db, ShowVerbose)
+	confirmTip := "Are you sure you want to roll back the migration?"
+	ccolor.Magentaf("Will roll back recent %d migrations:\n\n", count)
 
 	// Roll back the specified number of migrations
 	for i := 0; i < count; i++ {
+		var applied = appliedList[i]
 		// Find the corresponding migration file
 		var targetMig *migration.Migration
 		for _, mig := range migrations {
-			if mig.Version == appliedList[i].Version {
+			if mig.Version == applied.Version {
 				targetMig = mig
 				break
 			}
 		}
 
 		if targetMig == nil {
-			return fmt.Errorf("migration file not found for version: %s", appliedList[i].Version)
+			return fmt.Errorf("migration file not found for version: %s", applied.Version)
 		}
 
-		fmt.Printf("Rolling back migration: %s\n", targetMig.FileName)
+		ccolor.Printf("%d. Rolling back migration: <ylw>%s</> (appliedAt %s)\n", i+1, targetMig.FileName, formatTime(applied.AppliedAt))
+		if !opt.Yes && !cliutil.Confirm(confirmTip) {
+			ccolor.Warnln("Skipping rollback the migration!")
+			continue
+		}
+
 		if err := targetMig.Parse(); err != nil {
 			return err
 		}
@@ -98,7 +109,6 @@ func HandleDown(opt DownOption) error {
 		}
 	}
 
-	fmt.Printf("Successfully rolled back %d migration(s)\n", count)
+	ccolor.Successf("\n🎉  Successfully rolled back %d migration(s)\n", count)
 	return nil
-
 }

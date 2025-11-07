@@ -99,8 +99,12 @@ func IsApplied(db *database.DB, version string) (bool, string, error) {
 }
 
 // GetAppliedSortedByDate returns applied migrations sorted by application date (most recent first)
-func GetAppliedSortedByDate(db *database.DB) ([]Record, error) {
-	rows, err := db.Query("SELECT version, applied_at, status FROM db_schema_migrations ORDER BY applied_at DESC")
+func GetAppliedSortedByDate(db *database.DB, limit int) ([]Record, error) {
+	rows, err := db.Query(
+		"SELECT version, applied_at FROM db_schema_migrations WHERE status=? ORDER BY applied_at DESC LIMIT ?",
+		StatusUp,
+		limit,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query applied migrations: %v", err)
 	}
@@ -109,10 +113,11 @@ func GetAppliedSortedByDate(db *database.DB) ([]Record, error) {
 	var records []Record
 	for rows.Next() {
 		var record Record
-		err := rows.Scan(&record.Version, &record.AppliedAt, &record.Status)
+		err := rows.Scan(&record.Version, &record.AppliedAt)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan migration record: %v", err)
 		}
+		record.Status = StatusUp
 		records = append(records, record)
 	}
 
