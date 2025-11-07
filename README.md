@@ -41,27 +41,7 @@ go get github.com/gookit/miglite
 
 直接使用 `miglite` 命令行工具。
 
-```bash
-$ miglite
-
-miglite - Go minimal database migration tool(Version: 0.0.1)
-
-Usage: miglite COMMAND [--Options...] [...Arguments]
-Options:
-  --help, -h                Display application help
-  --verbose, -v             Enable verbose output
-  --version, -v             Show version and exit
-
-Commands:
-  create          Create a new migration
-  down            Rollback the most recent migration
-  init            Initialize the migration schema on db
-  status          Show the status of migrations
-  up              Execute pending migrations
-  help            Display application help
-
-Use "miglite COMMAND --help" for about a command
-```
+![help](./testdata/help.png)
 
 ### 配置
 
@@ -128,16 +108,21 @@ DROP TABLE post;
 ```bash
 # 应用所有待处理的迁移
 miglite up
+# 无需确认，立即执行
+miglite up --yes
 
 # 回滚最近的迁移
 miglite down
-
 # 回滚多个迁移
-miglite down --count 3
+miglite down --number 3
 
 # 查看迁移状态
 miglite status
 ```
+
+查看迁移状态:
+
+![status](./testdata/status.png)
 
 ## 作为库使用
 

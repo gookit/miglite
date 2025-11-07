@@ -15,7 +15,7 @@ func StatusCommand() *capp.Cmd {
 	c := capp.NewCmd("status", "Show the status of migrations", func(c *capp.Cmd) error {
 		return HandleStatus()
 	})
-	c.Aliases = []string{"st", "list", "ls"}
+	c.Aliases = []string{"st"} // , "list", "ls"
 
 	c.BoolVar(&ShowVerbose, "verbose", false, "Enable verbose output;;v")
 	c.StringVar(&ConfigFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
