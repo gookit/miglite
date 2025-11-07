@@ -12,9 +12,8 @@ func NewApp(name, version, description string) *capp.App {
 	app := capp.NewWith(name, version, description)
 
 	// Add global flags
-	// app.BoolVar(&showHelp, "help", false, "Show help message and exit;;h")
 	app.BoolVar(&showVersion, "version", false, "Show version and exit;;V")
-	app.BoolVar(&showVerbose, "verbose", false, "Enable verbose output;;v")
+	app.BoolVar(&ShowVerbose, "verbose", false, "Enable verbose output;;v")
 
 	// Add commands to the app
 	app.Add(

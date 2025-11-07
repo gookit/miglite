@@ -12,15 +12,19 @@ import (
 // StatusCommand shows the status of migrations
 func StatusCommand() *capp.Cmd {
 	// List applied and pending migrations
-	c := capp.NewCmd("status", "Show the status of migrations", handleStatus)
+	c := capp.NewCmd("status", "Show the status of migrations", func(c *capp.Cmd) error {
+		return HandleStatus()
+	})
+	c.Aliases = []string{"st", "list", "ls"}
 
-	c.BoolVar(&showVerbose, "verbose", false, "Enable verbose output;;v")
-	c.StringVar(&configFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
+	c.BoolVar(&ShowVerbose, "verbose", false, "Enable verbose output;;v")
+	c.StringVar(&ConfigFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
 
 	return c
 }
 
-func handleStatus(c *capp.Cmd) error {
+// HandleStatus display migration status
+func HandleStatus() error {
 	// Load configuration and connect to database
 	cfg, db, err := initConfigAndDB()
 	if err != nil {
@@ -29,7 +33,6 @@ func handleStatus(c *capp.Cmd) error {
 	defer db.Close()
 
 	// Discover migrations
-	ccolor.Println("Discovering migrations from", cfg.Migrations.Path)
 	migrations, err := migration.FindMigrations(cfg.Migrations.Path)
 	if err != nil {
 		return fmt.Errorf("failed to discover migrations: %v", err)
@@ -44,9 +47,11 @@ func handleStatus(c *capp.Cmd) error {
 	// Print status table
 	ccolor.Cyanf("\nMigration Status:(total=%d)\n", len(statuses))
 	fmt.Println(strings.Repeat("==", 41))
-	fmt.Printf("   Status   | %12sVersion(migration file)%12s    |   Operate Time \n", "", "")
+	ccolor.Printf("   <b>Status</>   | %12s<b>Version(migration file)</>%12s    |   <b>Operate Time</> \n", "", "")
+	fmt.Println(strings.Repeat("--", 41))
+
 	for _, status := range statuses {
-		statusIcon := "[pending]" // pending
+		statusIcon := "[<mga>pending</>]" // pending
 		if status.Status == "up" {
 			statusIcon = "[<green>applied</>]" // applied
 		} else if status.Status == "down" {

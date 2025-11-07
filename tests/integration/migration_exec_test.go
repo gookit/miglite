@@ -39,7 +39,7 @@ func TestMigrationExecution(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Execute migrations
-	executor := migration.NewExecutor(db)
+	executor := migration.NewExecutor(db, true)
 	for _, mig := range migrations {
 		applied, status, err := migration.IsApplied(db, mig.FileName)
 		if err != nil {

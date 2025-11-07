@@ -43,6 +43,9 @@ type Logger interface {
 	Error(msg string, args ...any)
 }
 
+// Log default Logger instance
+var Log = &DefaultLogger{}
+
 // DefaultLogger is a simple logger implementation
 type DefaultLogger struct{}
 
@@ -65,6 +68,3 @@ func (l *DefaultLogger) Warn(msg string, args ...any) {
 func (l *DefaultLogger) Error(msg string, args ...any) {
 	log.Printf("[ERROR] "+msg, args...)
 }
-
-// Log default Logger instance
-var Log = &DefaultLogger{}

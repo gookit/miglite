@@ -10,22 +10,23 @@ import (
 )
 
 var (
-	showVerbose bool
+	// ShowVerbose flag
+	ShowVerbose bool
 	// ConfigFile path to the configuration file
-	configFile string
+	ConfigFile string
 )
 
 func initLoadConfig() (*config.Config, error) {
 	// Load configuration
-	cfg, err := config.Load(configFile)
+	cfg, err := config.Load(ConfigFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load config: %v", err)
 	}
 
 	if cfg.ConfigFile != "" {
-		ccolor.Printf("Loaded config file: %s\n", cfg.ConfigFile)
+		ccolor.Printf("Loaded config file from <green>%s</>\n", cfg.ConfigFile)
 	}
-	if showVerbose {
+	if ShowVerbose {
 		dump.NoLoc(cfg)
 	}
 
@@ -45,6 +46,6 @@ func initConfigAndDB() (*config.Config, *database.DB, error) {
 		return nil, nil, fmt.Errorf("failed to connect to database: %v", err)
 	}
 
-	db.SetDebug(showVerbose)
+	db.SetDebug(ShowVerbose)
 	return cfg, db, nil
 }

@@ -4,20 +4,24 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/miglite/pkg/database"
 )
 
 // Executor handles the execution of migrations
 type Executor struct {
 	db *database.DB
+	// verbose flag
+	verbose bool
 	tracker *database.MigrationTracker
 }
 
 // NewExecutor creates a new migration executor
-func NewExecutor(db *database.DB) *Executor {
+func NewExecutor(db *database.DB, verbose bool) *Executor {
 	return &Executor{
 		db:      db,
-		tracker: database.NewMigrationTracker(db),
+		verbose: verbose,
+		tracker: database.NewMigrationTracker(db, verbose),
 	}
 }
 
@@ -30,9 +34,15 @@ func (e *Executor) ExecuteUp(migration *Migration) error {
 	}
 	defer func() {
 		if err != nil {
-			tx.Rollback()
+			if err1 := tx.Rollback(); err1 != nil {
+				log.Printf("Failed to rollback transaction: %v", err1)
+			}
 		}
 	}()
+
+	if e.verbose {
+		ccolor.Printf("Executing migration UP Section: %s", migration.UpSection)
+	}
 
 	// Execute the UP migration
 	if _, err := tx.Exec(migration.UpSection); err != nil {
@@ -45,10 +55,9 @@ func (e *Executor) ExecuteUp(migration *Migration) error {
 	}
 
 	// Now record the migration status after successful commit
-	if err := e.tracker.RecordMigration(migration.Version, "up"); err != nil {
+	if err := e.tracker.SaveRecord(migration.Version, StatusUp); err != nil {
 		return fmt.Errorf("failed to record migration: %v", err)
 	}
-
 	return nil
 }
 
@@ -60,10 +69,14 @@ func (e *Executor) ExecuteDown(migration *Migration) error {
 		return fmt.Errorf("failed to begin transaction: %v", err)
 	}
 	defer func() {
-		if err != nil {
-			tx.Rollback()
+		if err1 := tx.Rollback(); err1 != nil {
+			log.Printf("Failed to rollback transaction: %v", err1)
 		}
 	}()
+
+	if e.verbose {
+		ccolor.Printf("Executing migration DOWN Section: %s", migration.DownSection)
+	}
 
 	// Execute the DOWN migration
 	if _, err := tx.Exec(migration.DownSection); err != nil {
@@ -76,7 +89,7 @@ func (e *Executor) ExecuteDown(migration *Migration) error {
 	}
 
 	// Now record the migration status after successful commit
-	if err := e.tracker.RecordMigration(migration.Version, "down"); err != nil {
+	if err := e.tracker.SaveRecord(migration.Version, StatusDown); err != nil {
 		return fmt.Errorf("failed to record migration rollback: %v", err)
 	}
 

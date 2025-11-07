@@ -1,0 +1,5 @@
+database:
+  driver: sqlite3
+  dsn: ./test.db
+migrations:
+  path: ./migrations

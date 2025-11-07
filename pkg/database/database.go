@@ -14,8 +14,8 @@ const (
 // DB represents a database connection
 type DB struct {
 	*sql.DB
-	driver string
 	debug bool
+	driver string
 }
 
 // Connect establishes a database connection
@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS db_schema_migrations (
 	}
 
 	if db.debug {
-		fmt.Println("[DEBUG] database.InitSchema:\n", sqlStmt)
+		fmt.Println("[DEBUG] database.InitSchema:", sqlStmt)
 	}
 	_, err := db.Exec(sqlStmt)
 	return err

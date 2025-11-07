@@ -8,22 +8,27 @@ import (
 	"github.com/gookit/miglite/pkg/migration"
 )
 
-var downCmdOpt = struct {
-	count int
-}{}
+// DownOption represents the options for the down command
+type DownOption struct {
+	Count int
+}
 
 // DownCommand rolls back the last migration or a specific one
 func DownCommand() *capp.Cmd {
-	c := capp.NewCmd("down", "Rollback the most recent migration", handleDown)
+	var downOpt = DownOption{}
+	c := capp.NewCmd("down", "Rollback the most recent migration", func(c *capp.Cmd) error {
+		return HandleDown(downOpt)
+	})
 
-	c.BoolVar(&showVerbose, "verbose", false, "Enable verbose output;;v")
-	c.StringVar(&configFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
+	c.BoolVar(&ShowVerbose, "verbose", false, "Enable verbose output;;v")
+	c.StringVar(&ConfigFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
 
-	c.IntVar(&downCmdOpt.count, "count", 1, "Number of migrations to roll back;;c")
+	c.IntVar(&downOpt.Count, "count", 1, "Number of migrations to roll back;;c")
 	return c
 }
 
-func handleDown(c *capp.Cmd) error {
+// HandleDown migration logic
+func HandleDown(opt DownOption) error {
 	// Load configuration and connect to database
 	cfg, db, err := initConfigAndDB()
 	if err != nil {
@@ -38,7 +43,7 @@ func handleDown(c *capp.Cmd) error {
 	}
 
 	// Get the target number of migrations to rollback (default 1)
-	count := downCmdOpt.count
+	count := opt.Count
 	if count <= 0 {
 		return fmt.Errorf("count must be greater than 0")
 	}
@@ -60,7 +65,7 @@ func handleDown(c *capp.Cmd) error {
 	}
 
 	// Get executor
-	executor := migration.NewExecutor(db)
+	executor := migration.NewExecutor(db, ShowVerbose)
 
 	// Roll back the specified number of migrations
 	for i := 0; i < count; i++ {

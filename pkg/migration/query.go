@@ -52,7 +52,7 @@ func GetMigrationsStatus(db *database.DB, allMigrations []*Migration) ([]Status,
 			statuses = append(statuses, status)
 		} else {
 			statuses = append(statuses, Status{
-				Version: migration.Version,
+				Version: migration.FileName,
 				Status: StatusPending,
 			})
 		}
@@ -96,32 +96,6 @@ func IsApplied(db *database.DB, version string) (bool, string, error) {
 		return false, "", fmt.Errorf("failed to check migration status: %v", err)
 	}
 	return true, status, nil
-}
-
-// GetPendingMigrations returns migrations that have not been applied yet
-func GetPendingMigrations(db *database.DB, allMigrations []*Migration) ([]*Migration, error) {
-	appliedMigrations, err := GetAppliedMigrations(db)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get applied migrations: %v", err)
-	}
-
-	// Create a set of applied migration versions
-	appliedSet := make(map[string]bool)
-	for _, record := range appliedMigrations {
-		if record.Status == "up" {
-			appliedSet[record.Version] = true
-		}
-	}
-
-	// Find non-applied migrations
-	var pending []*Migration
-	for _, migration := range allMigrations {
-		if !appliedSet[migration.Version] {
-			pending = append(pending, migration)
-		}
-	}
-
-	return pending, nil
 }
 
 // GetAppliedSortedByDate returns applied migrations sorted by application date (most recent first)

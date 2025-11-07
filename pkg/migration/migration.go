@@ -28,7 +28,7 @@ type Migration struct {
 	FilePath string
 	// time from filename
 	Timestamp time.Time
-	// Version Use datetime(from filename) as version
+	// Version same as filename
 	Version string
 	// Contents of migration file
 	Contents    string
@@ -61,7 +61,7 @@ func NewMigration(filePath string) (*Migration, error) {
 		FileName:  fileName,
 		FilePath:  filePath,
 		Timestamp: fi.Time,
-		Version:   fi.Date, // Use date as version
+		Version: fileName,
 	}, nil
 }
 

@@ -10,12 +10,28 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+//
+// 需要通过:
+// go build -ldflags \
+//  "-X 'main.Version=0.0.1' -X 'main.BuildTime=2025-11-05T09:00:00Z' -X 'main.GitCommit=abc3d4efg'" \
+//  -o miglite ./cmd/miglite
+// 设置下面的信息
+//
+var (
+	// Version represents the version of the application
+	Version   = "0.1.0"
+	BuildTime = "2025-11-05T09:00:00Z"
+	GitCommit = "ab3cd4ef"
+)
+
 // DEV
 //  run: go run .\cmd\miglite
 //  install: go install .\cmd\miglite
 func main() {
+	miglite.InitInfo(Version, BuildTime, GitCommit)
+
 	// Create the CLI application
-	app := command.NewApp("miglite", miglite.Version, "Go minimal database migration tool")
+	app := command.NewApp("miglite", Version, "Go minimal database migration tool")
 
 	// Run the application
 	app.Run()

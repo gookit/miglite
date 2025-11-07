@@ -10,26 +10,31 @@ import (
 
 // CreateCommand creates a new migration file
 func CreateCommand() *capp.Cmd {
-	c := capp.NewCmd("create", "Create new migration SQL files", handleCreate)
+	c := capp.NewCmd("create", "Create new migration SQL files", func(c *capp.Cmd) error {
+		// Get the migration name from arguments
+		return HandleCreate(c.Args())
+	})
 	c.Aliases = []string{"new"}
 
-	c.BoolVar(&showVerbose, "verbose", false, "Enable verbose output;;v")
-	c.StringVar(&configFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
+	c.BoolVar(&ShowVerbose, "verbose", false, "Enable verbose output;;v")
+	c.StringVar(&ConfigFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
 
 	c.AddArg("name", "Migration name...", true, nil)
 
 	return c
 }
 
-func handleCreate(c *capp.Cmd) error {
+// HandleCreate creates migration files
+func HandleCreate(names []string) error {
+	if len(names) == 0 {
+		return fmt.Errorf("no migration name provided")
+	}
+
 	// Load configuration
 	cfg, err := initLoadConfig()
 	if err != nil {
 		return err
 	}
-
-	// Get the migration name from arguments
-	names := c.Args()
 
 	// Create the migration
 	filePaths, err := migration.CreateMigrations(cfg.Migrations.Path, names)

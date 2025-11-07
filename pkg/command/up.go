@@ -10,33 +10,37 @@ import (
 	"github.com/gookit/miglite/pkg/migration"
 )
 
-var upCmdOpt = struct {
+// UpOption represents options for the up command
+type UpOption struct {
 	// 默认每执行一个都需要确认
-	yes bool
+	Yes bool
 	// 跳过错误迁移并继续执行
-	skipErr bool
+	SkipErr bool
 	// 只执行指定数量的迁移
-	number int
+	Number int
 	// 查找迁移开始时间，默认只查找最近6个月的迁移文件
-	startTime string
-}{}
+	StartTime string
+}
 
 // NewUpCommand executes pending migrations
 func NewUpCommand() *capp.Cmd {
+	var upOpt = UpOption{}
+
 	c := capp.NewCmd("up", "Execute pending migrations", func(c *capp.Cmd) error {
-		return handleUp()
+		return HandleUp(upOpt)
 	})
 	c.Aliases = []string{"migrate", "run"}
 
-	c.BoolVar(&showVerbose, "verbose", false, "Enable verbose output;;v")
-	c.StringVar(&configFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
-	c.BoolVar(&upCmdOpt.yes, "yes", false, "Skip confirmation prompt;;y")
-	c.BoolVar(&upCmdOpt.skipErr, "skip-err", false, "Skip the error migration and continue with the execution;;s")
+	c.BoolVar(&ShowVerbose, "verbose", false, "Enable verbose output;;v")
+	c.StringVar(&ConfigFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
+	c.BoolVar(&upOpt.Yes, "yes", false, "Skip confirmation prompt;;y")
+	c.BoolVar(&upOpt.SkipErr, "skip-err", false, "Skip the error migration and continue with the execution;;s")
 
 	return c
 }
 
-func handleUp() error {
+// HandleUp executes pending migrations
+func HandleUp(opt UpOption) error {
 	// Load configuration and connect to database
 	cfg, db, err1 := initConfigAndDB()
 	if err1 != nil {
@@ -49,7 +53,6 @@ func handleUp() error {
 	}
 
 	// Discover migrations
-	ccolor.Println("🔎 Discovering migrations from", cfg.Migrations.Path)
 	migrations, err2 := migration.FindMigrations(cfg.Migrations.Path)
 	if err2 != nil {
 		return fmt.Errorf("failed to discover migrations: %v", err2)
@@ -61,10 +64,11 @@ func handleUp() error {
 	}
 
 	// Get executor
-	executor := migration.NewExecutor(db)
+	executor := migration.NewExecutor(db, ShowVerbose)
 	startTime := time.Now()
+	startDate := startTime.Format("2006.01.02 15:04:05")
 	confirmTip := "Are you sure you want to execute this migration?"
-	ccolor.Printf("🔀 Starting execution migrations(%d) at: %s\n", len(migrations), startTime)
+	ccolor.Printf("🔀 Starting execution migrations(%d). Start at: %s\n\n", len(migrations), startDate)
 
 	// Execute pending migrations
 	for idx, mig := range migrations {
@@ -75,9 +79,9 @@ func handleUp() error {
 		}
 
 		if !applied || status == migration.StatusDown {
-			ccolor.Printf("%d. Executing migration file: %s\n", idx+1, mig.FileName)
-			if !upCmdOpt.yes && !cliutil.Confirm(confirmTip) {
-				ccolor.Warnln("Skipping current migration!")
+			ccolor.Printf("<green>%d.</> Executing migration file: <green>%s</>\n", idx+1, mig.FileName)
+			if !opt.Yes && !cliutil.Confirm(confirmTip) {
+				ccolor.Warnln(" Skipping current migration!")
 				continue
 			}
 
@@ -87,12 +91,12 @@ func handleUp() error {
 			if err := executor.ExecuteUp(mig); err != nil {
 				return fmt.Errorf("failed to execute migration %s: %v", mig.FileName, err)
 			}
-			ccolor.Printf("Successfully executed migration: %s", mig.FileName)
+			ccolor.Printf("Successfully executed migration: %s\n", mig.FileName)
 		} else {
 			ccolor.Printf("Skipping already applied migration: %s\n", mig.FileName)
 		}
 	}
 
-	ccolor.Successln("🎉 All migrations applied successfully! ⏱️ costTime:", time.Since(startTime))
+	ccolor.Successln("\n🎉 All migrations applied successfully! ⏱️ costTime:", time.Since(startTime))
 	return nil
 }
