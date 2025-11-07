@@ -1,0 +1,78 @@
+name: Unit-Tests
+on:
+  pull_request:
+    paths:
+      - 'go.mod'
+      - '**.go'
+      - '**.yml'
+  push:
+    paths:
+      - 'go.mod'
+      - '**.go'
+      - '**.yml'
+
+jobs:
+
+  test:
+    name: Test on go ${{ matrix.go_version }} and ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        go_version: [1.19, 1.21, 1.22, 1.23, 1.24, stable]
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v5
+
+    - name: Setup Go Faster
+      uses: WillAbides/setup-go-faster@v1.14.0
+      timeout-minutes: 3
+      with:
+        go-version: ${{ matrix.go_version }}
+
+#    - name: Revive check
+#      uses: morphy2k/revive-action@v2.5.10
+#      if: ${{ matrix.os == 'ubuntu-latest' && matrix.go_version == '1.23' }}
+#      with:
+#        # Exclude patterns, separated by semicolons (optional)
+#        exclude: "./internal/..."
+
+    - name: Run staticcheck
+      uses: reviewdog/action-staticcheck@v1
+      if: ${{ matrix.os == 'ubuntu-latest' && matrix.go_version == '1.23' }}
+      with:
+        github_token: ${{ secrets.github_token }}
+        # Change reviewdog reporter if you need [github-pr-check,github-check,github-pr-review].
+        reporter: github-check
+        # Report all results. [added,diff_context,file,nofilter].
+        filter_mode: added
+        # Exit with 1 when it finds at least one finding.
+        fail_level: 'none'
+
+    - name: Tidy go mod
+      run: go mod tidy
+    - name: Run unit tests
+      # run: go test -v -cover ./...
+      # must add " for profile.cov on Windows OS
+      run: go test -coverprofile="profile.cov" ./...
+
+    - name: Send coverage
+      uses: shogo82148/actions-goveralls@v1
+      if: ${{ matrix.os == 'ubuntu-latest' }}
+      with:
+        path-to-profile: profile.cov
+        flag-name: Go-${{ matrix.go_version }}
+        shallow: true
+        parallel: true
+
+  # notifies that all test jobs are finished.
+  # https://github.com/shogo82148/actions-goveralls
+  finish:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: shogo82148/actions-goveralls@v1
+        with:
+          shallow: true
+          parallel-finished: true

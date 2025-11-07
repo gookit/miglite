@@ -14,10 +14,10 @@
 - 迁移 SQL 都在事物中执行，确保数据一致性
 - 配置文件默认为 `./miglite.yaml`
 - 支持 `mysql`, `sqlite`, `postgres` 数据库
-  - 作为库使用时，需要自己添加驱动依赖
-  - 直接使用 `miglite` 命令行工具时，已经添加了驱动依赖
+    - 作为库使用时，需要自己添加驱动依赖
+    - 直接使用 `miglite` 命令行工具时，已经添加了驱动依赖
 
-> **[中文说明](README.zh-CN.md)**
+> **[EN README](README.md)**
 
 ## 安装
 
@@ -114,14 +114,14 @@ miglite status
 `miglite` 本身不依赖任何三方驱动库，你可以将其作为库使用。搭配你当前的数据库驱动库使用。
 
 - Sqlite 驱动:
-  - `modernc.org/sqlite` **CGO-free driver**
-  - `github.com/ncruces/go-sqlite3` **CGO-free** Base on Wasm(wazero)
-  - `github.com/mattn/go-sqlite3`  **NEED cgo**
-  - `github.com/glebarez/go-sqlite`  Base on `modernc.org/sqlite`
+    - `modernc.org/sqlite` **CGO-free driver**
+    - `github.com/ncruces/go-sqlite3` **CGO-free** Base on Wasm(wazero)
+    - `github.com/mattn/go-sqlite3`  **NEED cgo**
+    - `github.com/glebarez/go-sqlite`  Base on `modernc.org/sqlite`
 - MySQL 驱动:
-  - github.com/go-sql-driver/mysql
+    - github.com/go-sql-driver/mysql
 - PostgreSQL 驱动:
-  - github.com/lib/pq
+    - github.com/lib/pq
 
 ```go
 
