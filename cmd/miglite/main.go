@@ -29,7 +29,7 @@ var (
 //  run: go run .\cmd\miglite
 //  install: go install .\cmd\miglite
 func main() {
-	miglite.InitInfo(Version, BuildTime, GitCommit)
+	miglite.InitInfo(Version, GoVersion, BuildTime, GitCommit)
 
 	// Create the CLI application
 	app := command.NewApp("miglite", Version, "Go minimal database migration tool")
