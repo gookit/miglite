@@ -32,7 +32,7 @@ func main() {
 	miglite.InitInfo(Version, GoVersion, BuildTime, GitCommit)
 
 	// Create the CLI application
-	app := command.NewApp("miglite", Version, "Go minimal database migration tool")
+	app := command.NewApp("miglite", Version, "Database schema migration tool implemented in Go")
 
 	// Run the application
 	app.Run()

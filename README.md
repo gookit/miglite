@@ -6,32 +6,32 @@
 [![Unit-Tests](https://github.com/gookit/miglite/workflows/Unit-Tests/badge.svg)](https://github.com/gookit/miglite/actions)
 [![Go Reference](https://pkg.go.dev/badge/github.com/gookit/miglite.svg)](https://pkg.go.dev/github.com/gookit/miglite)
 
-`miglite` Golang 实现的极简的数据库 Schema 迁移工具。
-
-- 使用简单，极简依赖
-- 基于 `database/sql` 进行开发，默认不添加任何驱动依赖包
-- 基于原始 SQL 方式作为迁移文件
-  - 固定文件名格式为 `YYYYMMDD-HHMMSS-{migration-name}.sql`
-- 迁移 SQL 都在事物中执行，确保数据一致性
-- 可以通过环境变量零配置直接运行迁移(eg: `DATABASE_URL`, `MIGRATIONS_PATH`)
-  - 会自动尝试加载目录下的 `.env` 文件
-  - 会自动加载默认配置文件 `./miglite.yaml`
-- 支持 `mysql`, `sqlite`, `postgres` 数据库
-  - 作为库使用时，需要自己添加DB驱动依赖
-  - 直接使用 `miglite` 命令行工具时，已经添加了驱动依赖
-
 > **[中文说明](README.zh-CN.md)**
 
-## 安装
+`miglite` is a minimalist database schema migration tool implemented in Golang.
 
-使用 `miglite` 命令行工具：
+- Easy to use with minimal dependencies
+- Developed based on `database/sql` without adding any driver dependencies by default
+- Uses raw SQL files as migration files
+  - Fixed filename format: `YYYYMMDD-HHMMSS-{migration-name}.sql`
+- Migration SQL is executed within transactions to ensure data consistency
+- Can run migrations with zero configuration via environment variables (e.g., `DATABASE_URL`, `MIGRATIONS_PATH`)
+  - Automatically attempts to load `.env` file in the directory
+  - Automatically loads default configuration file `./miglite.yaml`
+- Supports `mysql`, `sqlite`, `postgres` databases
+  - When used as a library, you need to add your own DB driver dependencies
+  - When using the `miglite` command-line tool directly, driver dependencies are already included
+
+## Installation
+
+Using the `miglite` command-line tool:
 
 ```bash
 # install it by go
 go install github.com/gookit/miglite/cmd/miglite@latest
 ```
 
-作为Go依赖库使用：
+Using as a Go dependency library:
 
 ```bash
 go get github.com/gookit/miglite
@@ -39,20 +39,20 @@ go get github.com/gookit/miglite
 # import "github.com/gookit/miglite"
 ```
 
-## CLI直接使用
+## Direct CLI Usage
 
-直接使用 `miglite` 命令行工具。
+Using the `miglite` command-line tool directly.
 
 ![help](./testdata/help.png)
 
-### 配置
+### Configuration
 
-`miglite` 支持通过 `miglite.yaml` 文件或环境变量进行配置。
+`miglite` supports configuration via `miglite.yaml` file or environment variables.
 
-- 可以允许没有配置文件，直接使用环境变量 `DATABASE_URL`
-- 配置文件默认为 `./miglite.yaml`，也可以通过 `--config` 参数指定
+- Can work without a configuration file, using the environment variable `DATABASE_URL` directly
+- Configuration file defaults to `./miglite.yaml`, but can be specified via the `--config` parameter
 
-#### miglite.yaml 示例
+#### miglite.yaml Example
 
 ```yaml
 database:
@@ -62,34 +62,34 @@ migrations:
   path: ./migrations
 ```
 
-#### 环境变量
+#### Environment Variables
 
-- `DATABASE_URL`: 数据库连接 URL (例如: `sqlite://path/to/db.sqlite`, `mysql://user:pass@localhost/dbname`)
-- `MIGRATIONS_PATH`: 迁移文件路径 (默认: `./migrations`)
+- `DATABASE_URL`: Database connection URL (e.g., `sqlite://path/to/db.sqlite`, `mysql://user:pass@localhost/dbname`)
+- `MIGRATIONS_PATH`: Migration files path (default: `./migrations`)
 
-### 创建迁移
+### Creating Migrations
 
 ```bash
 miglite create add-users-table
 ```
 
-这将在 `./migrations/` 目录下创建一个以当前日期命名的 SQL 文件，格式为 `YYYYMMDD-HHMMSS-add-users-table.sql`。
+This will create an SQL file named with the current date in the `./migrations/` directory, with the format `YYYYMMDD-HHMMSS-add-users-table.sql`.
 
 ```text
 ./migrations/20251105-102325-create-users-table.sql
 ```
 
-SQL文件内容包含模板：
+SQL file content includes a template:
 
 ```sql
 -- Migrate:UP
--- 在这里添加迁移 SQL
+-- Add migration SQL here
 
 -- Migrate:DOWN
--- 在这里添加回滚 SQL (可选)
+-- Add rollback SQL here (optional)
 ```
 
-示例迁移文件：
+Example migration file:
 
 ```sql
 -- Migrate:UP
@@ -105,46 +105,46 @@ DROP TABLE post;
 ```
 
 
-### 运行迁移
+### Running Migrations
 
 ```bash
-# 应用所有待处理的迁移
+# Apply all pending migrations
 miglite up
-# 无需确认，立即执行
+# Execute immediately without confirmation
 miglite up --yes
 
-# 回滚最近的迁移
+# Rollback the most recent migration
 miglite down
-# 回滚多个迁移
+# Rollback multiple migrations
 miglite down --number 3
 
-# 查看迁移状态
+# View migration status
 miglite status
 ```
 
-查看迁移状态:
+View migration status:
 
 ![status](./testdata/status.png)
 
-## 作为库使用
+## Using as a Library
 
-`miglite` 本身不依赖任何三方DB驱动库，你可以将其作为库使用。搭配你当前的数据库驱动库使用。
+`miglite` does not depend on any third-party DB driver libraries by itself, so you can use it as a library with your current database driver library.
 
-- Sqlite 驱动:
+- Sqlite drivers:
   - `modernc.org/sqlite` **CGO-free driver**
-  - `github.com/ncruces/go-sqlite3` **CGO-free** Base on Wasm(wazero)
+  - `github.com/ncruces/go-sqlite3` **CGO-free** Based on Wasm(wazero)
   - `github.com/mattn/go-sqlite3`  **NEED cgo**
-  - `github.com/glebarez/go-sqlite`  Base on `modernc.org/sqlite`
-- MySQL 驱动:
+  - `github.com/glebarez/go-sqlite`  Based on `modernc.org/sqlite`
+- MySQL driver:
   - `github.com/go-sql-driver/mysql`
-- Postgres 驱动:
+- Postgres driver:
   - `github.com/lib/pq`
-- MSSQL 驱动:
+- MSSQL driver:
   - `github.com/microsoft/go-mssqldb`
 
-### 构建自己的命令工具
+### Building Your Own Command Tool
 
-可以直接使用 `miglite` 库来快速构建自己的迁移命令工具，可以只注册自己需要的数据库驱动。
+You can directly use the `miglite` library to quickly build your own migration command tool, allowing you to register only the database drivers you need.
 
 ```go
 package main
@@ -162,7 +162,7 @@ import (
 var Version = "0.1.0"
 
 func main() {
-	// 可选：需要在构建时通过 ldflags 指定信息
+	// Optional: Information needs to be specified at build time via ldflags
 	// miglite.InitInfo(Version, GoVersion, BuildTime, GitCommit)
 
 	// Create the CLI application
@@ -173,11 +173,10 @@ func main() {
 }
 ```
 
-> **NOTE**: 如果还要进一步自定义CLI应用，可以自由选择其他cli库，解析选项后调用 `command` 下面的 `handleXXX()` 方法执行逻辑。
+> **NOTE**: If you want to further customize the CLI application, you can freely choose other CLI libraries, parse options, and then call the `handleXXX()` methods under `command` to execute the logic.
 
-## 相关的项目
+## Related Projects
 
 - [golang-migrate](https://github.com/golang-migrate/migrate)
 - [pressly/goose](https://github.com/pressly/goose)
 - [amacneil/dbmate](https://github.com/amacneil/dbmate)
-
