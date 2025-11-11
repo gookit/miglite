@@ -21,12 +21,8 @@ func AddProvider(driver string, provider SqlProvider) {
 
 // GetSqlProvider 获取数据库 SQL 语句提供者
 func GetSqlProvider(driver string) (SqlProvider, error) {
-	name, err := migutil.ResolveDriver(driver)
-	if err != nil {
-		name = driver
-	}
-
-	provider, ok := sqlProviders[name]
+	fmtName := migutil.FmtDriverName(driver)
+	provider, ok := sqlProviders[fmtName]
 	if !ok {
 		return nil, fmt.Errorf("unsupported OR un-registered database driver: %s", driver)
 	}

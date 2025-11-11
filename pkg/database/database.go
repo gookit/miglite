@@ -115,12 +115,12 @@ func (db *DB) InitSchema() error {
 
 // DropSchema drops the migrations table
 func (db *DB) DropSchema() error {
-	b, err := GetSqlProvider(db.driver)
+	provide, err := db.SqlProvider()
 	if err != nil {
 		return err
 	}
 
-	var sqlStmt = b.DropSchema()
+	var sqlStmt = provide.DropSchema()
 	if db.debug {
 		fmt.Println("[DEBUG] database.DropSchema:", sqlStmt)
 	}

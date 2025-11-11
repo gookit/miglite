@@ -1,23 +1,22 @@
 package migutil
 
 import (
-	"fmt"
 	"strings"
 )
 
-// ResolveDriver resolves the database driver name
-func ResolveDriver(driver string) (string, error) {
+// FmtDriverName format the database driver name to standard
+func FmtDriverName(driver string) string {
 	driver = strings.ToLower(driver)
 	switch driver {
 	case "mysql", "mariadb", "mysql2":
-		return "mysql", nil
+		return "mysql"
 	case "postgres", "pg", "pgx", "pgsql", "postgresql":
-		return "postgres", nil
+		return "postgres"
 	case "sqlite", "sqlite3":
-		return "sqlite", nil
+		return "sqlite"
 	case "mssql", "sqlserver":
-		return "mssql", nil
+		return "mssql"
 	default:
-		return "", fmt.Errorf("unsupported database driver: %s", driver)
+		return driver
 	}
 }

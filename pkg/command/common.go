@@ -54,12 +54,13 @@ func initConfigAndDB() (*config.Config, *database.DB, error) {
 	}
 
 	// Connect to database
-	db, err := database.Connect(cfg.Database.Driver, cfg.Database.DSN)
+	db, err := database.Connect(cfg.Database.SqlDriver, cfg.Database.DSN)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to connect to database: %v", err)
 	}
 
 	db.SetDebug(ShowVerbose)
+	ccolor.Infof("✅  Database connect successful! driver: %s\n", db.Driver())
 	return cfg, db, nil
 }
 

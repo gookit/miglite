@@ -71,7 +71,7 @@ func HandleUp(opt UpOption) error {
 
 	var appliedNum int
 	confirmTip := "Are you sure you want to execute this migration?"
-	ccolor.Printf("🔀  Starting exec migrations(<green>pending=%d</>). Start at: %s\n\n", len(migrations), formatTime(startTime))
+	ccolor.Printf("🚀  Starting exec migrations(<green>pending=%d</>). Start at: %s\n\n", len(migrations), formatTime(startTime))
 
 	// Execute pending migrations
 	for idx, mig := range migrations {
@@ -81,12 +81,12 @@ func HandleUp(opt UpOption) error {
 			return err
 		}
 		if applied || status == migration.StatusSkip {
-			ccolor.Printf("<ylw>Skip</>ping applied migration: %s\n", mig.FileName)
+			ccolor.Printf("⏭️  <ylw>Skip</>ping applied migration: %s\n", mig.FileName)
 			continue
 		}
 
 		// not applied OR status=down
-		ccolor.Printf("<green>%d.</> Executing migration file: <green>%s</>\n", idx+1, mig.FileName)
+		ccolor.Printf("<green>%d.</> 🔄  Executing migration file: <green>%s</>\n", idx+1, mig.FileName)
 		if !opt.Yes && !cliutil.Confirm(confirmTip) {
 			ccolor.Warnln("Exiting run migrations!")
 			break
@@ -101,7 +101,7 @@ func HandleUp(opt UpOption) error {
 
 		// free memory
 		mig.ResetContents()
-		ccolor.Printf("Successfully executed migration: %s\n", mig.FileName)
+		ccolor.Printf("✅  Successfully executed migration: %s\n", mig.FileName)
 
 		appliedNum++
 		if opt.Number > 0 && appliedNum >= opt.Number {

@@ -13,11 +13,32 @@ import (
 
 // Database configuration
 type Database struct {
-	// Driver name for database. eg: mysql, postgres, sqlite3, oracle, mssql, ...
+	// Driver name for database. 标准数据库类型名称。
+	//
+	// eg: mysql, postgres, sqlite, mssql, ...
+	//
+	// NOTE: 当使用的驱动库注册名称不一致时，需要配置 SqlDriver 用于 sql.Open()
+	Driver string `yaml:"driver"`
+	// SqlDriver sql driver name. 数据库驱动库注册到 database/sql 的名称
 	//
 	// NOTE: 跟使用的数据库驱动库有关
-	Driver string `yaml:"driver"`
-	DSN    string `yaml:"dsn"`
+	SqlDriver string `yaml:"sql_driver" json:"sql_driver"`
+	// DSN 连接配置
+	DSN string `yaml:"dsn"`
+
+	// 可以使用拆分配置项 - DSN 为空时，会跟据下面的信息构建DSN
+	Host     string `yaml:"host" json:"host"`
+	Port     int    `yaml:"port" json:"port"`
+	User     string `yaml:"user" json:"user"`
+	Password string `yaml:"password" json:"password"`
+	DBName   string `yaml:"dbname" json:"dbname"`
+	SSLMode  string `yaml:"ssl_mode" json:"ssl_mode"`
+
+	// Connection pool settings
+	MaxIdleConns    int `yaml:"max_idle_conns" json:"max_idle_conns"`
+	MaxOpenConns    int `yaml:"max_open_conns" json:"max_open_conns"`
+	ConnMaxIdleTime int `yaml:"conn_max_idle_time" json:"conn_max_idle_time"`
+	ConnMaxLifetime int `yaml:"conn_max_lifetime" json:"conn_max_lifetime"`
 }
 
 // Migrations configuration
@@ -57,7 +78,6 @@ func Reset() { std = nil }
 func Load(configPath string) (*Config, error) {
 	// load .env file
 	_ = dotenv.LoadExists("./")
-
 	config := &Config{}
 
 	// Load from YAML file if it exists
@@ -67,75 +87,86 @@ func Load(configPath string) (*Config, error) {
 		if err != nil {
 			return nil, err
 		}
-		if err := yaml.Unmarshal(data, config); err != nil {
+		if err = yaml.Unmarshal(data, config); err != nil {
 			return nil, err
 		}
 	}
 
 	// Override with environment variables
-	if err := loadFromENV(config); err != nil {
+	if err := setDBConfigFromENV(&config.Database); err != nil {
 		return nil, err
 	}
 
 	// Validate db configuration
-	if err := checkDatabaseConfig(config); err != nil {
+	if err := checkDatabaseConfig(&config.Database); err != nil {
 		return nil, err
 	}
 
-	// Set defaults if not defined
-	filePath := config.Migrations.Path
-	if filePath == "" {
-		filePath = "./migrations"
-	}
-	if strings.Contains(filePath, "{driver}") {
-		filePath = strings.Replace(filePath, "{driver}", config.Database.Driver, 1)
-	}
-	config.Migrations.Path = filePath
+	// Set migrations config
+	initMigrationsConfig(&config.Migrations, config.Database.Driver)
 
 	std = config
 	return config, nil
 }
 
-func checkDatabaseConfig(config *Config) error {
+func initMigrationsConfig(migConfig *Migrations, fmtDriver string) {
+	if path := os.Getenv("MIGRATIONS_PATH"); path != "" {
+		migConfig.Path = path
+	}
+
+	// Set defaults if not defined
+	dirPath := migConfig.Path
+	if dirPath == "" {
+		dirPath = "./migrations"
+	} else if strings.Contains(dirPath, "{driver}") {
+		dirPath = strings.Replace(dirPath, "{driver}", fmtDriver, 1)
+	}
+
+	migConfig.Path = dirPath
+}
+
+func checkDatabaseConfig(dbCfg *Database) error {
 	// Validate configuration
-	if config.Database.Driver == "" {
+	if dbCfg.Driver == "" {
 		return fmt.Errorf("database driver is required")
 	}
-	if config.Database.DSN == "" {
-		return fmt.Errorf("database DSN is required")
-	}
 
+	driver := dbCfg.Driver
 	// format driver name
-	driver, err := migutil.ResolveDriver(config.Database.Driver)
-	if err != nil {
-		return err
+	fmtDriver := migutil.FmtDriverName(driver)
+	dbCfg.Driver = fmtDriver
+	if dbCfg.SqlDriver == "" {
+		dbCfg.SqlDriver = driver
 	}
 
-	config.Database.Driver = driver
+	// check DSN
+	if dbCfg.DSN == "" {
+		dbDSN := buildDSNFromConfig(dbCfg)
+		if dbDSN == "" {
+			return fmt.Errorf("database DSN is required")
+		}
+	}
 	return nil
 }
 
-func loadFromENV(config *Config) error {
-	if driver := os.Getenv("DATABASE_DRIVER"); driver != "" {
-		config.Database.Driver = driver
-	}
-
+func setDBConfigFromENV(dbCfg *Database) error {
 	if dsn := os.Getenv("DATABASE_DSN"); dsn != "" {
-		config.Database.DSN = dsn
+		dbCfg.DSN = dsn
+	}
+	if driver := os.Getenv("DATABASE_DRIVER"); driver != "" {
+		dbCfg.Driver = driver
+		dbCfg.SqlDriver = driver
 	}
 
+	// Infer driver from DATABASE_URL
 	if dbURL := os.Getenv("DATABASE_URL"); dbURL != "" {
-		// Infer driver from DATABASE_URL
 		driver, dsn, err := parseDatabaseURL(dbURL)
 		if err != nil {
 			return err
 		}
-		config.Database.Driver = driver
-		config.Database.DSN = dsn
-	}
 
-	if path := os.Getenv("MIGRATIONS_PATH"); path != "" {
-		config.Migrations.Path = path
+		dbCfg.DSN = dsn
+		dbCfg.Driver = driver
 	}
 	return nil
 }
@@ -149,14 +180,60 @@ func parseDatabaseURL(url string) (string, string, error) {
 	// url eg: mysql://user:password@localhost:3306/dbname
 	sepIdx := strings.Index(url, "://")
 	if sepIdx < 1 {
-		return "", "", fmt.Errorf("invalid DATABASE_URL: %s(Should 'protocal://DSN')", url)
-	}
-
-	driver, err := migutil.ResolveDriver(url[:sepIdx])
-	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("invalid DATABASE_URL: %s(Should 'driver://DSN')", url)
 	}
 
 	dsnIndex := sepIdx + 3
-	return driver, url[dsnIndex:], nil
+	return url[:sepIdx], url[dsnIndex:], nil
+}
+
+func buildDSNFromConfig(dbCfg *Database) string {
+	// sqlite
+	if dbCfg.Driver == "sqlite" {
+		return dbCfg.DSN
+	}
+
+	// username is required
+	if dbCfg.User == "" {
+		return ""
+	}
+
+	if dbCfg.Host == "" {
+		dbCfg.Host = "localhost"
+	}
+
+	// mysql
+	if dbCfg.Driver == "mysql" {
+		if dbCfg.Port <= 0 {
+			dbCfg.Port = 3306
+		}
+		return fmt.Sprintf(
+			"%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+			dbCfg.User, dbCfg.Password, dbCfg.Host, dbCfg.Port, dbCfg.DBName,
+		)
+	}
+
+	// postgres
+	if dbCfg.Driver == "postgres" {
+		if dbCfg.Port <= 0 {
+			dbCfg.Port = 5432
+		}
+		return fmt.Sprintf(
+			"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
+			dbCfg.Host, dbCfg.Port, dbCfg.User, dbCfg.Password, dbCfg.DBName, dbCfg.SSLMode,
+		)
+	}
+
+	// mssql
+	if dbCfg.Driver == "mssql" {
+		if dbCfg.Port <= 0 {
+			dbCfg.Port = 1433
+		}
+		return fmt.Sprintf(
+			"server=%s;user id=%s;password=%s;database=%s;port=%d;",
+			dbCfg.Host, dbCfg.User, dbCfg.Password, dbCfg.DBName, dbCfg.Port,
+		)
+	}
+
+	return ""
 }

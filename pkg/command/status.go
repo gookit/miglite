@@ -44,7 +44,7 @@ func HandleStatus() error {
 	}
 
 	// Print status table
-	ccolor.Cyanf("\nMigration Status:(total=%d)\n", len(statuses))
+	ccolor.Cyanf("\n📊  Migration Status:(total=%d)\n", len(statuses))
 	fmt.Println(strings.Repeat("==", 45))
 	ccolor.Printf("    <b>Status</>   | %13s<b>Version(migration file)</>%13s    |   <b>Operate Time</> \n", "", "")
 	fmt.Println(strings.Repeat("--", 45))
@@ -52,7 +52,7 @@ func HandleStatus() error {
 	for _, st := range statuses {
 		statusIcon := "⏳  <mga>pending</>" // pending
 		if st.Status == "up" {
-			statusIcon = "✔️  <green>applied</>" // applied
+			statusIcon = "✅  <green>applied</>" // applied
 		} else if st.Status == "down" {
 			statusIcon = "↪️  <ylw>rolled</> " // rolled back
 		}
