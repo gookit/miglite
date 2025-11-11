@@ -78,7 +78,7 @@ func HandleUp(opt UpOption) error {
 		// Check if migration is already applied
 		applied, status, err := migration.IsApplied(db, mig.FileName)
 		if err != nil {
-			return fmt.Errorf("failed to check migration status: %v", err)
+			return err
 		}
 		if applied || status == migration.StatusSkip {
 			ccolor.Printf("<ylw>Skip</>ping applied migration: %s\n", mig.FileName)
@@ -96,7 +96,7 @@ func HandleUp(opt UpOption) error {
 			return err
 		}
 		if err := executor.ExecuteUp(mig); err != nil {
-			return fmt.Errorf("failed to execute migration %s: %v", mig.FileName, err)
+			return fmt.Errorf("failed to execute migration %s: %v\nUpSQL:\n%s", mig.FileName, err, mig.UpSection)
 		}
 
 		// free memory

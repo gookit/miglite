@@ -56,7 +56,7 @@ func (e *Executor) ExecuteUp(migration *Migration) error {
 
 	// Now record the migration status after successful commit
 	if err := e.tracker.SaveRecord(migration.Version, StatusUp); err != nil {
-		return fmt.Errorf("failed to record migration: %v", err)
+		return err
 	}
 	return nil
 }
@@ -92,7 +92,7 @@ func (e *Executor) ExecuteDown(migration *Migration) error {
 
 	// Now record the migration status after successful commit
 	if err := e.tracker.SaveRecord(migration.Version, StatusDown); err != nil {
-		return fmt.Errorf("failed to record migration rollback: %v", err)
+		return err
 	}
 
 	log.Printf("Successfully rolled back migration: %s", migration.FileName)

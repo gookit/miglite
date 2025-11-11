@@ -105,7 +105,10 @@ func HandleDown(opt DownOption) error {
 		}
 
 		if err := executor.ExecuteDown(targetMig); err != nil {
-			return fmt.Errorf("failed to execute rollback for migration %s: %v", targetMig.FileName, err)
+			return fmt.Errorf(
+				"failed to execute rollback for migration %s: %v.\nDownSQL:\n%s",
+				targetMig.FileName, err, targetMig.DownSection,
+			)
 		}
 	}
 
