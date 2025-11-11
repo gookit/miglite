@@ -1,5 +1,17 @@
-database:
-  driver: sqlite3
-  dsn: ./test.db
 migrations:
   path: ./testdata/migrations/{driver}
+database:
+  driver: sqlite # sqlite, postgres, mysql, mssql
+  # 优先使用 dsn 配置连接
+  dsn: ./sqlite_test.db
+  # 也可以使用以下配置连接
+  host: localhost
+  port: 5432
+  user: pguser1
+  password: pg1234abcd
+  dbname: pg_test_db
+  ssl_mode: disable
+  # 选项设置
+  max_idle_conns: 10
+  max_open_conns: 100
+  conn_max_lifetime: 3600

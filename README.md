@@ -104,10 +104,12 @@ CREATE TABLE post (
 DROP TABLE post;
 ```
 
-
 ### Running Migrations
 
 ```bash
+# Initialize the migrations schema table
+miglite init
+
 # Apply all pending migrations
 miglite up
 # Execute immediately without confirmation
@@ -141,6 +143,8 @@ View migration status:
   - `github.com/lib/pq`
 - MSSQL driver:
   - `github.com/microsoft/go-mssqldb`
+
+> More drivers see: https://go.dev/wiki/SQLDrivers
 
 ### Building Your Own Command Tool
 

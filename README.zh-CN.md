@@ -108,6 +108,9 @@ DROP TABLE post;
 ### 运行迁移
 
 ```bash
+# 初始化迁移表到DB
+miglite init
+
 # 应用所有待处理的迁移
 miglite up
 # 无需确认，立即执行
@@ -133,27 +136,50 @@ miglite status
 - Sqlite 驱动:
     - `modernc.org/sqlite` **CGO-free driver**
     - `github.com/ncruces/go-sqlite3` **CGO-free** Base on Wasm(wazero)
-    - `github.com/mattn/go-sqlite3`  **NEED cgo**
     - `github.com/glebarez/go-sqlite`  Base on `modernc.org/sqlite`
+    - `github.com/mattn/go-sqlite3`  **NEED cgo**
 - MySQL 驱动:
     - `github.com/go-sql-driver/mysql`
 - Postgres 驱动:
     - `github.com/lib/pq`
+    - `github.com/jackc/pgx/v5`
+- MSSQL 驱动:
+    - `github.com/microsoft/go-mssqldb`
+
+> 更多驱动查看: https://go.dev/wiki/SQLDrivers
+
+### 构建自己的命令工具
+
+可以直接使用 `miglite` 库来快速构建自己的迁移命令工具，可以只注册自己需要的数据库驱动。
 
 ```go
 package main
 
 import (
 	"github.com/gookit/miglite"
-	
+	"github.com/gookit/miglite/pkg/command"
+
 	// add your database driver
-	_ "github.com/lib/pq"
+	_ "github.com/go-sql-driver/mysql"
+	// _ "github.com/lib/pq"
+	// _ "modernc.org/sqlite"
 )
 
+var Version = "0.1.0"
+
 func main() {
-	
+	// 可选：需要在构建时通过 ldflags 指定信息
+	// miglite.InitInfo(Version, GoVersion, BuildTime, GitCommit)
+
+	// Create the CLI application
+	app := command.NewApp("miglite", Version, "Lite database schema migration tool by Go")
+
+	// Run the application
+	app.Run()
 }
 ```
+
+> **NOTE**: 如果还要进一步自定义CLI应用，可以自由选择其他cli库，解析选项后调用 `command` 下面的 `handleXXX()` 方法执行逻辑。
 
 ## 相关的项目
 
