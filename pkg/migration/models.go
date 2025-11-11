@@ -26,7 +26,7 @@ const (
 // Record represents a record in the database migrations table
 type Record struct {
 	// is migration filename
-	Version string `db:"version"`
+	Version   string    `db:"version"`
 	AppliedAt time.Time `db:"applied_at"`
 	// up, skip, down.
 	Status string `db:"status"`

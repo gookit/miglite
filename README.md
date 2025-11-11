@@ -13,7 +13,7 @@
 - Easy to use with minimal dependencies
 - Developed based on `database/sql` without adding any driver dependencies by default
 - Uses raw SQL files as migration files
-  - Fixed filename format: `YYYYMMDD-HHMMSS-{migration-name}.sql`
+  - SQL filename format: `YYYYMMDD-HHMMSS-{migration-name}.sql`
 - Migration SQL is executed within transactions to ensure data consistency
 - Can run migrations with zero configuration via environment variables (e.g., `DATABASE_URL`, `MIGRATIONS_PATH`)
   - Automatically attempts to load `.env` file in the directory

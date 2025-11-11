@@ -6,6 +6,7 @@ import (
 	"github.com/gookit/goutil/cflag/capp"
 	"github.com/gookit/goutil/cliutil"
 	"github.com/gookit/goutil/x/ccolor"
+	"github.com/gookit/miglite/pkg/database"
 	"github.com/gookit/miglite/pkg/migration"
 )
 
@@ -39,32 +40,21 @@ func HandleDown(opt DownOption) error {
 	}
 	defer db.Close()
 
-	// Discover migrations
-	migrations, err := migration.FindMigrations(cfg.Migrations.Path)
-	if err != nil {
-		return fmt.Errorf("failed to discover migrations: %v", err)
-	}
-
-	// Get the target number of migrations to rollback (default 1)
-	count := opt.Number
-	if count <= 0 {
-		return fmt.Errorf("count must be greater than 0")
-	}
-
 	// Get applied migrations sorted by date (most recent first)
-	appliedList, err := migration.GetAppliedSortedByDate(db, count)
+	appliedList, err := findAppliedMigrations(db, &opt)
 	if err != nil {
 		return fmt.Errorf("failed to get applied migrations: %v", err)
 	}
-
 	if len(appliedList) == 0 {
 		fmt.Println("🔎  No applied migrations to rollback")
 		return nil
 	}
 
-	// Limit the number of rollbacks to the available applied migrations
-	if count > len(appliedList) {
-		count = len(appliedList)
+	// Discover migrations
+	count := opt.Number
+	migrations, err := migration.FindMigrations(cfg.Migrations.Path)
+	if err != nil {
+		return fmt.Errorf("failed to discover migrations: %v", err)
 	}
 
 	// Get executor
@@ -83,7 +73,6 @@ func HandleDown(opt DownOption) error {
 				break
 			}
 		}
-
 		if targetMig == nil {
 			return fmt.Errorf("migration file not found for version: %s", applied.Version)
 		}
@@ -100,7 +89,7 @@ func HandleDown(opt DownOption) error {
 
 		// if down section is empty, skip
 		if targetMig.DownSection == "" {
-			ccolor.Warnln("Skipping empty down migration!")
+			ccolor.Warnln("Skipping empty DOWN migration!")
 			continue
 		}
 
@@ -114,4 +103,26 @@ func HandleDown(opt DownOption) error {
 
 	ccolor.Successf("\n🎉  Successfully rolled back %d migration(s)\n", count)
 	return nil
+}
+
+func findAppliedMigrations(db *database.DB, opt *DownOption) ([]migration.Record, error) {
+	// Get the target number of migrations to rollback (default 1)
+	count := opt.Number
+	if count <= 0 {
+		return nil, fmt.Errorf("count must be greater than 0")
+	}
+
+	// Get applied migrations sorted by date (most recent first)
+	appliedList, err := migration.GetAppliedSortedByDate(db, count)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get applied migrations: %v", err)
+	}
+
+	// Limit the number of rollbacks to the available applied migrations
+	if count > len(appliedList) {
+		count = len(appliedList)
+	}
+
+	opt.Number = count
+	return appliedList, nil
 }

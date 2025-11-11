@@ -33,7 +33,7 @@ type Migrations struct {
 
 // Config holds the application configuration
 type Config struct {
-	ConfigFile string `yaml:"-"` // internal use
+	ConfigFile string     `yaml:"-"` // internal use
 	Database   Database   `yaml:"database"`
 	Migrations Migrations `yaml:"migrations"`
 }

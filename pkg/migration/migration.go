@@ -53,7 +53,7 @@ func NewMigration(filePath string) (*Migration, error) {
 		FileName:  fileName,
 		FilePath:  filePath,
 		Timestamp: fi.Time,
-		Version: fileName,
+		Version:   fileName,
 	}, nil
 }
 

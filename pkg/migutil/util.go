@@ -21,4 +21,3 @@ func ResolveDriver(driver string) (string, error) {
 		return "", fmt.Errorf("unsupported database driver: %s", driver)
 	}
 }
-

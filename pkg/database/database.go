@@ -18,7 +18,7 @@ type DB struct {
 	*sql.DB
 	dsn string
 	// more information about the database
-	debug bool
+	debug  bool
 	driver string
 	// provider
 	provider SqlProvider

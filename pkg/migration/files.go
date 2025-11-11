@@ -112,11 +112,11 @@ func FindMigrations(migrationsDir string) ([]*Migration, error) {
 
 // FilenameInfo represents the information extracted from a migration filename
 //
-//  eg: 20251105-102430-add-age-index.sql
-//  => {Time: time.Time{}, Date: "20251105-102430", Name: "add-age-index"}
+//	eg: 20251105-102430-add-age-index.sql
+//	=> {Time: time.Time{}, Date: "20251105-102430", Name: "add-age-index"}
 type FilenameInfo struct {
 	Time time.Time // parsed time from Date field
-	Date string // eg: 20251105-102430
+	Date string    // eg: 20251105-102430
 	Name string
 }
 

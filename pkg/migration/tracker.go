@@ -22,8 +22,8 @@ func NewTracker(db *database.DB, verbose bool) *Tracker {
 }
 
 // SaveRecord records a migration in the database
-//  - status=up: insert a new record
-//  - status=down: update the record
+//   - status=up: insert a new record
+//   - status=down: update the record
 func (mt *Tracker) SaveRecord(version, status string) error {
 	provide, err := mt.db.SqlProvider()
 	if err != nil {
