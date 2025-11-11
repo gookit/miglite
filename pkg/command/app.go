@@ -16,6 +16,7 @@ func NewApp(name, version, description string) *capp.App {
 	// Add global flags
 	app.BoolVar(&showVersion, "version", false, "Show version and exit;;V")
 	app.BoolVar(&ShowVerbose, "verbose", false, "Enable verbose output;;v")
+	app.StringVar(&ConfigFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
 
 	// Add commands to the app
 	app.Add(

@@ -1,4 +1,4 @@
-# miglite - lite SQL Schema migration tool
+# miglite - Lite database schema migration tool by Go
 
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/gookit/miglite?style=flat-square)
 [![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/gookit/miglite)](https://github.com/gookit/miglite)
@@ -139,21 +139,41 @@ miglite status
   - `github.com/go-sql-driver/mysql`
 - Postgres 驱动:
   - `github.com/lib/pq`
+- MSSQL 驱动:
+  - `github.com/microsoft/go-mssqldb`
+
+### 构建自己的命令工具
+
+可以直接使用 `miglite` 库来快速构建自己的迁移命令工具，可以只注册自己需要的数据库驱动。
 
 ```go
 package main
 
 import (
 	"github.com/gookit/miglite"
-	
+	"github.com/gookit/miglite/pkg/command"
+
 	// add your database driver
-	_ "github.com/lib/pq"
+	_ "github.com/go-sql-driver/mysql"
+	// _ "github.com/lib/pq"
+	// _ "modernc.org/sqlite"
 )
 
+var Version = "0.1.0"
+
 func main() {
-	
+	// 可选：需要在构建时通过 ldflags 指定信息
+	// miglite.InitInfo(Version, GoVersion, BuildTime, GitCommit)
+
+	// Create the CLI application
+	app := command.NewApp("miglite", Version, "Lite database schema migration tool by Go")
+
+	// Run the application
+	app.Run()
 }
 ```
+
+> **NOTE**: 如果还要进一步自定义CLI应用，可以自由选择其他cli库，解析选项后调用 `command` 下面的 `handleXXX()` 方法执行逻辑。
 
 ## 相关的项目
 
