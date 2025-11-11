@@ -15,6 +15,8 @@ func ResolveDriver(driver string) (string, error) {
 		return "postgres", nil
 	case "sqlite", "sqlite3":
 		return "sqlite", nil
+	case "mssql", "sqlserver":
+		return "mssql", nil
 	default:
 		return "", fmt.Errorf("unsupported database driver: %s", driver)
 	}

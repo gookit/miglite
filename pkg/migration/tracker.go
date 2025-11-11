@@ -25,25 +25,25 @@ func NewTracker(db *database.DB, verbose bool) *Tracker {
 //  - status=up: insert a new record
 //  - status=down: update the record
 func (mt *Tracker) SaveRecord(version, status string) error {
-	builder, err := mt.db.SqlBuilder()
+	provide, err := mt.db.SqlProvider()
 	if err != nil {
 		return err
 	}
 
 	// Check if the record already exists
 	var exists bool
-	err = mt.db.QueryRow(builder.QueryExists(), version).Scan(&exists)
+	err = mt.db.QueryRow(provide.QueryExists(), version).Scan(&exists)
 	if err != nil {
 		return fmt.Errorf("failed to check if migration exists: %v", err)
 	}
 
 	// Insert a new record
-	var aSql = builder.InsertMigration()
+	var aSql = provide.InsertMigration()
 	var args = []any{version, status}
 
 	// Update the existing record. eg: up -> down
 	if exists {
-		aSql = builder.UpdateMigration()
+		aSql = provide.UpdateMigration()
 		args = []any{status, version} // parameter order must be same as query
 	}
 
@@ -56,13 +56,13 @@ func (mt *Tracker) SaveRecord(version, status string) error {
 
 // GetMigrationsStatus retrieves the status of all migrations
 func GetMigrationsStatus(db *database.DB, allMigrations []*Migration) ([]Record, error) {
-	builder, err := db.SqlBuilder()
+	provide, err := db.SqlProvider()
 	if err != nil {
 		return nil, err
 	}
 
 	// Query the database for applied migrations
-	rows, err := db.Query(builder.QueryAll())
+	rows, err := db.Query(provide.QueryAll())
 	if err != nil {
 		return nil, fmt.Errorf("failed to query migration status: %v", err)
 	}
@@ -106,13 +106,13 @@ func GetMigrationsStatus(db *database.DB, allMigrations []*Migration) ([]Record,
 
 // IsApplied checks if a specific migration has been applied(status=up)
 func IsApplied(db *database.DB, version string) (bool, string, error) {
-	builder, err := db.SqlBuilder()
+	provide, err := db.SqlProvider()
 	if err != nil {
 		return false, "", err
 	}
 
 	var status string
-	err = db.QueryRow(builder.QueryStatus(), version).Scan(&status)
+	err = db.QueryRow(provide.QueryStatus(), version).Scan(&status)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return false, "", nil
@@ -124,12 +124,12 @@ func IsApplied(db *database.DB, version string) (bool, string, error) {
 
 // GetAppliedSortedByDate returns applied migrations sorted by application date (most recent first)
 func GetAppliedSortedByDate(db *database.DB, limit int) ([]Record, error) {
-	builder, err := db.SqlBuilder()
+	provide, err := db.SqlProvider()
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := db.Query(builder.GetAppliedSortedByDate(), StatusUp, limit)
+	rows, err := db.Query(provide.GetAppliedSortedByDate(), StatusUp, limit)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query applied migrations: %v", err)
 	}

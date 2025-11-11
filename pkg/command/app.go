@@ -2,7 +2,9 @@ package command
 
 import (
 	"github.com/gookit/goutil/cflag/capp"
+	"github.com/gookit/goutil/strutil"
 	"github.com/gookit/goutil/x/ccolor"
+	"github.com/gookit/miglite"
 )
 
 var showVersion bool
@@ -34,7 +36,11 @@ func beforeRun(app *capp.App) bool {
 		ccolor.Printf(`<green>Version</> : %s
 <green>Author</>  : https://github.com/inhere
 <green>Homepage</>: https://github.com/gookit/miglite
-`, app.Version)
+
+<green>Build Date</>: %s
+<green>Git Commit</>: %s
+<green>Go Version</>: %s
+`, app.Version, miglite.BuildTime, strutil.Substr(miglite.GitCommit, 0, 10), miglite.GoVersion)
 		return false
 	}
 

@@ -6,35 +6,38 @@ import (
 	"github.com/gookit/miglite/pkg/migutil"
 )
 
-var sqlBuilders = map[string]SqlBuilder{
-	"mysql":    &MySqlBuilder{},
-	"postgres": &PgSqlBuilder{},
-	"sqlite":   &SqliteBuilder{},
+// 内置SQL语句提供者适配
+var sqlProviders = map[string]SqlProvider{
+	"mssql":    &MSSqlProvider{},
+	"mysql":    &MySqlProvider{},
+	"postgres": &PgSqlProvider{},
+	"sqlite":   &SqliteProvider{},
 }
 
-// AddSqlBuilder 添加数据库 SQL 语句构建处理
-func AddSqlBuilder(driver string, builder SqlBuilder) {
-	sqlBuilders[driver] = builder
+// AddProvider 添加数据库 SQL 语句提供者
+func AddProvider(driver string, provider SqlProvider) {
+	sqlProviders[driver] = provider
 }
 
-// GetSqlBuilder 获取数据库 SQL 语句构建处理器
-func GetSqlBuilder(driver string) (SqlBuilder, error) {
+// GetSqlProvider 获取数据库 SQL 语句提供者
+func GetSqlProvider(driver string) (SqlProvider, error) {
 	name, err := migutil.ResolveDriver(driver)
 	if err != nil {
 		name = driver
 	}
 
-	builder, ok := sqlBuilders[name]
+	provider, ok := sqlProviders[name]
 	if !ok {
 		return nil, fmt.Errorf("unsupported OR un-registered database driver: %s", driver)
 	}
-	return builder, nil
+	return provider, nil
 }
 
-// SqlBuilder 通用的数据库 SQL 语句构建处理
+// SqlProvider 通用的数据库 SQL 语句提供者
 //   - ReSQL: mysql, postgres, sqlite3, oracle, mssql, ...
 //   - NoSQL: MongoDB, Redis, ElasticSearch, ...
-type SqlBuilder interface {
+type SqlProvider interface {
+	// CreateSchema 创建数据库结构SQL
 	CreateSchema() string
 	DropSchema() string
 	QueryAll() string
@@ -42,25 +45,26 @@ type SqlBuilder interface {
 	QueryOne() string
 	// QueryStatus 获取指定版本状态 params: version
 	QueryStatus() string
+	// QueryExists 获取指定版本是否存在 params: version
 	QueryExists() string
-	DeleteByVersion() string
 	// InsertMigration 插入迁移记录 params: version, status
 	InsertMigration() string
 	// UpdateMigration 更新迁移记录 params: status, version
 	UpdateMigration() string
 	// GetAppliedSortedByDate 获取所有已迁移的版本，按迁移时间排序 params: status, limit
 	GetAppliedSortedByDate() string
+	// DeleteByVersion() string
 }
 
 //
-// region default sql build
+// region Re-Sql Provider
 //
 
-// SqlBuilderImpl 通用的关系型数据库 SQL 语句构建处理
-type SqlBuilderImpl struct{}
+// ReSqlProvider 通用的关系型数据库 SQL 语句提供者
+type ReSqlProvider struct{}
 
 // CreateSchema 创建数据库结构
-func (b *SqlBuilderImpl) CreateSchema() string {
+func (b *ReSqlProvider) CreateSchema() string {
 	return `
 CREATE TABLE IF NOT EXISTS db_schema_migrations (
     version VARCHAR(160) PRIMARY KEY,
@@ -70,68 +74,70 @@ CREATE TABLE IF NOT EXISTS db_schema_migrations (
 }
 
 // DropSchema 删除数据库结构
-func (b *SqlBuilderImpl) DropSchema() string {
+func (b *ReSqlProvider) DropSchema() string {
 	return "DROP TABLE IF EXISTS db_schema_migrations"
 }
 
 // QueryAll 查询所有
-func (b *SqlBuilderImpl) QueryAll() string {
+func (b *ReSqlProvider) QueryAll() string {
 	return "SELECT version, status, applied_at FROM db_schema_migrations"
 }
 
 // QueryOne 获取指定版本
-func (b *SqlBuilderImpl) QueryOne() string {
+func (b *ReSqlProvider) QueryOne() string {
 	return "SELECT version, status, applied_at FROM db_schema_migrations WHERE version = ?"
 }
 
 // QueryStatus 查询指定版本状态
-func (b *SqlBuilderImpl) QueryStatus() string {
+func (b *ReSqlProvider) QueryStatus() string {
 	return "SELECT status FROM db_schema_migrations WHERE version = ?"
 }
 
 // QueryExists 查询指定版本是否存在
-func (b *SqlBuilderImpl) QueryExists() string {
+func (b *ReSqlProvider) QueryExists() string {
 	return "SELECT EXISTS(SELECT 1 FROM db_schema_migrations WHERE version = ?)"
 }
 
 // DeleteByVersion 删除指定版本
-func (b *SqlBuilderImpl) DeleteByVersion() string {
+func (b *ReSqlProvider) DeleteByVersion() string {
 	return "DELETE FROM db_schema_migrations WHERE version = ?"
 }
 
 // InsertMigration 插入迁移记录
-func (b *SqlBuilderImpl) InsertMigration() string {
+func (b *ReSqlProvider) InsertMigration() string {
 	return "INSERT INTO db_schema_migrations (version, status) VALUES (?, ?)"
 }
 
 // UpdateMigration 更新迁移记录
-func (b *SqlBuilderImpl) UpdateMigration() string {
+func (b *ReSqlProvider) UpdateMigration() string {
 	return "UPDATE db_schema_migrations SET applied_at = CURRENT_TIMESTAMP, status = ? WHERE version = ?"
 }
 
 // GetAppliedSortedByDate 获取所有已迁移的版本，按迁移时间排序
-func (b *SqlBuilderImpl) GetAppliedSortedByDate() string {
+func (b *ReSqlProvider) GetAppliedSortedByDate() string {
 	return "SELECT version, applied_at FROM db_schema_migrations WHERE status=? ORDER BY applied_at DESC LIMIT ?"
 }
 
 //
-// region sql build for mysql
+// region MySql Provider
 //
 
-type MySqlBuilder struct {
-	SqlBuilderImpl
+// MySqlProvider for mysql
+type MySqlProvider struct {
+	ReSqlProvider
 }
 
 //
-// region sql build for sqlite
+// region Sqlite Provider
 //
 
-type SqliteBuilder struct {
-	SqlBuilderImpl
+// SqliteProvider for sqlite
+type SqliteProvider struct {
+	ReSqlProvider
 }
 
 // CreateSchema 创建数据库结构. sqlite 时间字段是 DATETIME
-func (b *SqliteBuilder) CreateSchema() string {
+func (b *SqliteProvider) CreateSchema() string {
 	return `
 CREATE TABLE IF NOT EXISTS db_schema_migrations (
     version VARCHAR(160) PRIMARY KEY,
@@ -141,47 +147,66 @@ CREATE TABLE IF NOT EXISTS db_schema_migrations (
 }
 
 //
-// region sql build for pgsql
+// region MsSql Provider
 //
 
-// PgSqlBuilder for postgresql
+// MSSqlProvider for mssql
+type MSSqlProvider struct {
+	ReSqlProvider
+}
+
+// CreateSchema 创建数据库结构. mssql 使用 DATETIME2 和 IDENTITY
+func (b *MSSqlProvider) CreateSchema() string {
+	return `
+CREATE TABLE db_schema_migrations (
+    version NVARCHAR(160) NOT NULL PRIMARY KEY,
+    applied_at DATETIME2 DEFAULT CURRENT_TIMESTAMP,
+    status NVARCHAR(24) -- up,skip,down
+);`
+}
+
+//
+// region PgSql Provider
+//
+
+// PgSqlProvider postgres sql 语句提供者
 //
 // NOTE: pgsql 绑定参数语法不一样，使用 $N
-type PgSqlBuilder struct {
-	SqlBuilderImpl
+type PgSqlProvider struct {
+	ReSqlProvider
 }
 
 // QueryOne 获取指定版本
-func (b *PgSqlBuilder) QueryOne() string {
+func (b *PgSqlProvider) QueryOne() string {
 	return "SELECT version, status, applied_at FROM db_schema_migrations WHERE version = $1"
 }
 
 // QueryStatus 查询指定版本状态
-func (b *PgSqlBuilder) QueryStatus() string {
+func (b *PgSqlProvider) QueryStatus() string {
 	return "SELECT status FROM db_schema_migrations WHERE version = $1"
 }
 
 // QueryExists 获取指定版本是否存在
-func (b *PgSqlBuilder) QueryExists() string {
+func (b *PgSqlProvider) QueryExists() string {
 	return "SELECT EXISTS(SELECT 1 FROM db_schema_migrations WHERE version = $1)"
 }
 
 // DeleteByVersion 删除指定版本
-func (b *PgSqlBuilder) DeleteByVersion() string {
+func (b *PgSqlProvider) DeleteByVersion() string {
 	return "DELETE FROM db_schema_migrations WHERE version = $1"
 }
 
 // InsertMigration 插入迁移记录
-func (b *PgSqlBuilder) InsertMigration() string {
+func (b *PgSqlProvider) InsertMigration() string {
 	return "INSERT INTO db_schema_migrations (version, status) VALUES ($1, $2)"
 }
 
 // UpdateMigration 插入迁移记录
-func (b *PgSqlBuilder) UpdateMigration() string {
+func (b *PgSqlProvider) UpdateMigration() string {
 	return "UPDATE db_schema_migrations SET applied_at = CURRENT_TIMESTAMP, status = $1 WHERE version = $2"
 }
 
 // GetAppliedSortedByDate 获取所有已迁移的版本，按迁移时间排序
-func (b *PgSqlBuilder) GetAppliedSortedByDate() string {
+func (b *PgSqlProvider) GetAppliedSortedByDate() string {
 	return "SELECT version, applied_at FROM db_schema_migrations WHERE status=$1 ORDER BY applied_at DESC LIMIT $2"
 }

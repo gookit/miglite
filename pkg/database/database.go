@@ -20,6 +20,8 @@ type DB struct {
 	// more information about the database
 	debug bool
 	driver string
+	// provider
+	provider SqlProvider
 }
 
 var std *DB
@@ -87,19 +89,23 @@ func (db *DB) Close() error { return db.DB.Close() }
 // SetDebug sets the debug mode
 func (db *DB) SetDebug(debug bool) { db.debug = debug }
 
-// SqlBuilder for database driver
-func (db *DB) SqlBuilder() (SqlBuilder, error) {
-	return GetSqlBuilder(db.driver)
+// SqlProvider for database driver
+func (db *DB) SqlProvider() (SqlProvider, error) {
+	var err error
+	if db.provider == nil {
+		db.provider, err = GetSqlProvider(db.driver)
+	}
+	return db.provider, err
 }
 
 // InitSchema creates the migrations table if it doesn't exist
 func (db *DB) InitSchema() error {
-	b, err := GetSqlBuilder(db.driver)
+	provide, err := db.SqlProvider()
 	if err != nil {
 		return err
 	}
 
-	var sqlStmt = b.CreateSchema()
+	var sqlStmt = provide.CreateSchema()
 	if db.debug {
 		fmt.Println("[DEBUG] database.InitSchema:", sqlStmt)
 	}
@@ -109,7 +115,7 @@ func (db *DB) InitSchema() error {
 
 // DropSchema drops the migrations table
 func (db *DB) DropSchema() error {
-	b, err := GetSqlBuilder(db.driver)
+	b, err := GetSqlProvider(db.driver)
 	if err != nil {
 		return err
 	}

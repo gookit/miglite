@@ -45,18 +45,18 @@ func (e *Executor) ExecuteUp(migration *Migration) error {
 	}
 
 	// Execute the UP migration
-	if _, err := tx.Exec(migration.UpSection); err != nil {
+	if _, err = tx.Exec(migration.UpSection); err != nil {
 		return fmt.Errorf("failed to execute UP migration: %v", err)
 	}
 
-	// Record the migration in the database
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit transaction: %v", err)
+	// Save record the migration status
+	if err = e.tracker.SaveRecord(migration.Version, StatusUp); err != nil {
+		return err
 	}
 
-	// Now record the migration status after successful commit
-	if err := e.tracker.SaveRecord(migration.Version, StatusUp); err != nil {
-		return err
+	// Commit the transaction
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %v", err)
 	}
 	return nil
 }
@@ -81,18 +81,18 @@ func (e *Executor) ExecuteDown(migration *Migration) error {
 	}
 
 	// Execute the DOWN migration
-	if _, err := tx.Exec(migration.DownSection); err != nil {
+	if _, err = tx.Exec(migration.DownSection); err != nil {
 		return fmt.Errorf("failed to execute DOWN migration: %v", err)
 	}
 
-	// Record the migration rollback in the database
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit transaction: %v", err)
+	// Update record the migration status
+	if err = e.tracker.SaveRecord(migration.Version, StatusDown); err != nil {
+		return err
 	}
 
-	// Now record the migration status after successful commit
-	if err := e.tracker.SaveRecord(migration.Version, StatusDown); err != nil {
-		return err
+	// Commit the transaction
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %v", err)
 	}
 
 	log.Printf("Successfully rolled back migration: %s", migration.FileName)

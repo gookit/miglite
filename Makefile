@@ -19,8 +19,8 @@ MAIN_SRC_FILE=cmd/miglite/main.go
 #VERSION=$(shell git for-each-ref refs/tags/ --count=1 --sort=-version:refname --format='%(refname:short)' 1 |  sed 's/^v//')
 GO_VERSION := $(shell go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 
-# short commit id
-COMMIT_ID := $(shell git rev-parse --short HEAD 2> /dev/null || echo 'unknown')
+# git commit id
+COMMIT_ID := $(shell git rev-parse HEAD 2> /dev/null || echo 'unknown')
 # set dev version unless VERSION is explicitly set via environment
 # manual set: make VERSION=1.2.3
 VERSION ?= $(shell echo "$$(git for-each-ref refs/tags/ --count=1 --sort=-version:refname --format='%(refname:short)' | echo 'main' 2>/dev/null)-dev+$(REV)" | sed 's/^v//')
@@ -30,7 +30,8 @@ BUILD_DATE := $(shell date +%Y/%m/%d-%H:%M:%S)
 BUILD_FLAGS := -ldflags \
   " -s -w \
    -X main.Version=$(VERSION)\
-   -X main.BuildTime=$(BUILD_DATE)'\
+   -X main.GoVersion=$(GO_VERSION)\
+   -X main.BuildTime='$(BUILD_DATE)'\
    -X main.GitCommit=$(COMMIT_ID)"
 
 ##there some make command for the project
@@ -41,9 +42,9 @@ help:
 
 ##Available Commands:
 
-ins2bin: ## Install to GOPATH/bin
-	cd cmd/miglite && go build $(BUILD_FLAGS) -o $(GOPATH)/bin/miglite $(MAIN_SRC_FILE)
-	chmod +x $(GOPATH)/bin/miglite
+install: ## Install to GOPATH/bin
+	go install $(BUILD_FLAGS) ./cmd/miglite
+	#chmod +x $(GOPATH)/bin/miglite
 
 build-all:linux arm win darwin ## Build for Linux,ARM,OSX,Windows
 
