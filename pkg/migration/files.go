@@ -139,3 +139,22 @@ func parseFilename(filename string) (*FilenameInfo, error) {
 		Name: matches[2],
 	}, nil
 }
+
+// MigrationsFrom creates migrations from a list of files
+func MigrationsFrom(dirPath string, files []string) ([]*Migration, error) {
+	var migrations []*Migration
+
+	for _, file := range files {
+		migration, err := NewMigration(dirPath + "/" + file)
+		if err != nil {
+			return nil, err
+		}
+		if !fsutil.IsFile(migration.FilePath) {
+			return nil, fmt.Errorf("migration file not exists: %s", migration.FilePath)
+		}
+
+		migrations = append(migrations, migration)
+	}
+
+	return migrations, nil
+}

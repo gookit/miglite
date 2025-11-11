@@ -60,7 +60,7 @@ func initConfigAndDB() (*config.Config, *database.DB, error) {
 	}
 
 	db.SetDebug(ShowVerbose)
-	ccolor.Infof("✅  Database connect successful! driver: %s\n", db.Driver())
+	ccolor.Printf("✅  Database connect successful! driver: <green>%s</>\n", db.Driver())
 	return cfg, db, nil
 }
 

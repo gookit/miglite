@@ -20,11 +20,12 @@ func NewApp(name, version, description string) *capp.App {
 
 	// Add commands to the app
 	app.Add(
+		InitCommand(),
+		CreateCommand(),
 		NewUpCommand(),
 		DownCommand(),
+		SkipCommand(),
 		StatusCommand(),
-		CreateCommand(),
-		InitCommand(),
 	)
 
 	app.OnAppFlagParsed = beforeRun

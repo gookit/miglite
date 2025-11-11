@@ -44,7 +44,7 @@ func HandleStatus() error {
 	}
 
 	// Print status table
-	ccolor.Cyanf("\n📊  Migration Status:(total=%d)\n", len(statuses))
+	ccolor.Cyanf("\n📊  Migrations Status:(total=%d)\n", len(statuses))
 	fmt.Println(strings.Repeat("==", 45))
 	ccolor.Printf("    <b>Status</>   | %13s<b>Version(migration file)</>%13s    |   <b>Operate Time</> \n", "", "")
 	fmt.Println(strings.Repeat("--", 45))
