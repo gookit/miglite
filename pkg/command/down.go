@@ -23,9 +23,9 @@ func DownCommand() *capp.Cmd {
 		return HandleDown(downOpt)
 	}).WithConfigFn(capp.WithAliases("rollback"))
 
-	c.BoolVar(&ShowVerbose, "verbose", false, "Enable verbose output;;v")
-	c.StringVar(&ConfigFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
+	bindCommonFlags(c)
 
+	c.BoolVar(&downOpt.Yes, "yes", false, "Skip confirmation prompt;;y")
 	c.IntVar(&downOpt.Number, "number", 1, "Number of migrations to roll back;;n")
 	return c
 }

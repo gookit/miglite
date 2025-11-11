@@ -9,13 +9,15 @@
 `miglite` Golang 实现的极简的数据库 Schema 迁移工具。
 
 - 使用简单，极简依赖
+- 基于 `database/sql` 进行开发，默认不添加任何驱动依赖包
 - 基于原始 SQL 方式作为迁移文件
   - 固定文件名格式为 `YYYYMMDD-HHMMSS-{migration-name}.sql`
-- 基于 `database/sql` 进行开发，默认不添加任何驱动依赖包
 - 迁移 SQL 都在事物中执行，确保数据一致性
-- 配置文件默认为 `./miglite.yaml`
+- 可以通过环境变量零配置直接运行迁移(eg: `DATABASE_URL`, `MIGRATIONS_PATH`)
+  - 会自动尝试加载目录下的 `.env` 文件
+  - 会自动加载默认配置文件 `./miglite.yaml`
 - 支持 `mysql`, `sqlite`, `postgres` 数据库
-  - 作为库使用时，需要自己添加驱动依赖
+  - 作为库使用时，需要自己添加DB驱动依赖
   - 直接使用 `miglite` 命令行工具时，已经添加了驱动依赖
 
 > **[中文说明](README.zh-CN.md)**

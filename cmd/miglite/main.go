@@ -20,7 +20,7 @@ import (
 var (
 	// Version represents the version of the application
 	Version   = "0.1.0"
-	BuildTime = "2025-11-05T09:00:00Z"
+	BuildTime = "2025-11-05 09:00:00"
 	GitCommit = "ab3cd4ef"
 	GoVersion = "go1.20.1" // go version on build
 )

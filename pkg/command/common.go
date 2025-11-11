@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gookit/goutil/cflag/capp"
 	"github.com/gookit/goutil/dump"
 	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/ini/v2/dotenv"
@@ -19,6 +20,11 @@ var (
 	// ConfigFile path to the configuration file
 	ConfigFile string
 )
+
+func bindCommonFlags(c *capp.Cmd) {
+	c.BoolVar(&ShowVerbose, "verbose", false, "Enable verbose output;;v")
+	c.StringVar(&ConfigFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
+}
 
 func initLoadConfig() (*config.Config, error) {
 	// Load configuration

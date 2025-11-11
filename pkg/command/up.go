@@ -29,10 +29,10 @@ func NewUpCommand() *capp.Cmd {
 	c := capp.NewCmd("up", "Execute pending migrations", func(c *capp.Cmd) error {
 		return HandleUp(upOpt)
 	})
-	c.Aliases = []string{"migrate", "run"}
 
-	c.BoolVar(&ShowVerbose, "verbose", false, "Enable verbose output;;v")
-	c.StringVar(&ConfigFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
+	c.Aliases = []string{"migrate", "run"}
+	bindCommonFlags(c)
+
 	c.BoolVar(&upOpt.Yes, "yes", false, "Skip confirmation prompt;;y")
 	c.IntVar(&upOpt.Number, "number", 0, "Execute only the specified number of migrations;;n")
 	c.BoolVar(&upOpt.SkipErr, "skip-err", false, "Skip the error migration and continue with the execution;;s")

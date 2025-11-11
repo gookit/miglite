@@ -1,5 +1,7 @@
 package miglite
 
+import "strings"
+
 // Version represents the version of the application
 var Version = "0.1.0"
 var BuildTime = "2025-11-05T09:00:00Z"
@@ -10,6 +12,6 @@ var GoVersion = "1.21"
 func InitInfo(version, goVer, buildTime, gitCommit string) {
 	Version = version
 	GoVersion = goVer
-	BuildTime = buildTime
+	BuildTime = strings.Trim(buildTime, `'"`)
 	GitCommit = gitCommit
 }

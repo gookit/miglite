@@ -15,6 +15,8 @@ type InitOption struct {
 func InitCommand() *capp.Cmd {
 	var initOpt = InitOption{}
 	c := capp.NewCmd("init", "Initialize the migration schema on database")
+
+	bindCommonFlags(c)
 	c.BoolVar(&initOpt.Drop, "drop", false, "Drop existing schema before create")
 
 	c.Func = func(c *capp.Cmd) error {

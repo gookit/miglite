@@ -14,10 +14,9 @@ func CreateCommand() *capp.Cmd {
 		// Get the migration name from arguments
 		return HandleCreate(c.Args())
 	})
-	c.Aliases = []string{"new"}
 
-	c.BoolVar(&ShowVerbose, "verbose", false, "Enable verbose output;;v")
-	c.StringVar(&ConfigFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
+	c.Aliases = []string{"new"}
+	bindCommonFlags(c)
 
 	c.AddArg("name", "Migration name...", true, nil)
 
