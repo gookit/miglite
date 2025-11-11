@@ -55,6 +55,8 @@ func HandleStatus() error {
 			statusIcon = "✅  <green>applied</>" // applied
 		} else if st.Status == "down" {
 			statusIcon = "↪️  <ylw>rolled</> " // rolled back
+		} else if st.Status == "skip" {
+			statusIcon = "⏭️  <ylw>skipped</>" // skipped
 		}
 		ccolor.Printf("  %s | %-52s | %s\n", statusIcon, st.Version, formatTime(st.AppliedAt))
 	}

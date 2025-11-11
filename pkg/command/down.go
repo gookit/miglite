@@ -60,7 +60,7 @@ func HandleDown(opt DownOption) error {
 	// Get executor
 	executor := migration.NewExecutor(db, ShowVerbose)
 	confirmTip := "Are you sure you want to roll back the migration?"
-	ccolor.Magentaf("Will roll back recent %d migrations:\n\n", count)
+	ccolor.Magentaf("🚀  Will roll back recent %d migrations:\n\n", count)
 
 	// Roll back the specified number of migrations
 	for i := 0; i < count; i++ {

@@ -50,6 +50,7 @@ func HandleSkip(opt SkipOption) error {
 	})
 
 	tracker := migration.NewTracker(db, ShowVerbose)
+	ccolor.Magentaf("🚀  Start ignore %d migrations:\n\n", len(migFiles))
 
 	for _, migFile := range migFiles {
 		if record, ok := recordMap[migFile.Version]; ok {
@@ -64,7 +65,7 @@ func HandleSkip(opt SkipOption) error {
 		if err != nil {
 			return err
 		}
-		ccolor.Printf("- Migration %s skipped", migFile.Version)
+		ccolor.Printf("- Migration <green>%s</> skipped", migFile.Version)
 	}
 
 	return nil
