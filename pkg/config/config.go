@@ -7,6 +7,7 @@ import (
 
 	"github.com/goccy/go-yaml"
 	"github.com/gookit/goutil/fsutil"
+	"github.com/gookit/ini/v2/dotenv"
 	"github.com/gookit/miglite/pkg/migutil"
 )
 
@@ -37,8 +38,26 @@ type Config struct {
 	Migrations Migrations `yaml:"migrations"`
 }
 
+var std *Config
+
+// Get returns the default configuration
+func Get() *Config {
+	if std == nil {
+		panic("config not load and initialized")
+	}
+	return std
+}
+
+// Reset the default configuration
+func Reset() { std = nil }
+
 // Load loads configuration from YAML file and environment variables
+//
+// NOTE: will auto load .env file on working directory.
 func Load(configPath string) (*Config, error) {
+	// load .env file
+	_ = dotenv.LoadExists("./")
+
 	config := &Config{}
 
 	// Load from YAML file if it exists
@@ -73,6 +92,7 @@ func Load(configPath string) (*Config, error) {
 	}
 	config.Migrations.Path = filePath
 
+	std = config
 	return config, nil
 }
 
@@ -129,7 +149,7 @@ func parseDatabaseURL(url string) (string, string, error) {
 	// url eg: mysql://user:password@localhost:3306/dbname
 	sepIdx := strings.Index(url, "://")
 	if sepIdx < 1 {
-		return "", "", fmt.Errorf("invalid DATABASE_URL: %s", url)
+		return "", "", fmt.Errorf("invalid DATABASE_URL: %s(Should 'protocal://DSN')", url)
 	}
 
 	driver, err := migutil.ResolveDriver(url[:sepIdx])

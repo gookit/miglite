@@ -6,6 +6,7 @@ import (
 
 	"github.com/gookit/goutil/dump"
 	"github.com/gookit/goutil/x/ccolor"
+	"github.com/gookit/ini/v2/dotenv"
 	"github.com/gookit/miglite/pkg/config"
 	"github.com/gookit/miglite/pkg/database"
 )
@@ -26,6 +27,9 @@ func initLoadConfig() (*config.Config, error) {
 		return nil, fmt.Errorf("failed to load config: %v", err)
 	}
 
+	if envFiles := dotenv.LoadedFiles(); len(envFiles) > 0 {
+		ccolor.Printf("📄  Loaded environment variables from <green>%s</>\n", envFiles[0])
+	}
 	if cfg.ConfigFile != "" {
 		ccolor.Printf("📄  Loaded config file from <green>%s</>\n", cfg.ConfigFile)
 	}
