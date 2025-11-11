@@ -10,38 +10,27 @@ import (
 	"github.com/gookit/miglite/pkg/migration"
 )
 
-func TestMigrationExecution(t *testing.T) {
+func TestMigration_sqlite(t *testing.T) {
 	// For this test, we'll use a SQLite database
 	dbPath := "./test_migration.db"
 
 	// Set up environment variables for test
-	os.Setenv("DATABASE_URL", "sqlite://"+dbPath)
+	err := os.Setenv("DATABASE_URL", "sqlite://"+dbPath)
+	assert.NoError(t, err)
 	defer os.Remove(dbPath) // Clean up after the test
 
-	// Load configuration
-	cfg, err := config.Load("./miglite_test.yaml") // This might not exist, which is okay for this test
-	assert.NoError(t, err)
-
-	// Connect to database
-	db, err := database.Connect(cfg.Database.Driver, cfg.Database.DSN)
-	if err != nil {
-		t.Fatalf("Failed to connect to database: %v", err)
-	}
-	defer db.Close()
-
-	// Initialize schema
-	if err := db.InitSchema(); err != nil {
-		t.Fatalf("Failed to initialize schema: %v", err)
-	}
+	// run command: init
+	err = app.RunWithArgs([]string{"init"})
+	assert.Nil(t, err)
 
 	// Discover migrations
-	migrations, err := migration.FindMigrations(cfg.Migrations.Path)
+	migrations, err := migration.FindMigrations(config.Get().Migrations.Path)
 	assert.NoError(t, err)
 
 	// Execute migrations
-	executor := migration.NewExecutor(db, true)
+	executor := migration.NewExecutor(database.GetDB(), true)
 	for _, mig := range migrations {
-		applied, status, err := migration.IsApplied(db, mig.FileName)
+		applied, status, err := migration.IsApplied(database.GetDB(), mig.FileName)
 		if err != nil {
 			t.Fatalf("Failed to check migration status: %v", err)
 		}
@@ -57,7 +46,7 @@ func TestMigrationExecution(t *testing.T) {
 	}
 
 	// Verify migrations were applied
-	statuses, err := migration.GetMigrationsStatus(db, migrations)
+	statuses, err := migration.GetMigrationsStatus(database.GetDB(), migrations)
 	if err != nil {
 		t.Fatalf("Failed to get migration status: %v", err)
 	}

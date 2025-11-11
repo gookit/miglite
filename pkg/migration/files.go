@@ -33,7 +33,7 @@ func CreateMigrations(migrationsDir string, names []string) ([]string, error) {
 // CreateMigration creates a new migration file with the specified name
 func CreateMigration(migrationsDir, name string) (string, error) {
 	// Generate filename with current timestamp. format: YYYYMMDD-HHMMSS
-	timestamp := time.Now().Format("20060102-150405")
+	timestamp := time.Now().Format(DateLayout)
 	filename := fmt.Sprintf("%s-%s.sql", timestamp, name)
 
 	// Full path for the new migration file
