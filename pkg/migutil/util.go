@@ -11,7 +11,7 @@ func ResolveDriver(driver string) (string, error) {
 	switch driver {
 	case "mysql", "mariadb", "mysql2":
 		return "mysql", nil
-	case "postgres", "pg", "pgsql", "postgresql":
+	case "postgres", "pg", "pgx", "pgsql", "postgresql":
 		return "postgres", nil
 	case "sqlite", "sqlite3":
 		return "sqlite", nil
