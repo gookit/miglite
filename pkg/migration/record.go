@@ -9,30 +9,18 @@ import (
 	"github.com/gookit/miglite/pkg/database"
 )
 
-// Tracker handles tracking of applied migrations
-type Tracker struct {
-	db *database.DB
-	// verbose flag
-	verbose bool
-}
-
-// NewTracker creates a new migration tracker
-func NewTracker(db *database.DB, verbose bool) *Tracker {
-	return &Tracker{db: db, verbose: verbose}
-}
-
 // SaveRecord records a migration in the database
 //   - status=up: insert a new record
 //   - status=down: update the record
-func (mt *Tracker) SaveRecord(version, status string) error {
-	provide, err := mt.db.SqlProvider()
+func SaveRecord(db *database.DB, version, status string, tx *sql.Tx) error {
+	provide, err := db.SqlProvider()
 	if err != nil {
 		return err
 	}
 
 	// Check if the record already exists
 	var exists bool
-	err = mt.db.QueryRow(provide.QueryExists(), version).Scan(&exists)
+	err = db.QueryRow(provide.QueryExists(), version).Scan(&exists)
 	if err != nil {
 		return fmt.Errorf("failed to check if migration exists: %v", err)
 	}
@@ -47,7 +35,11 @@ func (mt *Tracker) SaveRecord(version, status string) error {
 		args = []any{status, version} // parameter order must be same as query
 	}
 
-	_, err = mt.db.Exec(aSql, args...)
+	if tx == nil {
+		_, err = db.Exec(aSql, args...)
+	} else {
+		_, err = tx.Exec(aSql, args...)
+	}
 	if err != nil {
 		return fmt.Errorf("failed to record migration: %v", err)
 	}

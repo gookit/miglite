@@ -13,7 +13,7 @@ type Executor struct {
 	db *database.DB
 	// verbose flag
 	verbose bool
-	tracker *Tracker
+	// tracker *Tracker
 }
 
 // NewExecutor creates a new migration executor
@@ -21,7 +21,6 @@ func NewExecutor(db *database.DB, verbose bool) *Executor {
 	return &Executor{
 		db:      db,
 		verbose: verbose,
-		tracker: NewTracker(db, verbose),
 	}
 }
 
@@ -50,7 +49,7 @@ func (e *Executor) ExecuteUp(migration *Migration) error {
 	}
 
 	// Save record the migration status
-	if err = e.tracker.SaveRecord(migration.Version, StatusUp); err != nil {
+	if err = SaveRecord(e.db, migration.Version, StatusUp, tx); err != nil {
 		return err
 	}
 
@@ -86,7 +85,7 @@ func (e *Executor) ExecuteDown(migration *Migration) error {
 	}
 
 	// Update record the migration status
-	if err = e.tracker.SaveRecord(migration.Version, StatusDown); err != nil {
+	if err = SaveRecord(e.db, migration.Version, StatusDown, tx); err != nil {
 		return err
 	}
 
