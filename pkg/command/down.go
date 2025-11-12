@@ -38,7 +38,7 @@ func HandleDown(opt DownOption) error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer db.SilentClose()
 
 	// Get applied migrations sorted by date (most recent first)
 	appliedList, err := findAppliedMigrations(db, &opt)

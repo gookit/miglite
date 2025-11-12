@@ -33,7 +33,7 @@ func HandleSkip(opt SkipOption) error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer db.SilentClose()
 
 	migFiles, err := migration.MigrationsFrom(cfg.Migrations.Path, opt.FileNames)
 	if err != nil {

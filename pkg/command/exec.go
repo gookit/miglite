@@ -8,8 +8,6 @@ import (
 
 	"github.com/gookit/goutil/cflag/capp"
 	"github.com/gookit/goutil/cliutil"
-	"github.com/gookit/goutil/fsutil"
-	"github.com/gookit/goutil/strutil"
 	"github.com/gookit/goutil/x/ccolor"
 )
 
@@ -54,24 +52,25 @@ func HandleExec(opt ExecOption) error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer db.SilentClose()
 
 	// Prepare SQL to execute
 	var sql = sqlOrFile
 	var sqlFile string
 	confirmTip := "Are you sure you want to execute the following SQL statement?"
 
-	// if sqlOrFile is a valid file path, read SQL from file
-	if len(sqlOrFile) < 128 && !strutil.ContainsByte(sqlOrFile, ' ') {
-		if fsutil.IsFile(sqlOrFile) {
-			sqlFile = sqlOrFile
-			confirmTip = fmt.Sprintf("Are you sure you want to execute SQL from file: %s", sqlFile)
+	// if sqlOrFile is a sql file path, read SQL from file
+	if len(sqlOrFile) < 128 && strings.HasSuffix(sqlOrFile, ".sql") {
+		sqlFile = sqlOrFile
+		confirmTip = fmt.Sprintf("Are you sure you want to execute SQL from file: %s", sqlFile)
 
-			// Read SQL from file
-			sql, err = readSQLFromFile(sqlFile)
-			if err != nil {
-				return fmt.Errorf("failed to read SQL file: %v", err)
-			}
+		// Read SQL from file
+		sql, err = readSQLFromFile(sqlFile)
+		if err != nil {
+			return fmt.Errorf("failed to read SQL file: %v", err)
+		}
+		if sql == "" {
+			return fmt.Errorf("no SQL contents in file: %s", sqlFile)
 		}
 	}
 
@@ -113,14 +112,8 @@ func readSQLFromFile(filePath string) (string, error) {
 	}
 
 	// Check if file exists
-	if _, err := os.Stat(absPath); os.IsNotExist(err) {
+	if _, err = os.Stat(absPath); os.IsNotExist(err) {
 		return "", fmt.Errorf("file does not exist: %s", absPath)
-	}
-
-	// Check file extension
-	ext := strings.ToLower(filepath.Ext(absPath))
-	if ext != ".sql" {
-		return "", fmt.Errorf("file must be a .sql file: %s", absPath)
 	}
 
 	// Read file content

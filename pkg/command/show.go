@@ -1,11 +1,13 @@
 package command
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 
 	"github.com/gookit/goutil/arrutil"
 	"github.com/gookit/goutil/cflag/capp"
+	"github.com/gookit/goutil/strutil"
 	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/miglite/pkg/database"
 )
@@ -44,7 +46,6 @@ func HandleShow(opt ShowOption) error {
 	if !opt.Tables && opt.Schema == "" {
 		return fmt.Errorf("either --tables or --schema must be provided")
 	}
-
 	if opt.Tables && opt.Schema != "" {
 		return fmt.Errorf("--tables and --schema cannot be used together")
 	}
@@ -54,7 +55,7 @@ func HandleShow(opt ShowOption) error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer db.SilentClose()
 
 	if opt.Tables {
 		// Show database tables
@@ -132,13 +133,13 @@ func showTableSchema(db *DB, tableName string) error {
 		var col ColumnInfo
 		if db.Driver() == "postgres" {
 			// For PostgreSQL, use different column order
-			err := rows.Scan(&col.Name, &col.Type, &col.NotNull, &col.Default)
+			err = rows.Scan(&col.Name, &col.Type, &col.NotNull, &col.Default)
 			if err != nil {
 				return fmt.Errorf("failed to scan column info: %v", err)
 			}
 		} else {
 			// For MySQL, SQLite, etc.
-			err := rows.Scan(&col.Name, &col.Type, &col.NotNull, &col.Default, &col.Key, &col.Extra)
+			err = rows.Scan(&col.Name, &col.Type, &col.NotNull, &col.Default, &col.Key, &col.Extra)
 			if err != nil {
 				return fmt.Errorf("failed to scan column info: %v", err)
 			}
@@ -156,12 +157,14 @@ func showTableSchema(db *DB, tableName string) error {
 	}
 
 	ccolor.Printf("📋  Table <green>%s</> has <green>%d</> column(s):\n", tableName, len(columns))
-	fmt.Println(strings.Repeat("-", 80))
-	fmt.Printf("%-20s %-20s %-10s %-15s %-10s %-15s\n", "Name", "Type", "Null", "Default", "Key", "Extra")
-	fmt.Println(strings.Repeat("-", 80))
+	fmt.Println(strings.Repeat("-", 90))
+	ccolor.Printf("%-20s | %-30s | %-5s | %-20s | %-10s | %-15s\n", "Name", "Type", "Null", "Default", "Key", "Extra")
+	fmt.Println(strings.Repeat("-", 90))
 	for _, col := range columns {
-		fmt.Printf("%-20s %-20s %-10s %-15s %-10s %-15s\n",
-			col.Name, col.Type, col.NotNull, col.Default, col.Key, col.Extra)
+		defVal := strutil.OrCond(col.Default.Valid, col.Default.String, "NULL")
+		fmt.Printf("%-20s %-30s %-5s %-20s %-10s %-15s\n",
+			col.Name, col.Type, col.NotNull, defVal, col.Key, col.Extra,
+		)
 	}
 	fmt.Println(strings.Repeat("-", 80))
 
@@ -223,7 +226,7 @@ type ColumnInfo struct {
 	Name    string
 	Type    string
 	NotNull string
-	Default string
+	Default sql.NullString
 	Key     string
 	Extra   string
 }

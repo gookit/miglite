@@ -1,6 +1,7 @@
 package command
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -29,7 +30,7 @@ func HandleStatus() error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer db.SilentClose()
 
 	// Discover migrations
 	migrations, err := migration.FindMigrations(cfg.Migrations.Path)
@@ -40,7 +41,10 @@ func HandleStatus() error {
 	// Get migration statuses
 	statuses, err := migration.GetMigrationsStatus(db, migrations)
 	if err != nil {
-		return fmt.Errorf("failed to get migration status: %v", err)
+		if strings.Contains(err.Error(), "no such table") {
+			err = errors.New("migration table does not exist. please run `miglite init` to create it")
+		}
+		return err
 	}
 
 	// Print status table

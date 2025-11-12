@@ -3,6 +3,8 @@ package database
 import (
 	"database/sql"
 	"fmt"
+
+	"github.com/gookit/goutil/x/ccolor"
 )
 
 // supported database drivers
@@ -85,6 +87,13 @@ func (db *DB) Driver() string { return db.driver }
 
 // Close closes the database connection
 func (db *DB) Close() error { return db.DB.Close() }
+
+// SilentClose closes the database connection
+func (db *DB) SilentClose() {
+	if err := db.DB.Close(); err != nil {
+		ccolor.Errorln("[ERROR] database.Close:", err)
+	}
+}
 
 // SetDebug sets the debug mode
 func (db *DB) SetDebug(debug bool) { db.debug = debug }
