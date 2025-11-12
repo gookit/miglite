@@ -1,6 +1,6 @@
 module github.com/gookit/miglite
 
-go 1.21.0
+go 1.24
 
 require (
 	github.com/gookit/ini/v2 v2.3.2
