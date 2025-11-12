@@ -27,6 +27,7 @@ func NewApp(name, version, description string) *capp.App {
 		SkipCommand(),
 		StatusCommand(),
 		NewExecCommand(),
+		NewShowCommand(),
 	)
 
 	app.OnAppFlagParsed = beforeRun

@@ -8,15 +8,15 @@ import (
 
 	"github.com/gookit/goutil/cflag/capp"
 	"github.com/gookit/goutil/cliutil"
+	"github.com/gookit/goutil/fsutil"
+	"github.com/gookit/goutil/strutil"
 	"github.com/gookit/goutil/x/ccolor"
 )
 
 // ExecOption represents options for the exec command
 type ExecOption struct {
-	// SQL statement to execute
-	SQL string
-	// Path to SQL file to execute
-	File string
+	// SQL or sql-file to execute
+	SQLOrFile string
 	// Skip confirmation prompt
 	Yes bool
 }
@@ -26,63 +26,63 @@ func NewExecCommand() *capp.Cmd {
 	var execOpt = ExecOption{}
 
 	c := capp.NewCmd("exec", "Execute SQL statement or SQL file directly", func(c *capp.Cmd) error {
+		execOpt.SQLOrFile = c.Arg("sql-or-file").String()
 		return HandleExec(execOpt)
 	})
 
 	c.Aliases = []string{"execute", "run-sql"}
 	bindCommonFlags(c)
 
-	c.StringVar(&execOpt.SQL, "sql", "", "SQL statement to execute;;s")
-	c.StringVar(&execOpt.File, "file", "", "Path to SQL file to execute;;f")
+	// c.StringVar(&execOpt.SQL, "sql", "", "SQL statement to execute;;s")
+	// c.StringVar(&execOpt.File, "file", "", "Path to SQL file to execute;;f")
 	c.BoolVar(&execOpt.Yes, "yes", false, "Skip confirmation prompt;;y")
 
+	c.AddArg("sql-or-file", "SQL statement/file to execute", true, nil)
 	return c
 }
 
 // HandleExec handles the exec command logic
 func HandleExec(opt ExecOption) error {
 	// Validate options
-	if opt.SQL == "" && opt.File == "" {
-		return fmt.Errorf("either --sql or --file must be provided")
-	}
-
-	if opt.SQL != "" && opt.File != "" {
-		return fmt.Errorf("--sql and --file cannot be used together")
+	sqlOrFile := strings.TrimSpace(opt.SQLOrFile)
+	if sqlOrFile == "" {
+		return fmt.Errorf("either SQL or sql-file must be provided")
 	}
 
 	// Load configuration and connect to database
 	_, db, err := initConfigAndDB()
 	if err != nil {
-		return fmt.Errorf("failed to connect to database: %v", err)
+		return err
 	}
 	defer db.Close()
 
 	// Prepare SQL to execute
-	var sql string
-	if opt.File != "" {
-		// Read SQL from file
-		var err error
-		sql, err = readSQLFromFile(opt.File)
-		if err != nil {
-			return fmt.Errorf("failed to read SQL file: %v", err)
+	var sql = sqlOrFile
+	var sqlFile string
+	confirmTip := "Are you sure you want to execute the following SQL statement?"
+
+	// if sqlOrFile is a valid file path, read SQL from file
+	if len(sqlOrFile) < 128 && !strutil.ContainsByte(sqlOrFile, ' ') {
+		if fsutil.IsFile(sqlOrFile) {
+			sqlFile = sqlOrFile
+			confirmTip = fmt.Sprintf("Are you sure you want to execute SQL from file: %s", sqlFile)
+
+			// Read SQL from file
+			sql, err = readSQLFromFile(sqlFile)
+			if err != nil {
+				return fmt.Errorf("failed to read SQL file: %v", err)
+			}
 		}
-	} else {
-		// Use SQL from command line
-		sql = opt.SQL
 	}
+
+	ccolor.Infoln("Input SQL:")
+	fmt.Println(sql)
 
 	// Confirmation prompt if --yes is not set
-	confirmTip := "Are you sure you want to execute the following SQL statement?"
-	if opt.File != "" {
-		confirmTip = fmt.Sprintf("Are you sure you want to execute SQL from file: %s", opt.File)
-	}
-
 	if !opt.Yes {
-		ccolor.Printf("⚠️  %s\n", confirmTip)
-		ccolor.Infof("SQL:\n%s\n", sql)
-
+		ccolor.Warnf("⚠️  %s\n", confirmTip)
 		if !cliutil.Confirm("Continue?") {
-			ccolor.Warnln("Exiting SQL execution!")
+			ccolor.Magentaln("Exiting SQL execution!")
 			return nil
 		}
 	}

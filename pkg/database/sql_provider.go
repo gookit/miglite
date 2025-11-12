@@ -6,6 +6,9 @@ import (
 	"github.com/gookit/miglite/pkg/migutil"
 )
 
+// MigrateSchemaName 数据库迁移结构表名
+const MigrateSchemaName = "db_schema_migrations"
+
 // 内置SQL语句提供者适配
 var sqlProviders = map[string]SqlProvider{
 	"mssql":    &MSSqlProvider{},
