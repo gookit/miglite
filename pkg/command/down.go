@@ -83,7 +83,7 @@ func HandleDown(opt DownOption) error {
 			continue
 		}
 
-		if err := targetMig.Parse(); err != nil {
+		if err = targetMig.Parse(); err != nil {
 			return err
 		}
 
@@ -93,12 +93,13 @@ func HandleDown(opt DownOption) error {
 			continue
 		}
 
-		if err := executor.ExecuteDown(targetMig); err != nil {
+		if err = executor.ExecuteDown(targetMig); err != nil {
 			return fmt.Errorf(
 				"failed to execute rollback for migration %s: %v.\nDownSQL:\n%s",
 				targetMig.FileName, err, targetMig.DownSection,
 			)
 		}
+		ccolor.Printf("✅  Success rolled back migration: %s\n", targetMig.FileName)
 	}
 
 	ccolor.Successf("\n🎉  Successfully rolled back %d migration(s)\n", count)

@@ -71,7 +71,7 @@ func HandleUp(opt UpOption) error {
 
 	var appliedNum int
 	confirmTip := "Are you sure you want to execute this migration?"
-	ccolor.Printf("🚀  Starting exec migrations(<green>pending=%d</>). Start at: %s\n\n", len(migrations), formatTime(startTime))
+	ccolor.Printf("🚀  Starting exec migrations(<green>founds=%d</>). Start at: %s\n\n", len(migrations), formatTime(startTime))
 
 	// Execute pending migrations
 	for idx, mig := range migrations {
@@ -81,7 +81,7 @@ func HandleUp(opt UpOption) error {
 			return err
 		}
 		if applied || status == migration.StatusSkip {
-			ccolor.Printf("⏭️  <ylw>Skip</>ping applied migration: %s\n", mig.FileName)
+			ccolor.Printf("%d. ⏭️  <ylw>Skipping</> %s migration: %s\n", idx+1, migration.StatusText(status), mig.FileName)
 			continue
 		}
 
@@ -92,10 +92,10 @@ func HandleUp(opt UpOption) error {
 			break
 		}
 
-		if err := mig.Parse(); err != nil {
+		if err = mig.Parse(); err != nil {
 			return err
 		}
-		if err := executor.ExecuteUp(mig); err != nil {
+		if err = executor.ExecuteUp(mig); err != nil {
 			return fmt.Errorf("failed to execute migration %s: %v\nUpSQL:\n%s", mig.FileName, err, mig.UpSection)
 		}
 

@@ -23,6 +23,22 @@ const (
 	PrefixFormat = "YYYYMMDD-HHMMSS"
 )
 
+// StatusText returns the text representation of a migration status
+func StatusText(status string) string {
+	switch status {
+	case StatusUp:
+		return "applied"
+	case StatusDown:
+		return "rolled"
+	case StatusSkip:
+		return "skipped"
+	case StatusPending:
+		return "pending"
+	default:
+		return "unknown"
+	}
+}
+
 // Record represents a record in the database migrations table
 type Record struct {
 	// is migration filename

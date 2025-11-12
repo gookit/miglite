@@ -8,13 +8,13 @@ import (
 func FmtDriverName(driver string) string {
 	driver = strings.ToLower(driver)
 	switch driver {
-	case "mysql", "mariadb", "mysql2":
+	case "mysql", "my", "mariadb", "mysql2":
 		return "mysql"
 	case "postgres", "pg", "pgx", "pgsql", "postgresql":
 		return "postgres"
 	case "sqlite", "sqlite3":
 		return "sqlite"
-	case "mssql", "sqlserver":
+	case "mssql", "ms", "sqlserver":
 		return "mssql"
 	default:
 		return driver
