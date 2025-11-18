@@ -1,7 +1,6 @@
 package command
 
 import (
-	"database/sql"
 	"fmt"
 	"strings"
 
@@ -57,8 +56,8 @@ func HandleShow(opt ShowOption) error {
 	}
 	defer db.SilentClose()
 
+	// Show database tables
 	if opt.Tables {
-		// Show database tables
 		return showTables(db)
 	}
 
@@ -73,30 +72,10 @@ func HandleShow(opt ShowOption) error {
 func showTables(db *DB) error {
 	ccolor.Println("🔍  Fetching database tables...")
 
-	query, err := getTablesQuery(db.Driver())
+	tables, err := db.ShowTables()
 	if err != nil {
-		return fmt.Errorf("unsupported database driver: %s", db.Driver())
+		return err
 	}
-
-	rows, err := db.Query(query)
-	if err != nil {
-		return fmt.Errorf("failed to query tables: %v", err)
-	}
-	defer rows.Close()
-
-	var tables []string
-	for rows.Next() {
-		var tableName string
-		if err := rows.Scan(&tableName); err != nil {
-			return fmt.Errorf("failed to scan table name: %v", err)
-		}
-		tables = append(tables, tableName)
-	}
-
-	if err = rows.Err(); err != nil {
-		return fmt.Errorf("error iterating over table rows: %v", err)
-	}
-
 	if len(tables) == 0 {
 		ccolor.Infoln("No tables found in the database.")
 		return nil
@@ -116,117 +95,28 @@ func showTables(db *DB) error {
 // showTableSchema displays the schema of a specific table
 func showTableSchema(db *DB, tableName string) error {
 	ccolor.Printf("🔍  Fetching schema for table: <green>%s</>\n", tableName)
-
-	query, err := getSchemaQuery(db.Driver(), tableName)
+	columns, err := db.QueryTableSchema(tableName)
 	if err != nil {
-		return fmt.Errorf("unsupported database driver: %s", db.Driver())
-	}
-
-	rows, err := db.Query(query)
-	if err != nil {
-		return fmt.Errorf("failed to query table schema: %v", err)
-	}
-	defer rows.Close()
-
-	var columns []ColumnInfo
-	for rows.Next() {
-		var col ColumnInfo
-		if db.Driver() == "postgres" {
-			// For PostgreSQL, use different column order
-			err = rows.Scan(&col.Name, &col.Type, &col.NotNull, &col.Default)
-			if err != nil {
-				return fmt.Errorf("failed to scan column info: %v", err)
-			}
-		} else {
-			// For MySQL, SQLite, etc.
-			err = rows.Scan(&col.Name, &col.Type, &col.NotNull, &col.Default, &col.Key, &col.Extra)
-			if err != nil {
-				return fmt.Errorf("failed to scan column info: %v", err)
-			}
-		}
-		columns = append(columns, col)
-	}
-
-	if err = rows.Err(); err != nil {
-		return fmt.Errorf("error iterating over schema rows: %v", err)
+		return err
 	}
 
 	if len(columns) == 0 {
-		ccolor.Printf("No columns found for table: %s\n", tableName)
+		ccolor.Warnf("No columns found for table: %s\n", tableName)
 		return nil
 	}
 
+	hLine := strings.Repeat("-", 110)
 	ccolor.Printf("📋  Table <green>%s</> has <green>%d</> column(s):\n", tableName, len(columns))
-	fmt.Println(strings.Repeat("-", 90))
-	ccolor.Printf("%-20s | %-30s | %-5s | %-20s | %-10s | %-15s\n", "Name", "Type", "Null", "Default", "Key", "Extra")
-	fmt.Println(strings.Repeat("-", 90))
+	fmt.Println(hLine)
+	ccolor.Printf(" %-20s | %-30s | %-4s | %-20s | %-10s | %-15s\n", "Name", "Type", "Null", "Default", "Key", "Extra")
+	fmt.Println(hLine)
 	for _, col := range columns {
 		defVal := strutil.OrCond(col.Default.Valid, col.Default.String, "NULL")
-		fmt.Printf("%-20s %-30s %-5s %-20s %-10s %-15s\n",
+		fmt.Printf(" %-20s | %-30s | %-4s | %-20s | %-10s | %-15s\n",
 			col.Name, col.Type, col.NotNull, defVal, col.Key, col.Extra,
 		)
 	}
-	fmt.Println(strings.Repeat("-", 80))
+	fmt.Println(hLine)
 
 	return nil
-}
-
-// getTablesQuery returns the appropriate query for fetching table names based on database driver
-func getTablesQuery(driver string) (string, error) {
-	switch driver {
-	case "mysql":
-		return "SHOW TABLES", nil
-	case "postgres":
-		return `SELECT tablename FROM pg_tables WHERE schemaname = 'public'`, nil
-	case "sqlite":
-		return `SELECT name FROM sqlite_master WHERE type='table'`, nil
-	case "mssql":
-		return `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'`, nil
-	default:
-		return "", fmt.Errorf("unsupported driver: %s", driver)
-	}
-}
-
-// getSchemaQuery returns the appropriate query for fetching table schema based on database driver
-func getSchemaQuery(driver, tableName string) (string, error) {
-	switch driver {
-	case "mysql":
-		return fmt.Sprintf("DESCRIBE `%s`", tableName), nil
-	case "postgres":
-		return fmt.Sprintf(`
-			SELECT 
-				column_name, 
-				data_type, 
-				is_nullable, 
-				column_default 
-			FROM information_schema.columns 
-			WHERE table_name = '%s' 
-			ORDER BY ordinal_position`, tableName), nil
-	case "sqlite":
-		return fmt.Sprintf("PRAGMA table_info(`%s`)", tableName), nil
-	case "mssql":
-		return fmt.Sprintf(`
-			SELECT 
-				COLUMN_NAME,
-				DATA_TYPE,
-				IS_NULLABLE,
-				COLUMN_DEFAULT,
-				COLUMNPROPERTY(OBJECT_ID(TABLE_SCHEMA+'.'+TABLE_NAME), COLUMN_NAME, 'IsIdentity') AS IS_IDENTITY,
-				'' AS EXTRA
-			FROM INFORMATION_SCHEMA.COLUMNS
-			WHERE TABLE_NAME = '%s'
-			ORDER BY ORDINAL_POSITION`, tableName), nil
-	default:
-		return "", fmt.Errorf("unsupported driver: %s", driver)
-	}
-}
-
-// ColumnInfo represents information about a database column
-type ColumnInfo struct {
-	Name    string
-	Type    string
-	NotNull string
-	Default sql.NullString
-	Key     string
-	Extra   string
 }

@@ -39,6 +39,10 @@ type SqlProvider interface {
 	// CreateSchema 创建数据库结构SQL
 	CreateSchema() string
 	DropSchema() string
+	ShowTables() string
+	// QueryTableSchema 获取数据库表结构SQL
+	QueryTableSchema(tableName string) string
+
 	QueryAll() string
 	// QueryOne by version. params: version
 	QueryOne() string
@@ -75,6 +79,14 @@ CREATE TABLE IF NOT EXISTS db_schema_migrations (
 // DropSchema 删除数据库结构
 func (b *ReSqlProvider) DropSchema() string {
 	return "DROP TABLE IF EXISTS db_schema_migrations"
+}
+
+// ShowTables 显示所有表
+func (b *ReSqlProvider) ShowTables() string { return "SHOW TABLES" }
+
+// QueryTableSchema 获取数据库表结构
+func (b *ReSqlProvider) QueryTableSchema(tableName string) string {
+	return fmt.Sprintf("DESCRIBE `%s`", tableName)
 }
 
 // QueryAll 查询所有
@@ -145,6 +157,16 @@ CREATE TABLE IF NOT EXISTS db_schema_migrations (
 );`
 }
 
+// ShowTables 显示所有表
+func (b *SqliteProvider) ShowTables() string {
+	return "SELECT name FROM sqlite_master WHERE type='table'"
+}
+
+// QueryTableSchema 获取数据库表结构
+func (b *SqliteProvider) QueryTableSchema(tableName string) string {
+	return fmt.Sprintf("PRAGMA table_info(`%s`)", tableName)
+}
+
 //
 // region MsSql Provider
 //
@@ -164,6 +186,22 @@ CREATE TABLE db_schema_migrations (
 );`
 }
 
+// ShowTables 显示所有表
+func (b *MSSqlProvider) ShowTables() string {
+	return `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'`
+}
+
+// QueryTableSchema 获取数据库表结构
+func (b *MSSqlProvider) QueryTableSchema(tableName string) string {
+	return fmt.Sprintf(`
+SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT,
+	COLUMNPROPERTY(OBJECT_ID(TABLE_SCHEMA+'.'+TABLE_NAME), COLUMN_NAME, 'IsIdentity') AS IS_IDENTITY,
+	'' AS EXTRA
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = '%s'
+ORDER BY ORDINAL_POSITION`, tableName)
+}
+
 //
 // region PgSql Provider
 //
@@ -173,6 +211,20 @@ CREATE TABLE db_schema_migrations (
 // NOTE: pgsql 绑定参数语法不一样，使用 $N
 type PgSqlProvider struct {
 	ReSqlProvider
+}
+
+// ShowTables 显示所有表
+func (b *PgSqlProvider) ShowTables() string {
+	return `SELECT tablename FROM pg_tables WHERE schemaname = 'public'`
+}
+
+// QueryTableSchema 获取数据库表结构
+func (b *PgSqlProvider) QueryTableSchema(tableName string) string {
+	return fmt.Sprintf(`
+SELECT column_name, data_type, is_nullable, column_default 
+FROM information_schema.columns 
+WHERE table_name = '%s' 
+ORDER BY ordinal_position`, tableName)
 }
 
 // QueryOne 获取指定版本

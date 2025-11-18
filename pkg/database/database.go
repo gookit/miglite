@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/gookit/goutil/x/ccolor"
+	"github.com/gookit/miglite/pkg/migutil"
 )
 
 // supported database drivers
@@ -135,4 +136,80 @@ func (db *DB) DropSchema() error {
 	}
 	_, err = db.Exec(sqlStmt)
 	return err
+}
+
+// ShowTables displays all tables in the database
+func (db *DB) ShowTables() ([]string, error) {
+	provide, err := db.SqlProvider()
+	if err != nil {
+		return nil, fmt.Errorf("unsupported database driver: %s", db.Driver())
+	}
+
+	rows, err := db.Query(provide.ShowTables())
+	if err != nil {
+		return nil, fmt.Errorf("failed to query tables: %v", err)
+	}
+	defer migutil.SafeClose(rows)
+
+	var tables []string
+	for rows.Next() {
+		var tableName string
+		if err := rows.Scan(&tableName); err != nil {
+			return nil, fmt.Errorf("failed to scan table name: %v", err)
+		}
+		tables = append(tables, tableName)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating over table rows: %v", err)
+	}
+	return tables, nil
+}
+
+// ColumnInfo represents information about a database column
+type ColumnInfo struct {
+	Name    string
+	Type    string
+	NotNull string
+	Default sql.NullString
+	Key     string
+	Extra   string
+}
+
+// QueryTableSchema queries the schema of a specific table
+func (db *DB) QueryTableSchema(tableName string) ([]ColumnInfo, error) {
+	provide, err := db.SqlProvider()
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := db.Query(provide.QueryTableSchema(tableName))
+	if err != nil {
+		return nil, fmt.Errorf("failed to query table schema: %v", err)
+	}
+	defer migutil.SafeClose(rows)
+
+	var columns []ColumnInfo
+	for rows.Next() {
+		var col ColumnInfo
+		if db.Driver() == "postgres" {
+			// For PostgreSQL, use different column order
+			err = rows.Scan(&col.Name, &col.Type, &col.NotNull, &col.Default)
+			if err != nil {
+				return nil, fmt.Errorf("failed to scan column info: %v", err)
+			}
+		} else {
+			// For MySQL, SQLite, etc.
+			err = rows.Scan(&col.Name, &col.Type, &col.NotNull, &col.Default, &col.Key, &col.Extra)
+			if err != nil {
+				return nil, fmt.Errorf("failed to scan column info: %v", err)
+			}
+		}
+		columns = append(columns, col)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating over schema rows: %v", err)
+	}
+	return columns, nil
 }
