@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gookit/goutil/x/stdio"
 	"github.com/gookit/miglite/pkg/database"
 )
 
@@ -58,7 +59,7 @@ func GetMigrationsStatus(db *database.DB, allMigrations []*Migration) ([]Record,
 	if err != nil {
 		return nil, fmt.Errorf("failed to query migration status: %v", err)
 	}
-	defer rows.Close()
+	defer stdio.SafeClose(rows)
 
 	// Create status list for all migrations
 	var statuses []Record
@@ -125,7 +126,7 @@ func GetAppliedSortedByDate(db *database.DB, limit int) ([]Record, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to query applied migrations: %v", err)
 	}
-	defer rows.Close()
+	defer stdio.SafeClose(rows)
 
 	var records []Record
 	for rows.Next() {

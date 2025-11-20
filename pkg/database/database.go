@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/gookit/goutil/x/ccolor"
-	"github.com/gookit/miglite/pkg/migutil"
+	"github.com/gookit/goutil/x/stdio"
 )
 
 // supported database drivers
@@ -149,7 +149,7 @@ func (db *DB) ShowTables() ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to query tables: %v", err)
 	}
-	defer migutil.SafeClose(rows)
+	defer stdio.SafeClose(rows)
 
 	var tables []string
 	for rows.Next() {
@@ -187,7 +187,7 @@ func (db *DB) QueryTableSchema(tableName string) ([]ColumnInfo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to query table schema: %v", err)
 	}
-	defer migutil.SafeClose(rows)
+	defer stdio.SafeClose(rows)
 
 	var columns []ColumnInfo
 	for rows.Next() {

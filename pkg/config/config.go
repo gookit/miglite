@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/goccy/go-yaml"
+	"github.com/gookit/goutil/envutil"
 	"github.com/gookit/goutil/fsutil"
-	"github.com/gookit/ini/v2/dotenv"
 	"github.com/gookit/miglite/pkg/migutil"
 )
 
@@ -77,7 +77,9 @@ func Reset() { std = nil }
 // NOTE: will auto load .env file on working directory.
 func Load(configPath string) (*Config, error) {
 	// load .env file
-	_ = dotenv.LoadExists("./")
+	_ = envutil.DotenvLoad(func(cfg *envutil.Dotenv) {
+		cfg.IgnoreNotExist = true
+	})
 	config := &Config{}
 
 	// Load from YAML file if it exists

@@ -50,11 +50,7 @@ type Record struct {
 
 // NewRecord creates a new migration record
 func NewRecord(version string, status string) *Record {
-	return &Record{
-		Version:   version,
-		AppliedAt: time.Now(),
-		Status:    status,
-	}
+	return &Record{Version: version, AppliedAt: time.Now(), Status: status}
 }
 
 // SetStatus updates the status of the migration record

@@ -1,11 +1,10 @@
 module github.com/gookit/miglite
 
-go 1.24
+go 1.24.0
 
 require (
-	github.com/gookit/ini/v2 v2.3.2
 	github.com/goccy/go-yaml v1.18.0
-	github.com/gookit/goutil v0.7.1
+	github.com/gookit/goutil v0.7.2
 )
 
 require (
