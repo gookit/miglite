@@ -67,6 +67,20 @@ migrations:
 - `DATABASE_URL`: 数据库连接 URL (例如: `sqlite://path/to/db.sqlite`, `mysql://user:pass@localhost/dbname`)
 - `MIGRATIONS_PATH`: 迁移文件路径 (默认: `./migrations`)
 
+`ENV` 示例:
+
+```ini
+MIGRATIONS_PATH = "./migrations"
+# sqlite
+DATABASE_URL="sqlite://path/to/db.sqlite"
+# mysql
+DATABASE_URL="mysql://user:passwd@tcp(127.0.0.1:3306)/local_test?charset=utf8mb4&parseTime=True&loc=Local"
+# postgresql
+DATABASE_URL="postgres://host=localhost port=5432 user=username password=password dbname=dbname sslmode=disable"
+```
+
+> **NOTE**: mysql URL 必须带上 `tcp` 协议标记
+
 ### 创建迁移
 
 ```bash

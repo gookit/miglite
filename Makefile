@@ -21,9 +21,10 @@ GO_VERSION := $(shell go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 
 # git commit id
 COMMIT_ID := $(shell git rev-parse HEAD 2> /dev/null || echo 'unknown')
+SHORT_HASH := $(shell git rev-parse --short HEAD 2> /dev/null || echo 'unknown')
 # set dev version unless VERSION is explicitly set via environment
 # manual set: make VERSION=1.2.3
-VERSION ?= $(shell echo "$$(git for-each-ref refs/tags/ --count=1 --sort=-version:refname --format='%(refname:short)' | echo 'main' 2>/dev/null)-dev+$(REV)" | sed 's/^v//')
+VERSION ?= $(shell echo "$$(git for-each-ref refs/tags/ --count=1 --sort=-version:refname --format='%(refname:short)' | echo 'dev' 2>/dev/null)-$(SHORT_HASH)" | sed 's/^v//')
 BUILD_DATE := $(shell date +%Y/%m/%d-%H:%M:%S)
 
 # Full build flags used when building binaries. Not used for test compilation/execution.
@@ -46,24 +47,29 @@ install: ## Install to GOPATH/bin
 	go install $(BUILD_FLAGS) ./cmd/miglite
 	#chmod +x $(GOPATH)/bin/miglite
 
-build-all:linux arm win darwin ## Build for Linux,ARM,OSX,Windows
+build-all: win linux linux-arm darwin darwin-arm ## Build for Linux,ARM,OSX,Windows
 
-linux: ## Build for Linux
+linux: ## Build for Linux AMD64
 	mkdir -p build
 	GOOS=linux GOARCH=amd64 go build $(BUILD_FLAGS) -o build/miglite-linux-amd64 $(MAIN_SRC_FILE)
 	chmod +x build/miglite-linux-amd64
 
-arm: ## Build for ARM
+linux-arm: ## Build for ARM64
 	mkdir -p build
-	GOOS=linux GOARCH=arm go build $(BUILD_FLAGS) -o build/miglite-linux-arm $(MAIN_SRC_FILE)
+	GOOS=linux GOARCH=arm64 go build $(BUILD_FLAGS) -o build/miglite-linux-arm $(MAIN_SRC_FILE)
 	chmod +x build/miglite-linux-arm
 
-darwin: ## Build for OSX
+darwin: ## Build for OSX AMD64
 	mkdir -p build
 	GOOS=darwin GOARCH=amd64 go build $(BUILD_FLAGS) -o build/miglite-darwin-amd64 $(MAIN_SRC_FILE)
 	chmod +x build/miglite-darwin-amd64
 
-win: ## Build for Windows
+darwin-arm: ## Build for OSX ARM64
+	mkdir -p build
+	GOOS=darwin GOARCH=arm64 go build $(BUILD_FLAGS) -o build/miglite-darwin-arm64 $(MAIN_SRC_FILE)
+	chmod +x build/miglite-darwin-arm64
+
+win: ## Build for Windows AMD64
 	mkdir -p build
 	GOOS=windows GOARCH=amd64 go build $(BUILD_FLAGS) -o build/miglite-windows-amd64.exe $(MAIN_SRC_FILE)
 
