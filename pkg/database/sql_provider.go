@@ -6,8 +6,8 @@ import (
 	"github.com/gookit/miglite/pkg/migutil"
 )
 
-// MigrateSchemaName 数据库迁移结构表名
-const MigrateSchemaName = "db_schema_migrations"
+// SchemaTableName 默认数据库迁移记录表名
+var SchemaTableName = "schema_migrations"
 
 // 内置SQL语句提供者适配
 var sqlProviders = map[string]SqlProvider{
@@ -68,8 +68,7 @@ type ReSqlProvider struct{}
 
 // CreateSchema 创建数据库结构
 func (b *ReSqlProvider) CreateSchema() string {
-	return `
-CREATE TABLE IF NOT EXISTS db_schema_migrations (
+	return "CREATE TABLE IF NOT EXISTS " + SchemaTableName + ` (
     version VARCHAR(160) PRIMARY KEY,
     applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     status VARCHAR(24) -- up,skip,down
@@ -78,7 +77,7 @@ CREATE TABLE IF NOT EXISTS db_schema_migrations (
 
 // DropSchema 删除数据库结构
 func (b *ReSqlProvider) DropSchema() string {
-	return "DROP TABLE IF EXISTS db_schema_migrations"
+	return "DROP TABLE IF EXISTS " + SchemaTableName
 }
 
 // ShowTables 显示所有表
@@ -91,42 +90,42 @@ func (b *ReSqlProvider) QueryTableSchema(tableName string) string {
 
 // QueryAll 查询所有
 func (b *ReSqlProvider) QueryAll() string {
-	return "SELECT version, status, applied_at FROM db_schema_migrations"
+	return "SELECT version, status, applied_at FROM " + SchemaTableName
 }
 
 // QueryOne 获取指定版本
 func (b *ReSqlProvider) QueryOne() string {
-	return "SELECT version, status, applied_at FROM db_schema_migrations WHERE version = ?"
+	return "SELECT version, status, applied_at FROM " + SchemaTableName + " WHERE version = ?"
 }
 
 // QueryStatus 查询指定版本状态
 func (b *ReSqlProvider) QueryStatus() string {
-	return "SELECT status FROM db_schema_migrations WHERE version = ?"
+	return "SELECT status FROM " + SchemaTableName + " WHERE version = ?"
 }
 
 // QueryExists 查询指定版本是否存在
 func (b *ReSqlProvider) QueryExists() string {
-	return "SELECT EXISTS(SELECT 1 FROM db_schema_migrations WHERE version = ?)"
+	return "SELECT EXISTS(SELECT 1 FROM " + SchemaTableName + " WHERE version = ?)"
 }
 
 // DeleteByVersion 删除指定版本
 func (b *ReSqlProvider) DeleteByVersion() string {
-	return "DELETE FROM db_schema_migrations WHERE version = ?"
+	return "DELETE FROM " + SchemaTableName + " WHERE version = ?"
 }
 
 // InsertMigration 插入迁移记录
 func (b *ReSqlProvider) InsertMigration() string {
-	return "INSERT INTO db_schema_migrations (version, status) VALUES (?, ?)"
+	return "INSERT INTO " + SchemaTableName + " (version, status) VALUES (?, ?)"
 }
 
 // UpdateMigration 更新迁移记录
 func (b *ReSqlProvider) UpdateMigration() string {
-	return "UPDATE db_schema_migrations SET applied_at = CURRENT_TIMESTAMP, status = ? WHERE version = ?"
+	return "UPDATE " + SchemaTableName + " SET applied_at = CURRENT_TIMESTAMP, status = ? WHERE version = ?"
 }
 
 // GetAppliedSortedByDate 获取所有已迁移的版本，按迁移时间排序
 func (b *ReSqlProvider) GetAppliedSortedByDate() string {
-	return "SELECT version, applied_at FROM db_schema_migrations WHERE status=? ORDER BY applied_at DESC LIMIT ?"
+	return "SELECT version, applied_at FROM " + SchemaTableName + " WHERE status=? ORDER BY applied_at DESC LIMIT ?"
 }
 
 //
@@ -149,8 +148,7 @@ type SqliteProvider struct {
 
 // CreateSchema 创建数据库结构. sqlite 时间字段是 DATETIME
 func (b *SqliteProvider) CreateSchema() string {
-	return `
-CREATE TABLE IF NOT EXISTS db_schema_migrations (
+	return "CREATE TABLE IF NOT EXISTS " + SchemaTableName + `(
     version VARCHAR(160) PRIMARY KEY,
     applied_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     status VARCHAR(24) -- up,skip,down
@@ -178,8 +176,7 @@ type MSSqlProvider struct {
 
 // CreateSchema 创建数据库结构. mssql 使用 DATETIME2 和 IDENTITY
 func (b *MSSqlProvider) CreateSchema() string {
-	return `
-CREATE TABLE db_schema_migrations (
+	return "CREATE TABLE " + SchemaTableName + `(
     version NVARCHAR(160) NOT NULL PRIMARY KEY,
     applied_at DATETIME2 DEFAULT CURRENT_TIMESTAMP,
     status NVARCHAR(24) -- up,skip,down
@@ -229,35 +226,35 @@ ORDER BY ordinal_position`, tableName)
 
 // QueryOne 获取指定版本
 func (b *PgSqlProvider) QueryOne() string {
-	return "SELECT version, status, applied_at FROM db_schema_migrations WHERE version = $1"
+	return "SELECT version, status, applied_at FROM " + SchemaTableName + " WHERE version = $1"
 }
 
 // QueryStatus 查询指定版本状态
 func (b *PgSqlProvider) QueryStatus() string {
-	return "SELECT status FROM db_schema_migrations WHERE version = $1"
+	return "SELECT status FROM " + SchemaTableName + " WHERE version = $1"
 }
 
 // QueryExists 获取指定版本是否存在
 func (b *PgSqlProvider) QueryExists() string {
-	return "SELECT EXISTS(SELECT 1 FROM db_schema_migrations WHERE version = $1)"
+	return "SELECT EXISTS(SELECT 1 FROM " + SchemaTableName + " WHERE version = $1)"
 }
 
 // DeleteByVersion 删除指定版本
 func (b *PgSqlProvider) DeleteByVersion() string {
-	return "DELETE FROM db_schema_migrations WHERE version = $1"
+	return "DELETE FROM " + SchemaTableName + " WHERE version = $1"
 }
 
 // InsertMigration 插入迁移记录
 func (b *PgSqlProvider) InsertMigration() string {
-	return "INSERT INTO db_schema_migrations (version, status) VALUES ($1, $2)"
+	return "INSERT INTO " + SchemaTableName + " (version, status) VALUES ($1, $2)"
 }
 
 // UpdateMigration 插入迁移记录
 func (b *PgSqlProvider) UpdateMigration() string {
-	return "UPDATE db_schema_migrations SET applied_at = CURRENT_TIMESTAMP, status = $1 WHERE version = $2"
+	return "UPDATE " + SchemaTableName + " SET applied_at = CURRENT_TIMESTAMP, status = $1 WHERE version = $2"
 }
 
 // GetAppliedSortedByDate 获取所有已迁移的版本，按迁移时间排序
 func (b *PgSqlProvider) GetAppliedSortedByDate() string {
-	return "SELECT version, applied_at FROM db_schema_migrations WHERE status=$1 ORDER BY applied_at DESC LIMIT $2"
+	return "SELECT version, applied_at FROM " + SchemaTableName + " WHERE status=$1 ORDER BY applied_at DESC LIMIT $2"
 }

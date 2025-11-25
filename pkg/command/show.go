@@ -82,7 +82,7 @@ func showTables(db *DB) error {
 	}
 
 	tables = arrutil.Filter(tables, func(s string) bool {
-		return s != database.MigrateSchemaName
+		return s != database.SchemaTableName
 	})
 
 	ccolor.Printf("📋  Found <green>%d</> table(s):\n", len(tables))
