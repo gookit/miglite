@@ -79,6 +79,8 @@ func Load(configPath string) (*Config, error) {
 	// load .env file
 	_ = envutil.DotenvLoad(func(cfg *envutil.Dotenv) {
 		cfg.IgnoreNotExist = true
+		cfg.LoadFirstExist = true
+		cfg.Files = []string{".env.local", ".env.dev", ".env"}
 	})
 	config := &Config{}
 
@@ -158,6 +160,9 @@ func setDBConfigFromENV(dbCfg *Database) error {
 	if driver := os.Getenv("DATABASE_DRIVER"); driver != "" {
 		dbCfg.Driver = driver
 		dbCfg.SqlDriver = driver
+	}
+	if sqlDriver := os.Getenv("DATABASE_SQL_DRIVER"); sqlDriver != "" {
+		dbCfg.SqlDriver = sqlDriver
 	}
 
 	// Infer driver from DATABASE_URL

@@ -8,21 +8,13 @@ import (
 	"github.com/gookit/goutil/x/stdio"
 )
 
-// supported database drivers
-const (
-	DriverMySQL    = "mysql"
-	DriverMSSQL    = "mssql"
-	DriverPostgres = "postgres"
-	DriverSQLite   = "sqlite"
-)
-
 // DB represents a database connection
 type DB struct {
 	*sql.DB
 	dsn string
 	// more information about the database
 	debug  bool
-	driver string
+	driver string // formatted driver name. eg migcom.DriverMySQL
 	// provider
 	provider SqlProvider
 }
@@ -43,18 +35,17 @@ func Close() error { return GetDB().Close() }
 // Connect establishes a database connection
 //
 //	driver: mysql, postgres, sqlite
-//	dsn:
+//	DSN:
 //	 - mysql: username:password@tcp(host:port)/dbname?charset=utf8mb4&parseTime=True&loc=Local
 //	 - postgres: host=localhost port=5432 user=username password=password dbname=dbname sslmode=disable
 //	 - sqlite: filepath
-func Connect(driver, dsn string) (*DB, error) {
+func Connect(driver, sqlDriver, dsn string) (*DB, error) {
 	if std != nil && std.dsn == dsn {
 		return std, nil
 	}
 
 	// get the register driver name
-	regName := sqlDriver(driver)
-	db, err := sql.Open(regName, dsn)
+	db, err := sql.Open(sqlDriver, dsn)
 	if err != nil {
 		return nil, err
 	}
@@ -69,21 +60,7 @@ func Connect(driver, dsn string) (*DB, error) {
 	return std, nil
 }
 
-func sqlDriver(driver string) string {
-	if driver == DriverSQLite {
-		// returns a list of supported SQL drivers
-		registered := sql.Drivers()
-		for _, name := range registered {
-			if name == "sqlite3" { // for github.com/mattn/go-sqlite3
-				driver = "sqlite3"
-				break
-			}
-		}
-	}
-	return driver
-}
-
-// Driver returns the database driver name
+// Driver returns the formatted driver name
 func (db *DB) Driver() string { return db.driver }
 
 // Close closes the database connection

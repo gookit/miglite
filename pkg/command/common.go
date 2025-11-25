@@ -52,9 +52,10 @@ func initConfigAndDB() (*config.Config, *database.DB, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	dbCfg := cfg.Database
 
 	// Connect to database
-	db, err := database.Connect(cfg.Database.SqlDriver, cfg.Database.DSN)
+	db, err := database.Connect(dbCfg.Driver, dbCfg.SqlDriver, dbCfg.DSN)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to connect to database: %v", err)
 	}

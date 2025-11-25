@@ -8,6 +8,7 @@ import (
 	"github.com/gookit/goutil/cflag/capp"
 	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/miglite/pkg/migration"
+	"github.com/gookit/miglite/pkg/migutil"
 )
 
 // StatusCommand shows the status of migrations
@@ -41,7 +42,7 @@ func HandleStatus() error {
 	// Get migration statuses
 	statuses, err := migration.GetMigrationsStatus(db, migrations)
 	if err != nil {
-		if strings.Contains(err.Error(), "no such table") {
+		if migutil.IsTableNotExists(db.Driver(), err.Error()) {
 			err = errors.New("migration table does not exist. please run `miglite init` to create it")
 		}
 		return err
