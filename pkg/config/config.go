@@ -153,7 +153,12 @@ func checkDatabaseConfig(dbCfg *Database) error {
 	} else if fmtDriver == migcom.DriverMySQL {
 		// fix: must set multiStatements=true to DSN
 		if !strings.Contains(dbCfg.DSN, "multiStatements=true") {
-			dbCfg.DSN += "&multiStatements=true"
+			if strings.Contains(dbCfg.DSN, "?") {
+				dbCfg.DSN += "&"
+			} else {
+				dbCfg.DSN += "?"
+			}
+			dbCfg.DSN += "multiStatements=true"
 		}
 	}
 	return nil

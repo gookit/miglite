@@ -64,7 +64,7 @@ migrations:
 
 #### 环境变量
 
-- `DATABASE_URL`: 数据库连接 URL (例如: `sqlite://path/to/db.sqlite`, `mysql://user:pass@localhost/dbname`)
+- `DATABASE_URL`: 数据库连接 URL (例如: `sqlite://path/to/your.db`, `mysql://user:pass@localhost/dbname`)
 - `MIGRATIONS_PATH`: 迁移文件路径 (默认: `./migrations`)
 
 `ENV` 示例:
@@ -72,7 +72,7 @@ migrations:
 ```ini
 MIGRATIONS_PATH = "./migrations"
 # sqlite
-DATABASE_URL="sqlite://path/to/db.sqlite"
+DATABASE_URL="sqlite://path/to/your.db"
 # mysql
 DATABASE_URL="mysql://user:passwd@tcp(127.0.0.1:3306)/local_test?charset=utf8mb4&parseTime=True&loc=Local"
 # postgresql

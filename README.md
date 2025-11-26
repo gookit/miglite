@@ -64,7 +64,7 @@ migrations:
 
 #### Environment Variables
 
-- `DATABASE_URL`: Database connection URL (e.g., `sqlite://path/to/db.sqlite`, `mysql://user:pass@tcp(host:port)/dbname`)
+- `DATABASE_URL`: Database connection URL (e.g., `sqlite://path/to/your.db`, `mysql://user:pass@tcp(host:port)/dbname`)
 - `MIGRATIONS_PATH`: Migration files path (default: `./migrations`)
 
 **Examples**:
@@ -72,7 +72,7 @@ migrations:
 ```ini
 MIGRATIONS_PATH = "./migrations"
 # sqlite
-DATABASE_URL="sqlite://path/to/db.sqlite"
+DATABASE_URL="sqlite://path/to/your.db"
 # mysql
 DATABASE_URL="mysql://user:passwd@tcp(127.0.0.1:3306)/local_test?charset=utf8mb4&parseTime=True&loc=Local"
 # postgresql

@@ -36,8 +36,9 @@ func main() {
 
 	// Run the application
 	app.Run()
-	// For testing
-	// err := app.RunWithArgs([]string{"init", "-h"})
+	// For debug/testing
+	// fmt.Println("Workdir", sysutil.Workdir())
+	// err := app.RunWithArgs([]string{"st"})
 	// if err != nil {
 	// 	fmt.Println(err)
 	// }

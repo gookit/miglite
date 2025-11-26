@@ -7,7 +7,7 @@ import (
 )
 
 // SchemaTableName 默认数据库迁移记录表名
-var SchemaTableName = "schema_migrations"
+var SchemaTableName = "z_schema_migrations"
 
 // 内置SQL语句提供者适配
 var sqlProviders = map[string]SqlProvider{
