@@ -8,6 +8,7 @@ import (
 	"github.com/goccy/go-yaml"
 	"github.com/gookit/goutil/envutil"
 	"github.com/gookit/goutil/fsutil"
+	"github.com/gookit/miglite/pkg/migcom"
 	"github.com/gookit/miglite/pkg/migutil"
 )
 
@@ -149,6 +150,11 @@ func checkDatabaseConfig(dbCfg *Database) error {
 		if dbDSN == "" {
 			return fmt.Errorf("database DSN is required")
 		}
+	} else if fmtDriver == migcom.DriverMySQL {
+		// fix: must set multiStatements=true to DSN
+		if !strings.Contains(dbCfg.DSN, "multiStatements=true") {
+			dbCfg.DSN += "&multiStatements=true"
+		}
 	}
 	return nil
 }
@@ -214,8 +220,9 @@ func buildDSNFromConfig(dbCfg *Database) string {
 		if dbCfg.Port <= 0 {
 			dbCfg.Port = 3306
 		}
+		// fix: need set multiStatements=true for migration
 		return fmt.Sprintf(
-			"%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+			"%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local&multiStatements=true",
 			dbCfg.User, dbCfg.Password, dbCfg.Host, dbCfg.Port, dbCfg.DBName,
 		)
 	}
