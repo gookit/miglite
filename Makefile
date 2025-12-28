@@ -32,7 +32,7 @@ BUILD_FLAGS := -ldflags \
   " -s -w \
    -X main.Version=$(VERSION)\
    -X main.GoVersion=$(GO_VERSION)\
-   -X main.BuildTime='$(BUILD_DATE)'\
+   -X main.BuildTime=$(BUILD_DATE)\
    -X main.GitCommit=$(COMMIT_ID)"
 
 ##there some make command for the project
