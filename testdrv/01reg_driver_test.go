@@ -13,7 +13,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-var app = command.NewApp("miglite", "0.0.1", "Go minimal database migration tool")
+var app = command.NewApp("miglite", "0.0.1", "Go minimal database migration tool(testing)")
 
 func TestMain(m *testing.M) {
 	fmt.Println("[TestMain] Workdir:", sysutil.Workdir())

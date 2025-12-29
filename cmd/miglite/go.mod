@@ -6,7 +6,7 @@ require (
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/gookit/miglite v1.0.0
 	github.com/lib/pq v1.10.9
-	modernc.org/sqlite v1.42.1
+	modernc.org/sqlite v1.42.2
 )
 
 require (
