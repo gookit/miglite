@@ -60,19 +60,6 @@ type Config struct {
 	Migrations Migrations `yaml:"migrations"`
 }
 
-var std *Config
-
-// Get returns the default configuration
-func Get() *Config {
-	if std == nil {
-		panic("config not load and initialized")
-	}
-	return std
-}
-
-// Reset the default configuration
-func Reset() { std = nil }
-
 // Load loads configuration from YAML file and environment variables
 //
 // NOTE: will auto load .env file on working directory.
@@ -110,7 +97,6 @@ func Load(configPath string) (*Config, error) {
 	// Set migrations config
 	initMigrationsConfig(&config.Migrations, config.Database.Driver)
 
-	std = config
 	return config, nil
 }
 

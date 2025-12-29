@@ -26,9 +26,17 @@ func bindCommonFlags(c *capp.Cmd) {
 	c.StringVar(&ConfigFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
 }
 
+// cache for testing
+var cfg *config.Config
+
 func initLoadConfig() (*config.Config, error) {
+	var err error
+	if cfg != nil {
+		return cfg, nil
+	}
+
 	// Load configuration
-	cfg, err := config.Load(ConfigFile)
+	cfg, err = config.Load(ConfigFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load config: %v", err)
 	}
@@ -47,8 +55,9 @@ func initLoadConfig() (*config.Config, error) {
 }
 
 func initConfigAndDB() (*config.Config, *database.DB, error) {
+	var err error
 	// Load configuration
-	cfg, err := initLoadConfig()
+	cfg, err = initLoadConfig()
 	if err != nil {
 		return nil, nil, err
 	}
