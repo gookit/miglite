@@ -43,8 +43,8 @@ help:
 
 ##Available Commands:
 
-install: ## Install to GOPATH/bin
-	go install $(BUILD_FLAGS) ./cmd/miglite
+install: ## Install to GOPATH/bin(local dev)
+	cd cmd/miglite && go install $(BUILD_FLAGS) .
 	#chmod +x $(GOPATH)/bin/miglite
 
 build-all: win linux linux-arm darwin darwin-arm ## Build for Linux,ARM,OSX,Windows

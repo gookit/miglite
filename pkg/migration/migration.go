@@ -89,10 +89,10 @@ func (m *Migration) ParseContents() error {
 		}
 
 		// TODO 后续支持 UP, DOWN 后面跟自定义设置: -- Migrate:UP(option=value,)
-		if strings.HasSuffix(trimmed, MarkUp) {
+		if strings.HasPrefix(trimmed, MarkUp) {
 			currentSection = "up"
 			continue
-		} else if strings.HasSuffix(trimmed, MarkDown) {
+		} else if strings.HasPrefix(trimmed, MarkDown) {
 			currentSection = "down"
 			continue
 		}
