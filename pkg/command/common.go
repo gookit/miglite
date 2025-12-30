@@ -14,6 +14,11 @@ import (
 
 const TimeLayout = "2006-01-02 15:04:05"
 
+// OnConfigLoaded hook. you can modify or validate the configuration here.
+var OnConfigLoaded = func(cfg *config.Config) error {
+	return nil
+}
+
 var (
 	// ShowVerbose flag
 	ShowVerbose bool
@@ -39,6 +44,13 @@ func initLoadConfig() (*config.Config, error) {
 	cfg, err = config.Load(ConfigFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load config: %v", err)
+	}
+
+	// fire OnConfigLoaded hook
+	if OnConfigLoaded != nil {
+		if err = OnConfigLoaded(cfg); err != nil {
+			return nil, err
+		}
 	}
 
 	if envFiles := envutil.LoadedEnvFiles(); len(envFiles) > 0 {
