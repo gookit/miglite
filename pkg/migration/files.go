@@ -55,10 +55,10 @@ func CreateMigration(migrationsDir, name string) (string, error) {
 --
 
 %s
--- Add your migration SQL here
+-- Add your migration SQL here 👇
 
 %s
--- Add your rollback SQL here (optional)
+-- Add your rollback SQL here (optional 👇)
 `, name, userLine, timestamp, MarkUp, MarkDown)
 
 	// Ensure the migrations directory exists

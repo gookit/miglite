@@ -119,7 +119,7 @@ func (m *Migration) ParseContents() error {
 
 	// 验证必须包含 UP 部分
 	if m.UpSection == "" {
-		return fmt.Errorf("migration file %s does not contain valid '-- Migrate:UP' section", m.FilePath)
+		return fmt.Errorf("migration file %s does not contain valid SQL in '-- Migrate:UP' section", m.FilePath)
 	}
 	return nil
 }
