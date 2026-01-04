@@ -14,7 +14,7 @@
 # TAG=$(tag)
 
 BIN_NAME=miglite
-MAIN_SRC_FILE=cmd/miglite/main.go
+MAIN_SRC_FILE=./main.go
 #ROOT_PACKAGE := main
 #VERSION=$(shell git for-each-ref refs/tags/ --count=1 --sort=-version:refname --format='%(refname:short)' 1 |  sed 's/^v//')
 GO_VERSION := $(shell go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
@@ -48,6 +48,7 @@ install: ## Install to GOPATH/bin(local dev)
 	#chmod +x $(GOPATH)/bin/miglite
 
 build-all: win linux linux-arm darwin darwin-arm ## Build for Linux,ARM,OSX,Windows
+	ls -alh ./build
 
 linux: ## Build for Linux AMD64
 	mkdir -p build
