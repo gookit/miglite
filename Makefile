@@ -51,27 +51,32 @@ build-all: win linux linux-arm darwin darwin-arm ## Build for Linux,ARM,OSX,Wind
 
 linux: ## Build for Linux AMD64
 	mkdir -p build
-	GOOS=linux GOARCH=amd64 go build $(BUILD_FLAGS) -o build/miglite-linux-amd64 $(MAIN_SRC_FILE)
+	cd cmd/miglite && GOOS=linux GOARCH=amd64 go build $(BUILD_FLAGS) -o miglite-linux-amd64 $(MAIN_SRC_FILE)
+	cp cmd/miglite/miglite-linux-amd64 build/miglite-linux-amd64
 	chmod +x build/miglite-linux-amd64
 
 linux-arm: ## Build for ARM64
 	mkdir -p build
-	GOOS=linux GOARCH=arm64 go build $(BUILD_FLAGS) -o build/miglite-linux-arm $(MAIN_SRC_FILE)
+	cd cmd/miglite && GOOS=linux GOARCH=arm64 go build $(BUILD_FLAGS) -o miglite-linux-arm $(MAIN_SRC_FILE)
+	cp cmd/miglite/miglite-linux-arm build/miglite-linux-arm
 	chmod +x build/miglite-linux-arm
 
 darwin: ## Build for OSX AMD64
 	mkdir -p build
-	GOOS=darwin GOARCH=amd64 go build $(BUILD_FLAGS) -o build/miglite-darwin-amd64 $(MAIN_SRC_FILE)
+	cd cmd/miglite && GOOS=darwin GOARCH=amd64 go build $(BUILD_FLAGS) -o miglite-darwin-amd64 $(MAIN_SRC_FILE)
+	cp cmd/miglite/miglite-darwin-amd64 build/miglite-darwin-amd64
 	chmod +x build/miglite-darwin-amd64
 
 darwin-arm: ## Build for OSX ARM64
 	mkdir -p build
-	GOOS=darwin GOARCH=arm64 go build $(BUILD_FLAGS) -o build/miglite-darwin-arm64 $(MAIN_SRC_FILE)
+	cd cmd/miglite && GOOS=darwin GOARCH=arm64 go build $(BUILD_FLAGS) -o miglite-darwin-arm64 $(MAIN_SRC_FILE)
+	cp cmd/miglite/miglite-darwin-arm64 build/miglite-darwin-arm64
 	chmod +x build/miglite-darwin-arm64
 
 win: ## Build for Windows AMD64
 	mkdir -p build
-	GOOS=windows GOARCH=amd64 go build $(BUILD_FLAGS) -o build/miglite-windows-amd64.exe $(MAIN_SRC_FILE)
+	cd cmd/miglite && GOOS=windows GOARCH=amd64 go build $(BUILD_FLAGS) -o miglite-windows-amd64.exe $(MAIN_SRC_FILE)
+	cp cmd/miglite/miglite-windows-amd64.exe build/miglite-windows-amd64.exe
 
   clean:     ## Clean all created artifacts
 clean:
