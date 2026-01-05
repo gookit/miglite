@@ -27,7 +27,7 @@ func InitCommand() *capp.Cmd {
 
 // HandleInit handles the init command logic
 func HandleInit(opt InitOption) error {
-	_, db, err := initConfigAndDB()
+	db, err := initConfigAndDB()
 	if err != nil {
 		return err
 	}

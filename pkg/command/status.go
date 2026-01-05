@@ -27,7 +27,7 @@ func StatusCommand() *capp.Cmd {
 // HandleStatus display migration status
 func HandleStatus() error {
 	// Load configuration and connect to database
-	cfg, db, err := initConfigAndDB()
+	db, err := initConfigAndDB()
 	if err != nil {
 		return err
 	}

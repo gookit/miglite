@@ -48,7 +48,7 @@ func HandleExec(opt ExecOption) error {
 	}
 
 	// Load configuration and connect to database
-	_, db, err := initConfigAndDB()
+	db, err := initConfigAndDB()
 	if err != nil {
 		return err
 	}

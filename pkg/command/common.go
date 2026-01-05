@@ -35,6 +35,11 @@ func bindCommonFlags(c *capp.Cmd) {
 // cache for testing
 var cfg *config.Config
 
+// Cfg get config instance
+func Cfg() *config.Config {
+	return cfg
+}
+
 func initLoadConfig() (*config.Config, error) {
 	var err error
 	if cfg != nil {
@@ -92,4 +97,8 @@ func formatTime(t time.Time) string {
 		return "N/A"
 	}
 	return t.Format(TimeLayout)
+}
+
+func findMigrations() ([]*migration.Migration, error) {
+	return migration.FindMigrations(cfg.Migrations.Path, cfg.Migrations.Recursive)
 }

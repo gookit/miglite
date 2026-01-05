@@ -34,7 +34,7 @@ func DownCommand() *capp.Cmd {
 // HandleDown migration logic
 func HandleDown(opt DownOption) error {
 	// Load configuration and connect to database
-	cfg, db, err := initConfigAndDB()
+	db, err := initConfigAndDB()
 	if err != nil {
 		return err
 	}
