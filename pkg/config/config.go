@@ -109,8 +109,13 @@ func initMigrationsConfig(migConfig *Migrations, fmtDriver string) {
 	dirPath := migConfig.Path
 	if dirPath == "" {
 		dirPath = "./migrations"
-	} else if strings.Contains(dirPath, "{driver}") {
-		dirPath = strings.Replace(dirPath, "{driver}", fmtDriver, 1)
+	} else {
+		if strings.Contains(dirPath, "{driver}") {
+			dirPath = strings.Replace(dirPath, "{driver}", fmtDriver, 1)
+		}
+
+		// parse ENV vars in migrations path
+		dirPath = envutil.ParseValue(dirPath)
 	}
 
 	migConfig.Path = dirPath
