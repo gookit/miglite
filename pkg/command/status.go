@@ -11,11 +11,17 @@ import (
 	"github.com/gookit/miglite/pkg/migutil"
 )
 
+// StatusOption status command option
+type StatusOption struct {
+}
+
 // StatusCommand shows the status of migrations
 func StatusCommand() *capp.Cmd {
+	opt := StatusOption{}
+
 	// List applied and pending migrations
 	c := capp.NewCmd("status", "Show the status of migrations", func(c *capp.Cmd) error {
-		return HandleStatus()
+		return HandleStatus(opt)
 	})
 
 	c.Aliases = []string{"st"} // , "list", "ls"
@@ -25,7 +31,7 @@ func StatusCommand() *capp.Cmd {
 }
 
 // HandleStatus display migration status
-func HandleStatus() error {
+func HandleStatus(_ StatusOption) error {
 	// Load configuration and connect to database
 	db, err := initConfigAndDB()
 	if err != nil {

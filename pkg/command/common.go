@@ -36,8 +36,13 @@ func bindCommonFlags(c *capp.Cmd) {
 var cfg *config.Config
 
 // Cfg get config instance
-func Cfg() *config.Config {
-	return cfg
+func Cfg() *config.Config { return cfg }
+
+// SetCfg set config instance. use on manual run logic.
+func SetCfg(c *config.Config) {
+	cfg = c
+	ConfigFile = c.ConfigFile
+	ShowVerbose = c.Verbose
 }
 
 func initLoadConfig() (*config.Config, error) {
