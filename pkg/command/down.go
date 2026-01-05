@@ -52,7 +52,7 @@ func HandleDown(opt DownOption) error {
 
 	// Discover migrations
 	count := opt.Number
-	migrations, err := migration.FindMigrations(cfg.Migrations.Path)
+	migrations, err := findMigrations()
 	if err != nil {
 		return fmt.Errorf("failed to discover migrations: %v", err)
 	}

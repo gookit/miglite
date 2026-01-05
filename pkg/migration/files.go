@@ -77,9 +77,30 @@ func CreateMigration(migrationsDir, name string) (string, error) {
 }
 
 // FindMigrations finds all migration files in the specified directory, and returns them sorted by timestamp
-func FindMigrations(migrationsDir string) ([]*Migration, error) {
+func FindMigrations(migrationsDir string, recursive bool) ([]*Migration, error) {
 	var migrations []*Migration
 	ccolor.Printf("🔎  Discovering migrations from <green>%s</>\n", migrationsDir)
+
+	// 禁用递归：只查找当前目录的sql文件
+	if !recursive {
+		err := fsutil.FindInDir(migrationsDir, func(path string, d fs.DirEntry) error {
+			if d.IsDir() {
+				return nil
+			}
+
+			// Only process .sql files
+			fName := d.Name()
+			if fName[0] != '_' && strings.HasSuffix(fName, ".sql") {
+				migration, err := NewMigration(path)
+				if err != nil {
+					return err
+				}
+				migrations = append(migrations, migration)
+			}
+			return nil
+		})
+		return migrations, err
+	}
 
 	// 以下划线开头的目录会被忽略 eg: _backup/xx.sql
 	ignorePart := "/_"
@@ -99,7 +120,8 @@ func FindMigrations(migrationsDir string) ([]*Migration, error) {
 		}
 
 		// Only process .sql files
-		if strings.HasSuffix(d.Name(), ".sql") {
+		fName := d.Name()
+		if fName[0] != '_' && strings.HasSuffix(fName, ".sql") {
 			migration, err := NewMigration(path)
 			if err != nil {
 				return err

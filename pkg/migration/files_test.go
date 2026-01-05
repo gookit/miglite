@@ -52,9 +52,13 @@ func TestCreateMigration(t *testing.T) {
 	assert.FileExists(t, filePath)
 
 	t.Run("find", func(t *testing.T) {
-		migrations, err1 := FindMigrations(parentDir)
+		migrations, err1 := FindMigrations(parentDir, true)
 		assert.NoError(t, err1)
 		assert.Eq(t, 2, len(migrations))
+
+		migrations, err1 = FindMigrations(parentDir, false)
+		assert.NoError(t, err1)
+		assert.Eq(t, 1, len(migrations))
 		dump.P(migrations)
 	})
 }

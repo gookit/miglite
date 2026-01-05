@@ -34,7 +34,7 @@ func HandleStatus() error {
 	defer db.SilentClose()
 
 	// Discover migrations
-	migrations, err := migration.FindMigrations(cfg.Migrations.Path)
+	migrations, err := findMigrations()
 	if err != nil {
 		return fmt.Errorf("failed to discover migrations: %v", err)
 	}

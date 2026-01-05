@@ -10,6 +10,7 @@ import (
 	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/miglite/pkg/config"
 	"github.com/gookit/miglite/pkg/database"
+	"github.com/gookit/miglite/pkg/migration"
 )
 
 const TimeLayout = "2006-01-02 15:04:05"
@@ -66,24 +67,24 @@ func initLoadConfig() (*config.Config, error) {
 	return cfg, nil
 }
 
-func initConfigAndDB() (*config.Config, *database.DB, error) {
+func initConfigAndDB() (*database.DB, error) {
 	var err error
 	// Load configuration
 	cfg, err = initLoadConfig()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	dbCfg := cfg.Database
 
 	// Connect to database
 	db, err := database.Connect(dbCfg.Driver, dbCfg.SqlDriver, dbCfg.DSN)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to connect to database: %v", err)
+		return nil, fmt.Errorf("failed to connect to database: %v", err)
 	}
 
 	db.SetDebug(ShowVerbose)
 	ccolor.Printf("✅  Database connect successful! driver: <green>%s</>\n", db.Driver())
-	return cfg, db, nil
+	return db, nil
 }
 
 func formatTime(t time.Time) string {

@@ -56,7 +56,7 @@ func HandleUp(opt UpOption) error {
 	}
 
 	// Discover migrations
-	migrations, err2 := migration.FindMigrations(cfg.Migrations.Path)
+	migrations, err2 := findMigrations()
 	if err2 != nil {
 		return fmt.Errorf("failed to discover migrations: %v", err2)
 	}
