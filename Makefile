@@ -58,9 +58,9 @@ linux: ## Build for Linux AMD64
 
 linux-arm: ## Build for ARM64
 	mkdir -p build
-	cd cmd/miglite && GOOS=linux GOARCH=arm64 go build $(BUILD_FLAGS) -o miglite-linux-arm $(MAIN_SRC_FILE)
-	cp cmd/miglite/miglite-linux-arm build/miglite-linux-arm
-	chmod +x build/miglite-linux-arm
+	cd cmd/miglite && GOOS=linux GOARCH=arm64 go build $(BUILD_FLAGS) -o miglite-linux-arm64 $(MAIN_SRC_FILE)
+	cp cmd/miglite/miglite-linux-arm64 build/miglite-linux-arm64
+	chmod +x build/miglite-linux-arm64
 
 darwin: ## Build for OSX AMD64
 	mkdir -p build

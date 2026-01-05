@@ -55,6 +55,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           files: |
             build/miglite-darwin-amd64
+            build/miglite-darwin-arm64
             build/miglite-linux-amd64
-            build/miglite-linux-arm
+            build/miglite-linux-arm64
             build/miglite-windows-amd64.exe
