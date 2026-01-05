@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/gookit/miglite"
 	"github.com/gookit/miglite/pkg/command"
 
 	// Register database drivers
@@ -29,7 +28,7 @@ var (
 //  run: go run .\cmd\miglite
 //  install: go install .\cmd\miglite
 func main() {
-	miglite.InitInfo(Version, GoVersion, BuildTime, GitCommit)
+	command.SetBuildInfo(Version, GoVersion, BuildTime, GitCommit)
 
 	// Create the CLI application
 	app := command.NewApp("miglite", Version, "Database schema migration tool implemented in Go")

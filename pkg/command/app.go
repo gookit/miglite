@@ -1,11 +1,28 @@
 package command
 
 import (
+	"strings"
+
 	"github.com/gookit/goutil/cflag/capp"
 	"github.com/gookit/goutil/strutil"
 	"github.com/gookit/goutil/x/ccolor"
-	"github.com/gookit/miglite"
 )
+
+var (
+	// Version represents the version of the application
+	Version   = "0.1.0"
+	BuildTime = "2025-11-05T09:00:00Z"
+	GitCommit = "ab3cd4ef"
+	GoVersion = "1.21"
+)
+
+// SetBuildInfo initializes the version, build time, and git commit
+func SetBuildInfo(version, goVer, buildTime, gitCommit string) {
+	Version = version
+	GoVersion = goVer
+	BuildTime = strings.Trim(buildTime, `'"`)
+	GitCommit = gitCommit
+}
 
 var showVersion bool
 
@@ -44,7 +61,7 @@ func beforeRun(app *capp.App) bool {
 <green>Build Date</>: %s
 <green>Git Commit</>: %s
 <green>Go Version</>: %s
-`, app.Version, miglite.BuildTime, strutil.Substr(miglite.GitCommit, 0, 10), miglite.GoVersion)
+`, app.Version, BuildTime, strutil.Substr(GitCommit, 0, 10), GoVersion)
 		return false
 	}
 
