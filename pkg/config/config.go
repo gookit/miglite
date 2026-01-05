@@ -44,18 +44,20 @@ type Database struct {
 
 // Migrations configuration
 type Migrations struct {
-	// Path to the migrations file directory.
+	// Path to the migrations file directory. default: ./migrations
 	//  - allow use string-vars: {driver}
+	//  - allow use ENV-vars: ${APP_MODULE}
 	Path string `yaml:"path"`
-	// Use date(YYYY) as directory TODO
-	DateDir bool `yaml:"date_dir"`
-	// Table name for migration tracking TODO
+	// Table name for migration record table TODO
 	Table string `yaml:"table"`
+	// Recursive search for migration SQL files. default: true
+	Recursive bool `yaml:"recursive"`
 }
 
 // Config holds the application configuration
 type Config struct {
 	ConfigFile string     `yaml:"-"` // internal use
+	Verbose bool `yaml:"verbose"`
 	Database   Database   `yaml:"database"`
 	Migrations Migrations `yaml:"migrations"`
 }
@@ -70,7 +72,9 @@ func Load(configPath string) (*Config, error) {
 		cfg.LoadFirstExist = true
 		cfg.Files = []string{".env.local", ".env.dev", ".env"}
 	})
-	config := &Config{}
+	config := &Config{
+		Migrations: Migrations{Recursive: true},
+	}
 
 	// Load from YAML file if it exists
 	if fsutil.FileExist(configPath) {
