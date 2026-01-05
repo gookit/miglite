@@ -14,6 +14,8 @@
 - Developed based on `database/sql` without adding any driver dependencies by default
 - Uses raw SQL files as migration files
   - SQL filename format: `YYYYMMDD-HHMMSS-{migration-name}.sql`
+  - All SQL files in the `MIGRATIONS_PATH` directory are recursively searched
+  - Directories starting with `_` are ignored when looking for SQL files (eg. `_backup/xx.sql`)
 - Migration SQL is executed within transactions to ensure data consistency
 - Can run migrations with zero configuration via environment variables (e.g., `DATABASE_URL`, `MIGRATIONS_PATH`)
   - Automatically attempts to load `.env` file in the directory

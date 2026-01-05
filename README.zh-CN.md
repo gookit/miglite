@@ -14,6 +14,8 @@
 - 基于 `database/sql` 进行开发，默认不添加任何驱动依赖包
 - 基于原始 SQL 方式作为迁移文件
     - 固定文件名格式为 `YYYYMMDD-HHMMSS-{migration-name}.sql`
+    - 会递归搜索 `MIGRATIONS_PATH` 目录下的所有sql文件
+    - 查找sql文件时会忽略以 `_` 开始的目录(eg. `_backup/xx.sql`)
 - 迁移 SQL 都在事物中执行，确保数据一致性
 - 可以通过环境变量零配置直接运行迁移(eg: `DATABASE_URL`, `MIGRATIONS_PATH`)
     - 会自动尝试加载目录下的 `.env` 文件

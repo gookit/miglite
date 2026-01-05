@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/gookit/goutil/testutil/assert"
-	"github.com/gookit/miglite/pkg/config"
+	"github.com/gookit/miglite/pkg/command"
 	"github.com/gookit/miglite/pkg/database"
 	"github.com/gookit/miglite/pkg/migration"
 )
@@ -24,7 +24,8 @@ func TestMigration_sqlite(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Discover migrations
-	migrations, err := migration.FindMigrations(config.Get().Migrations.Path)
+	migCfg := command.Cfg().Migrations
+	migrations, err := migration.FindMigrations(migCfg.Path, migCfg.Recursive)
 	assert.NoError(t, err)
 
 	// Execute migrations
