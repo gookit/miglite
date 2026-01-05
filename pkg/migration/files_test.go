@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/gookit/goutil/dump"
 	"github.com/gookit/goutil/testutil/assert"
 )
 
@@ -23,25 +24,37 @@ func TestParseFilename(t *testing.T) {
 
 func TestCreateMigration(t *testing.T) {
 	// Create a temporary directory for testing
-	tempDir := "./test_migrations"
+	parentDir := "./testdata/migtest"
+	tempDir := "./testdata/migtest/subdir"
+	_ = os.RemoveAll(parentDir)
 	err := os.MkdirAll(tempDir, 0755)
 	assert.NoError(t, err)
-	defer os.RemoveAll(tempDir)
 
 	// Test creating a migration
 	name := "test-migration"
-	filePath, err := CreateMigration(tempDir, name)
-	if err != nil {
-		t.Fatalf("Failed to create migration: %v", err)
-	}
-
-	// Verify that the file was created
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		t.Fatalf("Migration file was not created: %s", filePath)
-	}
+	filePath, err := CreateMigration(parentDir, name)
+	assert.NoError(t, err)
+	assert.FileExists(t, filePath)
 
 	// Read the file and verify the content
 	content, err := os.ReadFile(filePath)
 	assert.NoError(t, err)
 	assert.StrContainsAll(t, string(content), []string{MarkUp, MarkDown})
+
+	// create migration in subdir
+	filePath, err = CreateMigration(tempDir, "subdir-migration")
+	assert.NoError(t, err)
+	assert.FileExists(t, filePath)
+
+	// 以下划线开头的目录会被忽略
+	filePath, err = CreateMigration(parentDir+"/_ignoredir", "ignore-migration")
+	assert.NoError(t, err)
+	assert.FileExists(t, filePath)
+
+	t.Run("find", func(t *testing.T) {
+		migrations, err1 := FindMigrations(parentDir)
+		assert.NoError(t, err1)
+		assert.Eq(t, 2, len(migrations))
+		dump.P(migrations)
+	})
 }

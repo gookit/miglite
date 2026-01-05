@@ -23,4 +23,8 @@ ALTER TABLE users
 	assert.NoErr(t, err)
 	assert.Eq(t, "ALTER TABLE users\n    ADD COLUMN password_hash TEXT;", m.UpSection)
 	assert.Empty(t, m.DownSection)
+
+	m.ResetContents()
+	assert.Empty(t, m.Contents)
+	assert.Empty(t, m.UpSection)
 }

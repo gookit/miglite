@@ -2,9 +2,11 @@ package migration
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"os/user"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -62,12 +64,12 @@ func CreateMigration(migrationsDir, name string) (string, error) {
 `, name, userLine, timestamp, MarkUp, MarkDown)
 
 	// Ensure the migrations directory exists
-	if err := os.MkdirAll(migrationsDir, 0755); err != nil {
+	if err = os.MkdirAll(migrationsDir, 0755); err != nil {
 		return "", fmt.Errorf("failed to create migrations directory: %v", err)
 	}
 
 	// Write the content to the file
-	if err := os.WriteFile(filePath, []byte(content), 0644); err != nil {
+	if err = os.WriteFile(filePath, []byte(content), 0644); err != nil {
 		return "", fmt.Errorf("failed to write migration file: %v", err)
 	}
 
@@ -79,16 +81,25 @@ func FindMigrations(migrationsDir string) ([]*Migration, error) {
 	var migrations []*Migration
 	ccolor.Printf("🔎  Discovering migrations from <green>%s</>\n", migrationsDir)
 
-	err := filepath.Walk(migrationsDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
+	// 以下划线开头的目录会被忽略 eg: _backup/xx.sql
+	ignorePart := "/_"
+	if runtime.GOOS == "windows" {
+		ignorePart = "\\_"
+	}
+
+	// filepath.Walk/WalkDir 会递归的遍历子目录
+	err := filepath.WalkDir(migrationsDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
 			return err
 		}
-		if info.IsDir() { // TODO 支持date子目录
+
+		// 忽略掉 _ 开头的目录/文件
+		if strings.Contains(path, ignorePart) {
 			return nil
 		}
 
 		// Only process .sql files
-		if strings.HasSuffix(info.Name(), ".sql") {
+		if strings.HasSuffix(d.Name(), ".sql") {
 			migration, err := NewMigration(path)
 			if err != nil {
 				return err

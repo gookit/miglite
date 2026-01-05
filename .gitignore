@@ -15,8 +15,11 @@ vendor/
 .DS_Store
 *.db
 
+pkg/*/testdata/
 build/
 specs/
 .qwen/
 .specify/
 go.wor*
+miglite-d*
+miglite-l*
