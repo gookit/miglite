@@ -183,7 +183,7 @@ var Version = "0.1.0"
 
 func main() {
 	// Optional: Information needs to be specified at build time via ldflags
-	// miglite.InitInfo(Version, GoVersion, BuildTime, GitCommit)
+	// command.SetBuildInfo(Version, GoVersion, BuildTime, GitCommit)
 
 	// Create the CLI application
 	app := command.NewApp("miglite", Version, "Lite database schema migration tool by Go")

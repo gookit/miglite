@@ -30,8 +30,7 @@ func HandleCreate(names []string) error {
 	}
 
 	// Load configuration
-	cfg, err := initLoadConfig()
-	if err != nil {
+	if err := initLoadConfig(); err != nil {
 		return err
 	}
 

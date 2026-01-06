@@ -63,9 +63,10 @@ type Config struct {
 }
 
 // Load loads configuration from YAML file and environment variables
+//  - configFile: if not exist, will skip load it.
 //
 // NOTE: will auto load .env file on working directory.
-func Load(configPath string) (*Config, error) {
+func Load(configFile string) (*Config, error) {
 	// load .env file
 	_ = envutil.DotenvLoad(func(cfg *envutil.Dotenv) {
 		cfg.IgnoreNotExist = true
@@ -77,9 +78,9 @@ func Load(configPath string) (*Config, error) {
 	}
 
 	// Load from YAML file if it exists
-	if fsutil.FileExist(configPath) {
-		config.ConfigFile = configPath
-		data, err := os.ReadFile(configPath)
+	if fsutil.FileExist(configFile) {
+		config.ConfigFile = configFile
+		data, err := os.ReadFile(configFile)
 		if err != nil {
 			return nil, err
 		}
