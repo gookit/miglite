@@ -4,28 +4,26 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
-)
 
-// defines the regex pattern for extracting the date prefix from a filename
-//
-// format: YYYYMMDD-HHMMSS-{name}.sql
-var regexFilename = regexp.MustCompile(`^(\d{8}-\d{6})-([\w-]+)\.sql$`)
+	"github.com/gookit/goutil/fsutil"
+)
 
 // Migration represents a single migration file
 type Migration struct {
-	FileName string
-	FilePath string
+	FileName string // filename as version
+	FilePath string // full path
+	// Contents of migration file
+	Contents string
 	// time from filename
 	Timestamp time.Time
 	// Version same as filename
 	Version string
-	// Contents of migration file
-	Contents    string
+	// UpSection UP section contents
 	UpSection   string
 	DownSection string
+	// Options TODO options for current migration
 }
 
 // ParseFile parses a migration file to extract UP and DOWN sections
@@ -41,6 +39,26 @@ func ParseFile(filePath string) (*Migration, error) {
 	return migFile, nil
 }
 
+// MigrationsFrom creates migrations from a list of files
+func MigrationsFrom(dirPath string, files []string) ([]*Migration, error) {
+	migrations := make([]*Migration, 0, len(files))
+
+	for _, file := range files {
+		mig, err := NewMigration(dirPath + "/" + file)
+		if err != nil {
+			return nil, err
+		}
+		if !fsutil.IsFile(mig.FilePath) {
+			return nil, fmt.Errorf("migration file not exists: %s", mig.FilePath)
+		}
+
+		migrations = append(migrations, mig)
+	}
+
+	return migrations, nil
+}
+
+// NewMigration creates a new Migration instance from a file path
 func NewMigration(filePath string) (*Migration, error) {
 	// Extract timestamp from filename
 	fileName := filepath.Base(filePath)
@@ -129,4 +147,9 @@ func (m *Migration) ResetContents() {
 	m.Contents = ""
 	m.UpSection = ""
 	m.DownSection = ""
+}
+
+// IsBefore 判断当前迁移文件是否早于指定迁移文件
+func (m *Migration) IsBefore(other *Migration) bool {
+	return m.Timestamp.Before(other.Timestamp)
 }

@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"sort"
 	"strings"
@@ -137,11 +138,16 @@ func FindMigrations(migrationsDir string, recursive bool) ([]*Migration, error) 
 
 	// Sort migrations by timestamp
 	sort.Slice(migrations, func(i, j int) bool {
-		return migrations[i].Timestamp.Before(migrations[j].Timestamp)
+		return migrations[i].IsBefore(migrations[j])
 	})
 
 	return migrations, nil
 }
+
+// defines the regex pattern for extracting the date prefix from a filename
+//
+// format: YYYYMMDD-HHMMSS-{name}.sql
+var regexFilename = regexp.MustCompile(`^(\d{8}-\d{6})([\w-]+)\.sql$`)
 
 // FilenameInfo represents the information extracted from a migration filename
 //
@@ -150,7 +156,7 @@ func FindMigrations(migrationsDir string, recursive bool) ([]*Migration, error) 
 type FilenameInfo struct {
 	Time time.Time // parsed time from Date field
 	Date string    // eg: 20251105-102430
-	Name string
+	Name string    // eg: add-age-index
 }
 
 // parseFilename extracts the time,name from a migration filename
@@ -169,25 +175,6 @@ func parseFilename(filename string) (*FilenameInfo, error) {
 	return &FilenameInfo{
 		Time: createTime,
 		Date: dateStr,
-		Name: matches[2],
+		Name: strings.TrimLeft(matches[2], "-_"),
 	}, nil
-}
-
-// MigrationsFrom creates migrations from a list of files
-func MigrationsFrom(dirPath string, files []string) ([]*Migration, error) {
-	var migrations []*Migration
-
-	for _, file := range files {
-		migration, err := NewMigration(dirPath + "/" + file)
-		if err != nil {
-			return nil, err
-		}
-		if !fsutil.IsFile(migration.FilePath) {
-			return nil, fmt.Errorf("migration file not exists: %s", migration.FilePath)
-		}
-
-		migrations = append(migrations, migration)
-	}
-
-	return migrations, nil
 }
