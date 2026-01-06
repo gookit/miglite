@@ -11,14 +11,11 @@ import (
 	"github.com/gookit/miglite/pkg/database"
 )
 
-// DB alias for database.DB
-type DB = database.DB
-
 // ShowOption represents options for the show command
 type ShowOption struct {
 	// Show database tables
 	Tables bool
-	// Show table schema
+	// Show one table schema
 	Schema string
 }
 

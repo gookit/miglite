@@ -15,6 +15,9 @@ import (
 
 const TimeLayout = "2006-01-02 15:04:05"
 
+// DB alias for database.DB
+type DB = database.DB
+
 // OnConfigLoaded hook. you can modify or validate the configuration here.
 var OnConfigLoaded = func(cfg *config.Config) error {
 	return nil
@@ -45,22 +48,22 @@ func SetCfg(c *config.Config) {
 	ShowVerbose = c.Verbose
 }
 
-func initLoadConfig() (*config.Config, error) {
-	var err error
+func initLoadConfig() error {
 	if cfg != nil {
-		return cfg, nil
+		return nil
 	}
 
 	// Load configuration
+	var err error
 	cfg, err = config.Load(ConfigFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load config: %v", err)
+		return fmt.Errorf("failed to load config: %v", err)
 	}
 
 	// fire OnConfigLoaded hook
 	if OnConfigLoaded != nil {
 		if err = OnConfigLoaded(cfg); err != nil {
-			return nil, err
+			return err
 		}
 	}
 
@@ -74,19 +77,17 @@ func initLoadConfig() (*config.Config, error) {
 		dump.NoLoc(cfg)
 	}
 
-	return cfg, nil
+	return nil
 }
 
 func initConfigAndDB() (*database.DB, error) {
-	var err error
 	// Load configuration
-	cfg, err = initLoadConfig()
-	if err != nil {
+	if err := initLoadConfig(); err != nil {
 		return nil, err
 	}
-	dbCfg := cfg.Database
 
 	// Connect to database
+	dbCfg := cfg.Database
 	db, err := database.Connect(dbCfg.Driver, dbCfg.SqlDriver, dbCfg.DSN)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %v", err)
