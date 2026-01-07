@@ -15,6 +15,7 @@ func ExampleNew() {
 
 	// run up migrations
 	err = mig.Up(command.UpOption{
+		Yes: true, // dont confirm
 		// ... options
 	})
 	goutil.PanicIfErr(err) // handle error

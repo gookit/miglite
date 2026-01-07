@@ -18,8 +18,8 @@
   - Directories starting with `_` are ignored when looking for SQL files (eg. `_backup/xx.sql`)
 - Migration SQL is executed within transactions to ensure data consistency
 - Can run migrations with zero configuration via environment variables (e.g., `DATABASE_URL`, `MIGRATIONS_PATH`)
-  - Automatically attempts to load `.env` file in the directory
-  - Automatically loads default configuration file `./miglite.yaml`
+  - Automatically attempts to load `.env` file in the directory(Optional)
+  - Automatically loads default configuration file `./miglite.yaml`(Optional)
 - Supports `mysql`, `sqlite`, `postgres` databases
   - When used as a library, you need to add your own DB driver dependencies
   - When using the `miglite` command-line tool directly, driver dependencies are already included
@@ -146,7 +146,7 @@ View migration status:
 
 ## Using as a Library
 
-`miglite` does not depend on any third-party DB driver libraries by itself, so you can use it as a library with your current database driver library.
+`miglite` **does not depend on** any third-party DB driver libraries by itself, so you can use it as a library with your current database driver library.
 
 - Sqlite drivers:
   - `modernc.org/sqlite` **CGO-free driver**
@@ -161,6 +161,35 @@ View migration status:
   - `github.com/microsoft/go-mssqldb`
 
 > More drivers see: https://go.dev/wiki/SQLDrivers
+
+```go
+package main
+
+import (
+  "github.com/gookit/miglite"
+
+  // add your database driver
+  _ "github.com/go-sql-driver/mysql"
+  // _ "github.com/lib/pq"
+  // _ "modernc.org/sqlite"
+)
+
+func main() {
+  mig, err := miglite.New("miglite.yml", func(cfg *config.Config) {
+    // update config options
+  })
+  goutil.PanicIfErr(err) // handle error
+
+  // run up migrations
+  err = mig.Up(command.UpOption{
+    Yes: true, // dont confirm
+    // ... options
+  })
+  goutil.PanicIfErr(err) // handle error
+
+  // run down migrations ...
+}
+```
 
 ### Building Your Own Command Tool
 

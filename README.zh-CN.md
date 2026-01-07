@@ -14,12 +14,12 @@
 - 基于 `database/sql` 进行开发，默认不添加任何驱动依赖包
 - 基于原始 SQL 方式作为迁移文件
     - 固定文件名格式为 `YYYYMMDD-HHMMSS-{migration-name}.sql`
-    - 会递归搜索 `MIGRATIONS_PATH` 目录下的所有sql文件
+    - 默认会递归搜索 `MIGRATIONS_PATH` 目录下的所有sql文件(含子目录)
     - 查找sql文件时会忽略以 `_` 开始的目录(eg. `_backup/xx.sql`)
 - 迁移 SQL 都在事物中执行，确保数据一致性
 - 可以通过环境变量零配置直接运行迁移(eg: `DATABASE_URL`, `MIGRATIONS_PATH`)
-    - 会自动尝试加载目录下的 `.env` 文件
-    - 会自动加载默认配置文件 `./miglite.yaml`
+    - 会自动尝试加载目录下的 `.env` 文件(可选)
+    - 会自动加载默认配置文件 `./miglite.yaml`(可选)
 - 支持 `mysql`, `sqlite`, `postgres` 数据库
     - 作为库使用时，需要自己添加DB驱动依赖
     - 直接使用 `miglite` 命令行工具时，已经添加了驱动依赖
@@ -163,6 +163,35 @@ miglite status
     - `github.com/microsoft/go-mssqldb`
 
 > 更多驱动查看: https://go.dev/wiki/SQLDrivers
+
+```go
+package main
+
+import (
+  "github.com/gookit/miglite"
+
+  // add your database driver
+  _ "github.com/go-sql-driver/mysql"
+  // _ "github.com/lib/pq"
+  // _ "modernc.org/sqlite"
+)
+
+func main() {
+  mig, err := miglite.New("miglite.yml", func(cfg *config.Config) {
+    // update config options
+  })
+  goutil.PanicIfErr(err) // handle error
+
+  // run up migrations
+  err = mig.Up(command.UpOption{
+    Yes: true, // dont confirm
+    // ... options
+  })
+  goutil.PanicIfErr(err) // handle error
+
+  // run down migrations ...
+}
+```
 
 ### 构建自己的命令工具
 
