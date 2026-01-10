@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gookit/goutil/cflag/capp"
+	"github.com/gookit/goutil/cliutil"
 	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/miglite/pkg/migration"
 )
@@ -34,8 +35,25 @@ func HandleCreate(names []string) error {
 		return err
 	}
 
+	migPaths := cfg.Migrations.GetPaths()
+	migPath := migPaths[0]
+	if ln := len(migPaths); ln > 1 {
+		ccolor.Infof("multiple migration paths found: %v", migPaths)
+		for i, p := range migPaths {
+			ccolor.Infof("[%d] %s\n", i+1, p)
+		}
+		firstByte, err := cliutil.ReadFirstByte("which one do you want to use? (default: 1)")
+		if err != nil {
+			return err
+		}
+		idxVal := int(firstByte) - 1
+		if idxVal > 0 && idxVal < ln {
+			migPath = migPaths[idxVal]
+		}
+	}
+
 	// Create the migration
-	filePaths, err := migration.CreateMigrations(cfg.Migrations.Path, names)
+	filePaths, err := migration.CreateMigrations(migPath, names)
 	if err != nil {
 		return fmt.Errorf("failed to create migration: %v", err)
 	}

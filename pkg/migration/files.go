@@ -78,13 +78,34 @@ func CreateMigration(migrationsDir, name string) (string, error) {
 }
 
 // FindMigrations finds all migration files in the specified directory, and returns them sorted by timestamp
+//
+//  - migrationsDir: allow multiple directories separated by comma
 func FindMigrations(migrationsDir string, recursive bool) ([]*Migration, error) {
 	var migrations []*Migration
 	ccolor.Printf("🔎  Discovering migrations from <green>%s</>\n", migrationsDir)
 
+	dirPaths := strings.Split(migrationsDir, ",")
+	for _, dirPath := range dirPaths {
+		migList, err := findMigrations(dirPath, recursive)
+		if err != nil {
+			return nil, err
+		}
+		migrations = append(migrations, migList...)
+	}
+
+	// Sort migrations by timestamp
+	sort.Slice(migrations, func(i, j int) bool {
+		return migrations[i].IsBefore(migrations[j])
+	})
+
+	return migrations, nil
+}
+func findMigrations(dirPath string, recursive bool) ([]*Migration, error) {
+	var migrations []*Migration
+
 	// 禁用递归：只查找当前目录的sql文件
 	if !recursive {
-		err := fsutil.FindInDir(migrationsDir, func(path string, d fs.DirEntry) error {
+		err := fsutil.FindInDir(dirPath, func(path string, d fs.DirEntry) error {
 			if d.IsDir() {
 				return nil
 			}
@@ -110,7 +131,7 @@ func FindMigrations(migrationsDir string, recursive bool) ([]*Migration, error) 
 	}
 
 	// filepath.Walk/WalkDir 会递归的遍历子目录
-	err := filepath.WalkDir(migrationsDir, func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(dirPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return err
 		}
@@ -131,17 +152,7 @@ func FindMigrations(migrationsDir string, recursive bool) ([]*Migration, error) 
 		}
 		return nil
 	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	// Sort migrations by timestamp
-	sort.Slice(migrations, func(i, j int) bool {
-		return migrations[i].IsBefore(migrations[j])
-	})
-
-	return migrations, nil
+	return migrations, err
 }
 
 // defines the regex pattern for extracting the date prefix from a filename

@@ -8,6 +8,7 @@ import (
 	"github.com/goccy/go-yaml"
 	"github.com/gookit/goutil/envutil"
 	"github.com/gookit/goutil/fsutil"
+	"github.com/gookit/goutil/strutil"
 	"github.com/gookit/miglite/pkg/migcom"
 	"github.com/gookit/miglite/pkg/migutil"
 )
@@ -45,6 +46,7 @@ type Database struct {
 // Migrations configuration
 type Migrations struct {
 	// Path to the migrations file directory. default: ./migrations
+	//  - allow multiple paths separated by comma.
 	//  - allow use string-vars: {driver}
 	//  - allow use ENV-vars: ${APP_MODULE}
 	Path string `yaml:"path"`
@@ -52,6 +54,11 @@ type Migrations struct {
 	Table string `yaml:"table"`
 	// Recursive search for migration SQL files. default: true
 	Recursive bool `yaml:"recursive"`
+}
+
+// GetPaths get migration paths
+func (m *Migrations) GetPaths() []string {
+	return strutil.SplitTrimmed(m.Path, ",")
 }
 
 // Config holds the application configuration

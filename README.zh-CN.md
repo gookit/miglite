@@ -67,7 +67,7 @@ migrations:
 #### 环境变量
 
 - `DATABASE_URL`: 数据库连接 URL (例如: `sqlite://path/to/your.db`, `mysql://user:pass@localhost/dbname`)
-- `MIGRATIONS_PATH`: 迁移文件路径 (默认: `./migrations`)
+- `MIGRATIONS_PATH`: 迁移文件路径，支持使用逗号分隔添加多个路径 (默认: `./migrations`)
 
 `ENV` 示例:
 

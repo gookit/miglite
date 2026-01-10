@@ -40,18 +40,41 @@ func ParseFile(filePath string) (*Migration, error) {
 }
 
 // MigrationsFrom creates migrations from a list of files
-func MigrationsFrom(dirPath string, files []string) ([]*Migration, error) {
+func MigrationsFrom(migPath string, files []string) ([]*Migration, error) {
 	migrations := make([]*Migration, 0, len(files))
+	var migPaths []string
+	if strings.Contains(migPath, ",") {
+		migPaths = strings.Split(migPath, ",")
+	} else {
+		migPaths = []string{migPath}
+	}
 
 	for _, file := range files {
-		mig, err := NewMigration(dirPath + "/" + file)
+		var filePath string
+		var fileExists bool
+
+		// is multiple paths
+		if len(migPaths) > 0 {
+			for _, dirPath := range migPaths {
+				if fsutil.IsFile(dirPath + "/" + file) {
+					filePath = dirPath + "/" + file
+					fileExists = true
+					break
+				}
+			}
+		} else {
+			filePath = migPath + "/" + file
+			fileExists = fsutil.IsFile(filePath)
+		}
+
+		if !fileExists {
+			return nil, fmt.Errorf("migration file not exists: %s", file)
+		}
+
+		mig, err := NewMigration(filePath)
 		if err != nil {
 			return nil, err
 		}
-		if !fsutil.IsFile(mig.FilePath) {
-			return nil, fmt.Errorf("migration file not exists: %s", mig.FilePath)
-		}
-
 		migrations = append(migrations, mig)
 	}
 
