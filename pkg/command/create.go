@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/gookit/goutil/cflag/capp"
 	"github.com/gookit/goutil/cliutil"
@@ -38,17 +39,24 @@ func HandleCreate(names []string) error {
 	migPaths := cfg.Migrations.GetPaths()
 	migPath := migPaths[0]
 	if ln := len(migPaths); ln > 1 {
-		ccolor.Infof("multiple migration paths found: %v", migPaths)
+		ccolor.Infof("📢 Multiple migration paths found: %v\n", migPaths)
 		for i, p := range migPaths {
-			ccolor.Infof("[%d] %s\n", i+1, p)
+			ccolor.Cyanf(" %d) %s\n", i+1, p)
 		}
-		firstByte, err := cliutil.ReadFirstByte("which one do you want to use? (default: 1)")
+		str, err := cliutil.ReadLine("which one do you want to use? (default: 1) ")
 		if err != nil {
 			return err
 		}
-		idxVal := int(firstByte) - 1
-		if idxVal > 0 && idxVal < ln {
-			migPath = migPaths[idxVal]
+
+		// convert to int value
+		if intVal, err1 := strconv.Atoi(str); err1 == nil && intVal > 1 {
+			index := intVal - 1
+			if index < ln {
+				migPath = migPaths[index]
+			} else {
+				ccolor.Warnf("Invalid index: %d, Exit!\n", intVal)
+				return nil
+			}
 		}
 	}
 
