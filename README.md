@@ -12,11 +12,13 @@
 
 - Easy to use with minimal dependencies
 - Developed based on `database/sql` without adding any driver dependencies by default
+- Migration SQL is executed within transactions to ensure data consistency
 - Uses raw SQL files as migration files
   - SQL filename format: `YYYYMMDD-HHMMSS-{migration-name}.sql`
-  - All SQL files in the `MIGRATIONS_PATH` directory are recursively searched
-  - Directories starting with `_` are ignored when looking for SQL files (eg. `_backup/xx.sql`)
-- Migration SQL is executed within transactions to ensure data consistency
+- By default, all SQL files (including subdirectories) in the migration directory are recursively searched 
+  - Directories starting with `_` (eg. `_backup/xx.sql`) are ignored when looking for SQL files 
+  - Migration directories support the use of environment variables (eg `.migrations/${MODULE_NAME}`)}) 
+  - Migration directories support adding multiple paths using comma `,` splitting
 - Can run migrations with zero configuration via environment variables (e.g., `DATABASE_URL`, `MIGRATIONS_PATH`)
   - Automatically attempts to load `.env` file in the directory(Optional)
   - Automatically loads default configuration file `./miglite.yaml`(Optional)
@@ -150,9 +152,9 @@ View migration status:
 
 - Sqlite drivers:
   - `modernc.org/sqlite` **CGO-free driver**
+  - `github.com/glebarez/go-sqlite`  Based on `modernc.org/sqlite`
   - `github.com/ncruces/go-sqlite3` **CGO-free** Based on Wasm(wazero)
   - `github.com/mattn/go-sqlite3`  **NEED cgo**
-  - `github.com/glebarez/go-sqlite`  Based on `modernc.org/sqlite`
 - MySQL driver:
   - `github.com/go-sql-driver/mysql`
 - Postgres driver:

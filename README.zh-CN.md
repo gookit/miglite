@@ -12,11 +12,13 @@
 
 - 使用简单，极简依赖
 - 基于 `database/sql` 进行开发，默认不添加任何驱动依赖包
+- 迁移 SQL 都在事物中执行，确保数据一致性
 - 基于原始 SQL 方式作为迁移文件
     - 固定文件名格式为 `YYYYMMDD-HHMMSS-{migration-name}.sql`
-    - 默认会递归搜索 `MIGRATIONS_PATH` 目录下的所有sql文件(含子目录)
+- 默认会递归搜索迁移目录下的所有sql文件(含子目录)
     - 查找sql文件时会忽略以 `_` 开始的目录(eg. `_backup/xx.sql`)
-- 迁移 SQL 都在事物中执行，确保数据一致性
+    - 迁移目录支持使用环境变量(eg `./migrations/${MODULE_NAME}`)})
+    - 迁移目录支持使用逗号 `,` 分割添加多个路径
 - 可以通过环境变量零配置直接运行迁移(eg: `DATABASE_URL`, `MIGRATIONS_PATH`)
     - 会自动尝试加载目录下的 `.env` 文件(可选)
     - 会自动加载默认配置文件 `./miglite.yaml`(可选)
@@ -147,12 +149,12 @@ miglite status
 
 ## 作为库使用
 
-`miglite` 本身不依赖任何三方DB驱动库，你可以将其作为库使用。搭配你当前的数据库驱动库使用。
+`miglite` 包本身**不依赖**任何三方DB驱动库，你可以将其作为库使用。搭配你当前的数据库驱动库使用。
 
 - Sqlite 驱动:
     - `modernc.org/sqlite` **CGO-free driver**
-    - `github.com/ncruces/go-sqlite3` **CGO-free** Base on Wasm(wazero)
     - `github.com/glebarez/go-sqlite`  Base on `modernc.org/sqlite`
+    - `github.com/ncruces/go-sqlite3` **CGO-free** Base on Wasm(wazero)
     - `github.com/mattn/go-sqlite3`  **NEED cgo**
 - MySQL 驱动:
     - `github.com/go-sql-driver/mysql`
