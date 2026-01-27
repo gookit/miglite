@@ -19,18 +19,15 @@ type DB struct {
 	provider SqlProvider
 }
 
-var std *DB
-
-// GetDB returns the default database connection
-func GetDB() *DB {
-	if std == nil {
-		panic("database not initialized")
-	}
-	return std
+// NewWithSqlDB create a new database connection with sql.DB
+func NewWithSqlDB(driver string, db *sql.DB) *DB {
+	return &DB{DB: db, driver: driver}
 }
 
-// Close closes the default database connection
-func Close() error { return GetDB().Close() }
+// NewDB create a new database connection
+func NewDB(driver, sqlDriver, dsn string) (*DB, error) {
+	return Connect(driver, sqlDriver, dsn)
+}
 
 // Connect establishes a database connection
 //
@@ -40,10 +37,6 @@ func Close() error { return GetDB().Close() }
 //	 - postgres: host=localhost port=5432 user=username password=password dbname=dbname sslmode=disable
 //	 - sqlite: filepath
 func Connect(driver, sqlDriver, dsn string) (*DB, error) {
-	if std != nil && std.dsn == dsn {
-		return std, nil
-	}
-
 	// get the register driver name
 	db, err := sql.Open(sqlDriver, dsn)
 	if err != nil {
@@ -56,8 +49,8 @@ func Connect(driver, sqlDriver, dsn string) (*DB, error) {
 	}
 
 	// db.SetMaxOpenConns(1) TODO support options
-	std = &DB{DB: db, driver: driver, dsn: dsn}
-	return std, nil
+	dbx := &DB{DB: db, driver: driver, dsn: dsn}
+	return dbx, nil
 }
 
 // Driver returns the formatted driver name
