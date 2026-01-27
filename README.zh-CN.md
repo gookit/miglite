@@ -153,7 +153,7 @@ miglite status
 
 - Sqlite 驱动:
     - `modernc.org/sqlite` **CGO-free driver**
-    - `github.com/glebarez/go-sqlite`  Base on `modernc.org/sqlite`
+    - `github.com/glebarez/go-sqlite`  基于 `modernc.org/sqlite` 封装
     - `github.com/ncruces/go-sqlite3` **CGO-free** Base on Wasm(wazero)
     - `github.com/mattn/go-sqlite3`  **NEED cgo**
 - MySQL 驱动:

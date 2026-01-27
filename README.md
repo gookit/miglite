@@ -159,6 +159,7 @@ View migration status:
   - `github.com/go-sql-driver/mysql`
 - Postgres driver:
   - `github.com/lib/pq`
+  - `github.com/jackc/pgx/v5`
 - MSSQL driver:
   - `github.com/microsoft/go-mssqldb`
 

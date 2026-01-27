@@ -6,7 +6,6 @@ import (
 
 	"github.com/gookit/goutil/testutil/assert"
 	"github.com/gookit/miglite/pkg/command"
-	"github.com/gookit/miglite/pkg/database"
 	"github.com/gookit/miglite/pkg/migration"
 )
 
@@ -29,9 +28,9 @@ func TestMigration_sqlite(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Execute migrations
-	executor := migration.NewExecutor(database.GetDB(), true)
+	executor := migration.NewExecutor(command.DB(), true)
 	for _, mig := range migrations {
-		applied, status, err := migration.IsApplied(database.GetDB(), mig.FileName)
+		applied, status, err := migration.IsApplied(command.DB(), mig.FileName)
 		if err != nil {
 			t.Fatalf("Failed to check migration status: %v", err)
 		}

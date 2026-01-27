@@ -63,14 +63,20 @@ func (m *Migrations) GetPaths() []string {
 
 // Config holds the application configuration
 type Config struct {
-	ConfigFile string     `yaml:"-"` // internal use
 	Verbose bool `yaml:"verbose"`
 	Database   Database   `yaml:"database"`
 	Migrations Migrations `yaml:"migrations"`
+
+	// ---- internal use  ----
+
+	// ConfigFile path
+	ConfigFile string `yaml:"-"`
+	// LogFunc handler
+	LogFunc func(msg string) `yaml:"-"`
 }
 
 // Load loads configuration from YAML file and environment variables
-//  - configFile: if not exist, will skip load it.
+//   - configFile: if not exist, will skip load it.
 //
 // NOTE: will auto load .env file on working directory.
 func Load(configFile string) (*Config, error) {
