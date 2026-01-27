@@ -33,8 +33,7 @@ func StatusCommand() *capp.Cmd {
 // HandleStatus display migration status
 func HandleStatus(_ StatusOption) error {
 	// Load configuration and connect to database
-	db, err := initConfigAndDB()
-	if err != nil {
+	if err := initConfigAndDB(); err != nil {
 		return err
 	}
 	defer db.SilentClose()

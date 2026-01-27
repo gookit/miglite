@@ -47,8 +47,7 @@ func HandleShow(opt ShowOption) error {
 	}
 
 	// Load configuration and connect to database
-	db, err := initConfigAndDB()
-	if err != nil {
+	if err := initConfigAndDB(); err != nil {
 		return err
 	}
 	defer db.SilentClose()
@@ -66,7 +65,7 @@ func HandleShow(opt ShowOption) error {
 }
 
 // showTables displays all tables in the database
-func showTables(db *DB) error {
+func showTables(db *database.DB) error {
 	ccolor.Println("🔍  Fetching database tables...")
 
 	tables, err := db.ShowTables()
@@ -90,7 +89,7 @@ func showTables(db *DB) error {
 }
 
 // showTableSchema displays the schema of a specific table
-func showTableSchema(db *DB, tableName string) error {
+func showTableSchema(db *database.DB, tableName string) error {
 	ccolor.Printf("🔍  Fetching schema for table: <green>%s</>\n", tableName)
 	columns, err := db.QueryTableSchema(tableName)
 	if err != nil {

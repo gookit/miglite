@@ -44,8 +44,7 @@ func NewUpCommand() *capp.Cmd {
 // HandleUp executes pending migrations
 func HandleUp(opt UpOption) error {
 	// Load configuration and connect to database
-	db, err1 := initConfigAndDB()
-	if err1 != nil {
+	if err1 := initConfigAndDB(); err1 != nil {
 		return fmt.Errorf("failed to connect to database: %v", err1)
 	}
 	defer db.SilentClose()

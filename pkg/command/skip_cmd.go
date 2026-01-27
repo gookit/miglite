@@ -29,8 +29,7 @@ func SkipCommand() *capp.Cmd {
 
 // HandleSkip skips one or multi migration file(s)
 func HandleSkip(opt SkipOption) error {
-	db, err := initConfigAndDB()
-	if err != nil {
+	if err := initConfigAndDB(); err != nil {
 		return err
 	}
 	defer db.SilentClose()

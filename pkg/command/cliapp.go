@@ -26,6 +26,18 @@ func SetBuildInfo(version, goVer, buildTime, gitCommit string) {
 
 var showVersion bool
 
+var (
+	// ShowVerbose flag
+	ShowVerbose bool
+	// ConfigFile path to the configuration file
+	ConfigFile string
+)
+
+func bindCommonFlags(c *capp.Cmd) {
+	c.BoolVar(&ShowVerbose, "verbose", false, "Enable verbose output;;v")
+	c.StringVar(&ConfigFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
+}
+
 // NewApp creates a new CLI application
 func NewApp(name, version, description string) *capp.App {
 	app := capp.NewWith(name, version, description)

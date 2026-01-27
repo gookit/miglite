@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gookit/goutil/cflag/capp"
 	"github.com/gookit/goutil/dump"
 	"github.com/gookit/goutil/envutil"
 	"github.com/gookit/goutil/x/ccolor"
@@ -15,28 +14,14 @@ import (
 
 const TimeLayout = "2006-01-02 15:04:05"
 
-// DB alias for database.DB
-type DB = database.DB
-
 // OnConfigLoaded hook. you can modify or validate the configuration here.
 var OnConfigLoaded = func(cfg *config.Config) error {
 	return nil
 }
 
-var (
-	// ShowVerbose flag
-	ShowVerbose bool
-	// ConfigFile path to the configuration file
-	ConfigFile string
-)
-
-func bindCommonFlags(c *capp.Cmd) {
-	c.BoolVar(&ShowVerbose, "verbose", false, "Enable verbose output;;v")
-	c.StringVar(&ConfigFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
-}
-
 // cache for testing
 var cfg *config.Config
+var db *database.DB
 
 // Cfg get config instance
 func Cfg() *config.Config { return cfg }
@@ -47,6 +32,12 @@ func SetCfg(c *config.Config) {
 	ConfigFile = c.ConfigFile
 	ShowVerbose = c.Verbose
 }
+
+// DB get database instance
+func DB() *database.DB { return db }
+
+// SetDB set database instance. use on manual run logic.
+func SetDB(d *database.DB) { db = d }
 
 func initLoadConfig() error {
 	if cfg != nil {
@@ -80,22 +71,24 @@ func initLoadConfig() error {
 	return nil
 }
 
-func initConfigAndDB() (*database.DB, error) {
+func initConfigAndDB() (err error) {
 	// Load configuration
-	if err := initLoadConfig(); err != nil {
-		return nil, err
+	if err = initLoadConfig(); err != nil {
+		return err
 	}
 
 	// Connect to database
-	dbCfg := cfg.Database
-	db, err := database.Connect(dbCfg.Driver, dbCfg.SqlDriver, dbCfg.DSN)
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to database: %v", err)
+	if db == nil {
+		dbCfg := cfg.Database
+		db, err = database.Connect(dbCfg.Driver, dbCfg.SqlDriver, dbCfg.DSN)
+		if err != nil {
+			return fmt.Errorf("failed to connect to database: %v", err)
+		}
+		ccolor.Printf("✅  Database connect successful! driver: <green>%s</>\n", db.Driver())
 	}
 
 	db.SetDebug(ShowVerbose)
-	ccolor.Printf("✅  Database connect successful! driver: <green>%s</>\n", db.Driver())
-	return db, nil
+	return nil
 }
 
 func formatTime(t time.Time) string {
