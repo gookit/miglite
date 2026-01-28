@@ -12,9 +12,9 @@ import (
 
 // UpOption represents options for the up command
 type UpOption struct {
-	// 默认每执行一个都需要确认
+	// 默认每执行一个都需要确认 default: false
 	Yes bool
-	// 跳过错误迁移并继续执行
+	// 跳过错误迁移并继续执行 default: false
 	SkipErr bool
 	// 只执行指定数量的迁移
 	Number int

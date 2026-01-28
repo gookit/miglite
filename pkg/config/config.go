@@ -126,7 +126,7 @@ func initMigrationsConfig(migConfig *Migrations, fmtDriver string) {
 	// Set defaults if not defined
 	dirPath := migConfig.Path
 	if dirPath == "" {
-		dirPath = "./migrations"
+		dirPath = migcom.DefaultMigrationsDir
 	} else {
 		if strings.Contains(dirPath, "{driver}") {
 			dirPath = strings.Replace(dirPath, "{driver}", fmtDriver, -1)
@@ -216,21 +216,20 @@ func parseDatabaseURL(url string) (string, string, error) {
 
 func buildDSNFromConfig(dbCfg *Database) string {
 	// sqlite
-	if dbCfg.Driver == "sqlite" {
+	if dbCfg.Driver == migcom.DriverSQLite {
 		return dbCfg.DSN
 	}
 
-	// username is required
+	// username is required for mysql, mssql, postgres
 	if dbCfg.User == "" {
 		return ""
 	}
-
 	if dbCfg.Host == "" {
 		dbCfg.Host = "localhost"
 	}
 
 	// mysql
-	if dbCfg.Driver == "mysql" {
+	if dbCfg.Driver == migcom.DriverMySQL {
 		if dbCfg.Port <= 0 {
 			dbCfg.Port = 3306
 		}
@@ -242,7 +241,7 @@ func buildDSNFromConfig(dbCfg *Database) string {
 	}
 
 	// postgres
-	if dbCfg.Driver == "postgres" {
+	if dbCfg.Driver == migcom.DriverPostgres {
 		if dbCfg.Port <= 0 {
 			dbCfg.Port = 5432
 		}
@@ -253,7 +252,7 @@ func buildDSNFromConfig(dbCfg *Database) string {
 	}
 
 	// mssql
-	if dbCfg.Driver == "mssql" {
+	if dbCfg.Driver == migcom.DriverMSSQL {
 		if dbCfg.Port <= 0 {
 			dbCfg.Port = 1433
 		}

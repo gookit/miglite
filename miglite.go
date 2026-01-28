@@ -6,6 +6,7 @@ import (
 	"github.com/gookit/miglite/pkg/command"
 	"github.com/gookit/miglite/pkg/config"
 	"github.com/gookit/miglite/pkg/database"
+	"github.com/gookit/miglite/pkg/migcom"
 )
 
 // ConfigFn is a function type for updating the configuration
@@ -20,6 +21,11 @@ type Migrator struct {
 	// 	mig.Add("2026...-add_user_table", `UP sql`, `DOWN sql`, options)
 	//
 	// migrations []*migration.Migration
+}
+
+// NewAuto creates a new Migrator instance with autoload default config
+func NewAuto(fns ...ConfigFn) (*Migrator, error) {
+	return New(migcom.DefaultConfigFile, fns...)
 }
 
 // New creates a new Migrator instance, with optional configuration functions

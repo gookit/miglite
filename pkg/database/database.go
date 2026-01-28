@@ -6,6 +6,7 @@ import (
 
 	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/goutil/x/stdio"
+	"github.com/gookit/miglite/pkg/migcom"
 )
 
 // DB represents a database connection
@@ -24,15 +25,17 @@ func NewWithSqlDB(driver string, db *sql.DB) *DB {
 	return &DB{DB: db, driver: driver}
 }
 
-// NewDB create a new database connection
+// NewDB create a new database connection. alias for Connect
 func NewDB(driver, sqlDriver, dsn string) (*DB, error) {
 	return Connect(driver, sqlDriver, dsn)
 }
 
 // Connect establishes a database connection
 //
-//	driver: mysql, postgres, sqlite
-//	DSN:
+//  - driver: mysql, postgres, sqlite. see migcom.DriverMySQL
+//  - sqlDriver: Affected by the driver libraries used. eg: sqlite, sqlite3; pg, pgx, postgres.
+//
+//	DSN format:
 //	 - mysql: username:password@tcp(host:port)/dbname?charset=utf8mb4&parseTime=True&loc=Local
 //	 - postgres: host=localhost port=5432 user=username password=password dbname=dbname sslmode=disable
 //	 - sqlite: filepath
@@ -162,7 +165,7 @@ func (db *DB) QueryTableSchema(tableName string) ([]ColumnInfo, error) {
 	var columns []ColumnInfo
 	for rows.Next() {
 		var col ColumnInfo
-		if db.Driver() == "postgres" {
+		if db.Driver() == migcom.DriverPostgres {
 			// For PostgreSQL, use different column order
 			err = rows.Scan(&col.Name, &col.Type, &col.NotNull, &col.Default)
 			if err != nil {

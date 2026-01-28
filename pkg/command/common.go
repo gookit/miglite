@@ -80,7 +80,7 @@ func initConfigAndDB() (err error) {
 	// Connect to database
 	if db == nil {
 		dbCfg := cfg.Database
-		db, err = database.Connect(dbCfg.Driver, dbCfg.SqlDriver, dbCfg.DSN)
+		db, err = database.NewDB(dbCfg.Driver, dbCfg.SqlDriver, dbCfg.DSN)
 		if err != nil {
 			return fmt.Errorf("failed to connect to database: %v", err)
 		}
