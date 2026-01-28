@@ -54,8 +54,8 @@ type SqlProvider interface {
 	InsertMigration() string
 	// UpdateMigration 更新迁移记录 params: status, version
 	UpdateMigration() string
-	// GetAppliedSortedByDate 获取所有已迁移的版本，按迁移时间排序 params: status, limit
-	GetAppliedSortedByDate() string
+	// GetAppliedSortedByVersion 获取所有已迁移的版本，按迁移 version desc排序. params: status, limit
+	GetAppliedSortedByVersion() string
 	// DeleteByVersion() string
 }
 
@@ -123,9 +123,9 @@ func (b *ReSqlProvider) UpdateMigration() string {
 	return "UPDATE " + SchemaTableName + " SET applied_at = CURRENT_TIMESTAMP, status = ? WHERE version = ?"
 }
 
-// GetAppliedSortedByDate 获取所有已迁移的版本，按迁移时间排序
-func (b *ReSqlProvider) GetAppliedSortedByDate() string {
-	return "SELECT version, applied_at FROM " + SchemaTableName + " WHERE status=? ORDER BY applied_at DESC LIMIT ?"
+// GetAppliedSortedByVersion 获取所有已迁移的版本，按迁移 version desc排序
+func (b *ReSqlProvider) GetAppliedSortedByVersion() string {
+	return "SELECT version, applied_at FROM " + SchemaTableName + " WHERE status=? ORDER BY version DESC LIMIT ?"
 }
 
 //
@@ -254,7 +254,7 @@ func (b *PgSqlProvider) UpdateMigration() string {
 	return "UPDATE " + SchemaTableName + " SET applied_at = CURRENT_TIMESTAMP, status = $1 WHERE version = $2"
 }
 
-// GetAppliedSortedByDate 获取所有已迁移的版本，按迁移时间排序
-func (b *PgSqlProvider) GetAppliedSortedByDate() string {
-	return "SELECT version, applied_at FROM " + SchemaTableName + " WHERE status=$1 ORDER BY applied_at DESC LIMIT $2"
+// GetAppliedSortedByVersion 获取所有已迁移的版本，按迁移 version desc排序
+func (b *PgSqlProvider) GetAppliedSortedByVersion() string {
+	return "SELECT version, applied_at FROM " + SchemaTableName + " WHERE status=$1 ORDER BY version DESC LIMIT $2"
 }

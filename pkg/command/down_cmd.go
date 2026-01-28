@@ -113,7 +113,7 @@ func findAppliedMigrations(db *database.DB, opt *DownOption) ([]migration.Record
 	}
 
 	// Get applied migrations sorted by date (most recent first)
-	appliedList, err := migration.GetAppliedSortedByDate(db, count)
+	appliedList, err := migration.GetAppliedSortedByVersion(db, count)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get applied migrations: %v", err)
 	}

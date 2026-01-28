@@ -115,14 +115,14 @@ func IsApplied(db *database.DB, version string) (bool, string, error) {
 	return status == StatusUp, status, nil
 }
 
-// GetAppliedSortedByDate returns applied migrations sorted by application date (most recent first)
-func GetAppliedSortedByDate(db *database.DB, limit int) ([]Record, error) {
+// GetAppliedSortedByVersion returns applied migrations sorted by version (most recent first)
+func GetAppliedSortedByVersion(db *database.DB, limit int) ([]Record, error) {
 	provide, err := db.SqlProvider()
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := db.Query(provide.GetAppliedSortedByDate(), StatusUp, limit)
+	rows, err := db.Query(provide.GetAppliedSortedByVersion(), StatusUp, limit)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query applied migrations: %v", err)
 	}
