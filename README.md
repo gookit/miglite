@@ -6,7 +6,7 @@
 [![Unit-Tests](https://github.com/gookit/miglite/workflows/Unit-Tests/badge.svg)](https://github.com/gookit/miglite/actions)
 [![Go Reference](https://pkg.go.dev/badge/github.com/gookit/miglite.svg)](https://pkg.go.dev/github.com/gookit/miglite)
 
-> **[中文说明](README.zh-CN.md)**
+> **👉 [中文说明](README.zh-CN.md)**
 
 `miglite` is a minimalist database schema migration tool implemented in Golang.
 
@@ -178,7 +178,7 @@ import (
 )
 
 func main() {
-  mig, err := miglite.New("miglite.yml", func(cfg *config.Config) {
+  mig, err := miglite.NewAuto(func(cfg *config.Config) {
     // update config options
   })
   goutil.PanicIfErr(err) // handle error

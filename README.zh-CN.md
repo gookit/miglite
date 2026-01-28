@@ -6,7 +6,7 @@
 [![Unit-Tests](https://github.com/gookit/miglite/workflows/Unit-Tests/badge.svg)](https://github.com/gookit/miglite/actions)
 [![Go Reference](https://pkg.go.dev/badge/github.com/gookit/miglite.svg)](https://pkg.go.dev/github.com/gookit/miglite)
 
-> **[EN README](README.md)**
+> **👉 [EN README](README.md)**
 
 `miglite` Golang 实现的极简的数据库 Schema 迁移工具。
 
@@ -179,7 +179,7 @@ import (
 )
 
 func main() {
-  mig, err := miglite.New("miglite.yml", func(cfg *config.Config) {
+  mig, err := miglite.NewAuto(func(cfg *config.Config) {
     // update config options
   })
   goutil.PanicIfErr(err) // handle error
