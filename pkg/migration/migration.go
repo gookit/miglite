@@ -39,7 +39,7 @@ func ParseFile(filePath string) (*Migration, error) {
 	return migFile, nil
 }
 
-// MigrationsFrom creates migrations from a list of files
+// MigrationsFrom creates migrations from a list of file names
 func MigrationsFrom(migPath string, files []string) ([]*Migration, error) {
 	migrations := make([]*Migration, 0, len(files))
 	var migPaths []string
@@ -52,6 +52,10 @@ func MigrationsFrom(migPath string, files []string) ([]*Migration, error) {
 	for _, file := range files {
 		var filePath string
 		var fileExists bool
+		// check and auto append .sql
+		if !strings.HasSuffix(file, ".sql") {
+			file = file + ".sql"
+		}
 
 		// is multiple paths
 		if len(migPaths) > 0 {
