@@ -1,9 +1,0 @@
-
-paths = [
-]
-
-[sdks]
-go = "1.24"
-
-[envs]
-[tools]
