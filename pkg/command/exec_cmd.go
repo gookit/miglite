@@ -8,7 +8,10 @@ import (
 
 	"github.com/gookit/goutil/cflag/capp"
 	"github.com/gookit/goutil/cliutil"
+	"github.com/gookit/goutil/strutil"
 	"github.com/gookit/goutil/x/ccolor"
+	"github.com/gookit/goutil/x/stdio"
+	"github.com/gookit/miglite/pkg/database"
 )
 
 // ExecOption represents options for the exec command
@@ -74,7 +77,7 @@ func HandleExec(opt ExecOption) error {
 		}
 	}
 
-	ccolor.Infoln("Input SQL:")
+	ccolor.Infop("📄  Input SQL: ")
 	fmt.Println(sql)
 
 	// Confirmation prompt if --yes is not set
@@ -86,7 +89,19 @@ func HandleExec(opt ExecOption) error {
 		}
 	}
 
-	// Execute SQL
+	// 检查是否为查询语句
+	sqlLower := strings.ToLower(sql)
+	isQuery := strings.HasPrefix(sqlLower, "select") ||
+		strings.HasPrefix(sqlLower, "describe") || // mysql
+		strings.HasPrefix(sqlLower, "pragma") || // sqlite
+		strings.HasPrefix(sqlLower, "show")
+
+	// 执行查询
+	if isQuery {
+		return execQuery(db, sql)
+	}
+
+	// Execute DDL statement
 	ccolor.Printf("🚀  Executing SQL...\n")
 	result, err := db.Exec(sql)
 	if err != nil {
@@ -123,4 +138,67 @@ func readSQLFromFile(filePath string) (string, error) {
 	}
 
 	return strings.TrimSpace(string(data)), nil
+}
+
+func execQuery(db *database.DB, sql string) error {
+	rows, err := db.Query(sql)
+	if err != nil {
+		return fmt.Errorf("failed to execute query: %v", err)
+	}
+	defer stdio.SafeClose(rows)
+
+	// 获取列名
+	columns, err := rows.Columns()
+	if err != nil {
+		return fmt.Errorf("failed to get columns: %v", err)
+	}
+
+	// 获取行数据
+	var rowsData [][]any
+	for rows.Next() {
+		// 创建一个any切片来存储每列的值
+		values := make([]any, len(columns))
+		valuePtrs := make([]any, len(columns))
+		for i := range columns {
+			valuePtrs[i] = &values[i]
+		}
+
+		if err = rows.Scan(valuePtrs...); err != nil {
+			ccolor.Errorf("Failed to scan row: %v", err)
+			continue
+		}
+
+		// 转换为any类型
+		row := make([]any, len(columns))
+		for i := range columns {
+			val := values[i]
+			b, ok := val.([]byte)
+			if ok {
+				row[i] = string(b)
+			} else {
+				row[i] = val
+			}
+		}
+		rowsData = append(rowsData, row)
+	}
+
+	// 输出结果
+	ccolor.Successf("📘  Query Results(size=%d):\n", len(rowsData))
+	// 输出列名
+	ccolor.Cyanf("  %s\n", strings.Join(columns, "  | "))
+	sb := strutil.NewBuffer(256)
+	sb.WriteString("----------------------------------------------\n")
+
+	for _, row := range rowsData {
+		sb.WriteString("  ")
+		for i, col := range row {
+			sb.Writef("%v", col)
+			if i < len(columns)-1 {
+				sb.WriteString("  | ")
+			}
+		}
+		sb.WriteRune('\n')
+	}
+	fmt.Println(sb.String())
+	return nil
 }

@@ -165,24 +165,29 @@ func (db *DB) QueryTableSchema(tableName string) ([]ColumnInfo, error) {
 	var columns []ColumnInfo
 	for rows.Next() {
 		var col ColumnInfo
-		if db.Driver() == migcom.DriverPostgres {
-			// For PostgreSQL, use different column order
-			err = rows.Scan(&col.Name, &col.Type, &col.NotNull, &col.Default)
-			if err != nil {
-				return nil, fmt.Errorf("failed to scan column info: %v", err)
-			}
+		var defVal sql.NullString
+
+		// For PostgreSQL, use different column order
+		if db.driver == migcom.DriverPostgres {
+			err = rows.Scan(&col.Name, &col.Type, &col.NotNull, &defVal)
+			// For MySQL database
+			// DESCRIBE 返回：Field, Type, Null(是否允许 NULL), Key(键类型), Default(默认值), Extra(额外信息)
+		} else if db.driver == migcom.DriverMySQL {
+			err = rows.Scan(&col.Name, &col.Type, &col.NotNull, &col.Key, &defVal, &col.Extra)
 		} else {
-			// For MySQL, SQLite, etc.
-			err = rows.Scan(&col.Name, &col.Type, &col.NotNull, &col.Default, &col.Key, &col.Extra)
-			if err != nil {
-				return nil, fmt.Errorf("failed to scan column info: %v", err)
-			}
+			// For SQLite, etc.
+			err = rows.Scan(&col.Name, &col.Type, &col.NotNull, &defVal, &col.Key, &col.Extra)
 		}
+		if err != nil {
+			return nil, fmt.Errorf("(%s) failed to scan %q column info: %v", db.driver, tableName, err)
+		}
+
+		col.Default = defVal
 		columns = append(columns, col)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating over schema rows: %v", err)
+		return nil, fmt.Errorf("error iterating over schema %q rows: %v", tableName, err)
 	}
 	return columns, nil
 }
