@@ -80,7 +80,7 @@ func HandleUp(opt UpOption) error {
 		if err != nil {
 			return err
 		}
-		if applied || status == migration.StatusSkip {
+		if applied || ShowVerbose || status == migration.StatusSkip {
 			ccolor.Printf("%d. ⏭️  <ylw>Skipping</> %s migration: %s\n", idx+1, migration.StatusText(status), mig.FileName)
 			continue
 		}
