@@ -70,6 +70,7 @@ func HandleUp(opt UpOption) error {
 	startTime := time.Now()
 
 	var appliedNum int
+	var splitSkipped = !ShowVerbose
 	confirmTip := "Are you sure you want to execute this migration?"
 	ccolor.Printf("🚀  Starting exec migrations(<green>founds=%d</>). Start at: %s\n\n", len(migrations), formatTime(startTime))
 
@@ -80,9 +81,19 @@ func HandleUp(opt UpOption) error {
 		if err != nil {
 			return err
 		}
-		if applied || ShowVerbose || status == migration.StatusSkip {
-			ccolor.Printf("%d. ⏭️  <ylw>Skipping</> %s migration: %s\n", idx+1, migration.StatusText(status), mig.FileName)
+		if applied || status == migration.StatusSkip {
+			if ShowVerbose {
+				ccolor.Printf("%d. ⏭️  <ylw>Skipping</> %s migration: %s\n", idx+1, migration.StatusText(status), mig.FileName)
+			} else {
+				ccolor.Infop(".")
+				splitSkipped = true
+			}
 			continue
+		}
+
+		if splitSkipped {
+			fmt.Println()
+			splitSkipped = false
 		}
 
 		// not applied OR status=down
