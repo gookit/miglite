@@ -69,7 +69,7 @@ func HandleUp(opt UpOption) error {
 	executor := migration.NewExecutor(db, ShowVerbose)
 	startTime := time.Now()
 
-	var appliedNum int
+	var appliedNum, skippedNum int
 	var splitSkipped = !ShowVerbose
 	confirmTip := "Are you sure you want to execute this migration?"
 	ccolor.Printf("🚀  Starting exec migrations(<green>founds=%d</>). Start at: %s\n\n", len(migrations), formatTime(startTime))
@@ -82,6 +82,7 @@ func HandleUp(opt UpOption) error {
 			return err
 		}
 		if applied || status == migration.StatusSkip {
+			skippedNum++
 			if ShowVerbose {
 				ccolor.Printf("%d. ⏭️  <ylw>Skipping</> %s migration: %s\n", idx+1, migration.StatusText(status), mig.FileName)
 			} else {
@@ -120,6 +121,6 @@ func HandleUp(opt UpOption) error {
 		}
 	}
 
-	ccolor.Successln("\n🎉  All migrations applied successfully! ⏱️ costTime:", time.Since(startTime))
+	ccolor.Successf("\n\n🎉  All migrations applied successfully! 📘 apply:%d, skip:%d ⏱️ duration: %s\n", appliedNum, skippedNum, time.Since(startTime))
 	return nil
 }
