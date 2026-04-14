@@ -6,7 +6,7 @@ import (
 	"github.com/gookit/goutil/cflag/capp"
 	"github.com/gookit/goutil/strutil"
 	"github.com/gookit/goutil/x/ccolor"
-	"github.com/gookit/miglite/pkg/config"
+	"github.com/gookit/miglite/internal/config"
 )
 
 var (
@@ -82,7 +82,7 @@ func beforeRun(app *capp.App) bool {
 	}
 
 	if envPrefix != "" {
-		config.SetEnvPrefix(envPrefix)
+		config.EnvPrefix = envPrefix
 	}
 	return true
 }

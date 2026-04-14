@@ -9,8 +9,8 @@ import (
 	"github.com/gookit/goutil/envutil"
 	"github.com/gookit/goutil/fsutil"
 	"github.com/gookit/goutil/strutil"
+	"github.com/gookit/miglite/internal/migutil"
 	"github.com/gookit/miglite/pkg/migcom"
-	"github.com/gookit/miglite/pkg/migutil"
 )
 
 // Database configuration
@@ -76,7 +76,7 @@ type Config struct {
 }
 
 // EnvPrefix prefix for environment variables
-var envPrefix string
+var EnvPrefix string
 
 // Load loads configuration from YAML file and environment variables
 //   - configFile: if not exist, will skip load it.
@@ -90,8 +90,8 @@ func Load(configFile string) (*Config, error) {
 		cfg.Files = []string{".env.local", ".env.dev", ".env"}
 	})
 	// load env prefix after load .env file
-	if envPrefix == "" {
-		envPrefix = os.Getenv(EnvPrefix)
+	if EnvPrefix == "" {
+		EnvPrefix = os.Getenv(EnvPrefixKey)
 	}
 
 	// create default config
@@ -191,16 +191,11 @@ const (
 	// EnvDBURL database url. equals DATABASE_DRIVER + DATABASE_DSN
 	EnvDBURL = "DATABASE_URL"
 	// EnvPrefix prefix for environment variables
-	EnvPrefix = "MIGLITE_ENV_PREFIX"
+	EnvPrefixKey = "MIGLITE_ENV_PREFIX"
 )
 
-// SetEnvPrefix set environment prefix
-func SetEnvPrefix(prefix string) {
-	envPrefix = prefix
-}
-
 func getEnvVal(key string) string {
-	return os.Getenv(envPrefix + key)
+	return os.Getenv(EnvPrefix + key)
 }
 
 func setDBConfigFromENV(dbCfg *Database) error {
