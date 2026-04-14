@@ -7,8 +7,8 @@ import (
 
 	"github.com/gookit/goutil/cflag/capp"
 	"github.com/gookit/goutil/x/ccolor"
+	"github.com/gookit/miglite/internal/migutil"
 	"github.com/gookit/miglite/pkg/migration"
-	"github.com/gookit/miglite/pkg/migutil"
 )
 
 // StatusOption status command option
