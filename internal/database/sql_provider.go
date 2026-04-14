@@ -3,7 +3,7 @@ package database
 import (
 	"fmt"
 
-	"github.com/gookit/miglite/pkg/migutil"
+	"github.com/gookit/miglite/internal/migutil"
 )
 
 // SchemaTableName 默认数据库迁移记录表名
@@ -218,9 +218,9 @@ func (b *PgSqlProvider) ShowTables() string {
 // QueryTableSchema 获取数据库表结构
 func (b *PgSqlProvider) QueryTableSchema(tableName string) string {
 	return fmt.Sprintf(`
-SELECT column_name, data_type, is_nullable, column_default 
-FROM information_schema.columns 
-WHERE table_name = '%s' 
+SELECT column_name, data_type, is_nullable, column_default
+FROM information_schema.columns
+WHERE table_name = '%s'
 ORDER BY ordinal_position`, tableName)
 }
 

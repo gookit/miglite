@@ -7,8 +7,8 @@ import (
 	"github.com/gookit/goutil/dump"
 	"github.com/gookit/goutil/envutil"
 	"github.com/gookit/goutil/x/ccolor"
-	"github.com/gookit/miglite/pkg/config"
-	"github.com/gookit/miglite/pkg/database"
+	"github.com/gookit/miglite/internal/config"
+	"github.com/gookit/miglite/internal/database"
 	"github.com/gookit/miglite/pkg/migration"
 )
 

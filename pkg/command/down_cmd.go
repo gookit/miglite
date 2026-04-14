@@ -6,7 +6,7 @@ import (
 	"github.com/gookit/goutil/cflag/capp"
 	"github.com/gookit/goutil/cliutil"
 	"github.com/gookit/goutil/x/ccolor"
-	"github.com/gookit/miglite/pkg/database"
+	"github.com/gookit/miglite/internal/database"
 	"github.com/gookit/miglite/pkg/migration"
 )
 

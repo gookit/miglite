@@ -8,7 +8,7 @@ import (
 	"github.com/gookit/goutil/cflag/capp"
 	"github.com/gookit/goutil/strutil"
 	"github.com/gookit/goutil/x/ccolor"
-	"github.com/gookit/miglite/pkg/database"
+	"github.com/gookit/miglite/internal/database"
 )
 
 // ShowOption represents options for the show command

@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/gookit/goutil/x/ccolor"
-	"github.com/gookit/miglite/pkg/database"
+	"github.com/gookit/miglite/internal/database"
 )
 
 // Executor handles the execution of migrations

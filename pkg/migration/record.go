@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/gookit/goutil/x/stdio"
-	"github.com/gookit/miglite/pkg/database"
+	"github.com/gookit/miglite/internal/database"
 )
 
 // SaveRecord records a migration in the database

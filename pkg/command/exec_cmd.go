@@ -11,7 +11,7 @@ import (
 	"github.com/gookit/goutil/strutil"
 	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/goutil/x/stdio"
-	"github.com/gookit/miglite/pkg/database"
+	"github.com/gookit/miglite/internal/database"
 )
 
 // ExecOption represents options for the exec command
