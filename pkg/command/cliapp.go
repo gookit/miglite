@@ -6,6 +6,7 @@ import (
 	"github.com/gookit/goutil/cflag/capp"
 	"github.com/gookit/goutil/strutil"
 	"github.com/gookit/goutil/x/ccolor"
+	"github.com/gookit/miglite/pkg/config"
 )
 
 var (
@@ -24,6 +25,7 @@ func SetBuildInfo(version, goVer, buildTime, gitCommit string) {
 	GitCommit = gitCommit
 }
 
+var envPrefix string
 var showVersion bool
 
 var (
@@ -34,6 +36,7 @@ var (
 )
 
 func bindCommonFlags(c *capp.Cmd) {
+	// Add global flags
 	c.BoolVar(&ShowVerbose, "verbose", false, "Enable verbose output;;v")
 	c.StringVar(&ConfigFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
 }
@@ -43,6 +46,7 @@ func NewApp(name, version, description string) *capp.App {
 	app := capp.NewWith(name, version, description)
 
 	// Add global flags
+	app.StringVar(&envPrefix, "env-prefix", "", "Environment variable prefix. same as MIGLITE_ENV_PREFIX;;pfx")
 	app.BoolVar(&showVersion, "version", false, "Show version and exit;;V")
 	app.BoolVar(&ShowVerbose, "verbose", false, "Enable verbose output;;v")
 	app.StringVar(&ConfigFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
@@ -77,5 +81,8 @@ func beforeRun(app *capp.App) bool {
 		return false
 	}
 
+	if envPrefix != "" {
+		config.SetEnvPrefix(envPrefix)
+	}
 	return true
 }

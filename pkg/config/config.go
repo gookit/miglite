@@ -90,7 +90,9 @@ func Load(configFile string) (*Config, error) {
 		cfg.Files = []string{".env.local", ".env.dev", ".env"}
 	})
 	// load env prefix after load .env file
-	envPrefix = os.Getenv(EnvPrefix)
+	if envPrefix == "" {
+		envPrefix = os.Getenv(EnvPrefix)
+	}
 
 	// create default config
 	config := &Config{
@@ -191,6 +193,11 @@ const (
 	// EnvPrefix prefix for environment variables
 	EnvPrefix = "MIGLITE_ENV_PREFIX"
 )
+
+// SetEnvPrefix set environment prefix
+func SetEnvPrefix(prefix string) {
+	envPrefix = prefix
+}
 
 func getEnvVal(key string) string {
 	return os.Getenv(envPrefix + key)

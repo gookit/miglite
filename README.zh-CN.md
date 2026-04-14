@@ -22,6 +22,7 @@
 - 可以通过环境变量零配置直接运行迁移(eg: `DATABASE_URL`, `MIGRATIONS_PATH`)
     - 会自动尝试加载目录下的 `.env` 文件(可选)
     - 会自动加载默认配置文件 `./miglite.yaml`(可选)
+- 内置支持通过 `miglite exec` 执行 SQL 语句，方便调试和测试
 - 支持 `mysql`, `sqlite`, `postgres` 数据库
     - 作为库使用时，需要自己添加DB驱动依赖
     - 直接使用 `miglite` 命令行工具时，已经添加了驱动依赖
@@ -48,6 +49,20 @@ go get github.com/gookit/miglite
 直接使用 `miglite` 命令行工具。
 
 ![help](./testdata/help.png)
+
+**Commands**:
+
+```bash
+  create, new                 Create new migration SQL files
+  down, rollback              Rollback the most recent migration
+  exec, execute, run-sql      Execute SQL statement or SQL file directly
+  init                        Initialize the migration schema on database
+  show, info, describe        Show database information like tables or table schema
+  skip, ignore                Manual skip one or multi migration file(s)
+  status, st                  Show the status of migrations
+  up, migrate, run            Execute pending migrations
+  help                        Display application help
+```
 
 ### 配置
 

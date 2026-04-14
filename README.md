@@ -22,6 +22,7 @@
 - Can run migrations with zero configuration via environment variables (e.g., `DATABASE_URL`, `MIGRATIONS_PATH`)
   - Automatically attempts to load `.env` file in the directory(Optional)
   - Automatically loads default configuration file `./miglite.yaml`(Optional)
+- Built-in support for executing SQL statements via `miglite exec`, convenient for debugging and testing
 - Supports `mysql`, `sqlite`, `postgres` databases
   - When used as a library, you need to add your own DB driver dependencies
   - When using the `miglite` command-line tool directly, driver dependencies are already included
@@ -48,6 +49,20 @@ go get github.com/gookit/miglite
 Using the `miglite` command-line tool directly.
 
 ![help](./testdata/help.png)
+
+**Commands**:
+
+```bash
+  create, new                 Create new migration SQL files
+  down, rollback              Rollback the most recent migration
+  exec, execute, run-sql      Execute SQL statement or SQL file directly
+  init                        Initialize the migration schema on database
+  show, info, describe        Show database information like tables or table schema
+  skip, ignore                Manual skip one or multi migration file(s)
+  status, st                  Show the status of migrations
+  up, migrate, run            Execute pending migrations
+  help                        Display application help
+```
 
 ### Configuration
 
