@@ -3,8 +3,8 @@ package miglite_test
 import (
 	"github.com/gookit/goutil"
 	"github.com/gookit/miglite"
+	"github.com/gookit/miglite/internal/config"
 	"github.com/gookit/miglite/pkg/command"
-	"github.com/gookit/miglite/pkg/config"
 )
 
 func ExampleNew() {
@@ -21,7 +21,6 @@ func ExampleNew() {
 	goutil.PanicIfErr(err) // handle error
 
 	// other operations
-
 
 	// init migrations schema
 	err = mig.Init(command.InitOption{
