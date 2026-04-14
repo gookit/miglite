@@ -15,9 +15,9 @@
 - Migration SQL is executed within transactions to ensure data consistency
 - Uses raw SQL files as migration files
   - SQL filename format: `YYYYMMDD-HHMMSS-{migration-name}.sql`
-- By default, all SQL files (including subdirectories) in the migration directory are recursively searched 
-  - Directories starting with `_` (eg. `_backup/xx.sql`) are ignored when looking for SQL files 
-  - Migration directories support the use of environment variables (eg `.migrations/${MODULE_NAME}`)}) 
+- By default, all SQL files (including subdirectories) in the migration directory are recursively searched
+  - Directories starting with `_` (eg. `_backup/xx.sql`) are ignored when looking for SQL files
+  - Migration directories support the use of environment variables (eg `.migrations/${MODULE_NAME}`)
   - Migration directories support adding multiple paths using comma `,` splitting
 - Can run migrations with zero configuration via environment variables (e.g., `DATABASE_URL`, `MIGRATIONS_PATH`)
   - Automatically attempts to load `.env` file in the directory(Optional)
@@ -68,8 +68,13 @@ migrations:
 
 #### Environment Variables
 
+- `MIGRATIONS_PATH`: Migration files directory path (default: `./migrations`)
+  - Supports using environment variables (eg `./migrations/${MODULE_NAME}`)
+  - Supports adding multiple paths using comma `,` splitting
 - `DATABASE_URL`: Database connection URL (e.g., `sqlite://path/to/your.db`, `mysql://user:pass@tcp(host:port)/dbname`)
-- `MIGRATIONS_PATH`: Migration files path (default: `./migrations`)
+- `MIGLITE_ENV_PREFIX`: Environment variable prefix, default is empty string
+  - After setting, environment variables will be prefixed with the prefix, eg. `MIGLITE_ENV_PREFIX=MY_`, then read `MY_DATABASE_URL` instead of `DATABASE_URL`
+  - All environment variables will be affected by the prefix setting
 
 **Examples**:
 
@@ -83,7 +88,7 @@ DATABASE_URL="mysql://user:passwd@tcp(127.0.0.1:3306)/local_test?charset=utf8mb4
 DATABASE_URL="postgres://host=localhost port=5432 user=username password=password dbname=dbname sslmode=disable"
 ```
 
-> **NOTE**: mysql URLs must be tagged with the 'tcp' protocol
+> **NOTE**: mysql DSNs must be tagged with the 'tcp(...)' protocol. Otherwise, it will throw an error.
 
 ### Creating Migrations
 

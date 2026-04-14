@@ -17,7 +17,7 @@
     - 固定文件名格式为 `YYYYMMDD-HHMMSS-{migration-name}.sql`
 - 默认会递归搜索迁移目录下的所有sql文件(含子目录)
     - 查找sql文件时会忽略以 `_` 开始的目录(eg. `_backup/xx.sql`)
-    - 迁移目录支持使用环境变量(eg `./migrations/${MODULE_NAME}`)})
+    - 迁移目录支持使用环境变量(eg `./migrations/${MODULE_NAME}`)
     - 迁移目录支持使用逗号 `,` 分割添加多个路径
 - 可以通过环境变量零配置直接运行迁移(eg: `DATABASE_URL`, `MIGRATIONS_PATH`)
     - 会自动尝试加载目录下的 `.env` 文件(可选)
@@ -68,8 +68,13 @@ migrations:
 
 #### 环境变量
 
+- `MIGRATIONS_PATH`: 迁移文件所在目录路径 (默认: `./migrations`)
+  - 支持使用环境变量(eg `./migrations/${MODULE_NAME}`)
+  - 支持使用逗号 `,` 分割添加多个路径
 - `DATABASE_URL`: 数据库连接 URL (例如: `sqlite://path/to/your.db`, `mysql://user:pass@localhost/dbname`)
-- `MIGRATIONS_PATH`: 迁移文件路径，支持使用逗号分隔添加多个路径 (默认: `./migrations`)
+- `MIGLITE_ENV_PREFIX`: 环境变量前缀, 默认为空字符串 (主要是用于快速的支持多DB迁移)
+  - 设置后环境变量名会添加前缀读取，例如  `MIGLITE_ENV_PREFIX=MY_`, 则读取 `MY_DATABASE_URL` 而不是 `DATABASE_URL`
+  - 上面的几个环境变量都受到ENV前缀设置影响
 
 `ENV` 示例:
 
@@ -83,7 +88,7 @@ DATABASE_URL="mysql://user:passwd@tcp(127.0.0.1:3306)/local_test?charset=utf8mb4
 DATABASE_URL="postgres://host=localhost port=5432 user=username password=password dbname=dbname sslmode=disable"
 ```
 
-> **NOTE**: mysql URL 必须带上 `tcp` 协议标记
+> **NOTE**: mysql 的 DSN 必须带上 `tcp(...)` 协议标记，否则会报错。
 
 ### 创建迁移
 

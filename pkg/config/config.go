@@ -63,7 +63,7 @@ func (m *Migrations) GetPaths() []string {
 
 // Config holds the application configuration
 type Config struct {
-	Verbose bool `yaml:"verbose"`
+	Verbose    bool       `yaml:"verbose"`
 	Database   Database   `yaml:"database"`
 	Migrations Migrations `yaml:"migrations"`
 
@@ -74,6 +74,9 @@ type Config struct {
 	// LogFunc handler
 	LogFunc func(msg string) `yaml:"-"`
 }
+
+// EnvPrefix prefix for environment variables
+var envPrefix string
 
 // Load loads configuration from YAML file and environment variables
 //   - configFile: if not exist, will skip load it.
@@ -86,6 +89,10 @@ func Load(configFile string) (*Config, error) {
 		cfg.LoadFirstExist = true
 		cfg.Files = []string{".env.local", ".env.dev", ".env"}
 	})
+	// load env prefix after load .env file
+	envPrefix = os.Getenv(EnvPrefix)
+
+	// create default config
 	config := &Config{
 		Migrations: Migrations{Recursive: true},
 	}
@@ -119,7 +126,7 @@ func Load(configFile string) (*Config, error) {
 }
 
 func initMigrationsConfig(migConfig *Migrations, fmtDriver string) {
-	if path := os.Getenv("MIGRATIONS_PATH"); path != "" {
+	if path := getEnvVal(EnvMigrationsPath); path != "" {
 		migConfig.Path = path
 	}
 
@@ -129,7 +136,7 @@ func initMigrationsConfig(migConfig *Migrations, fmtDriver string) {
 		dirPath = migcom.DefaultMigrationsDir
 	} else {
 		if strings.Contains(dirPath, "{driver}") {
-			dirPath = strings.Replace(dirPath, "{driver}", fmtDriver, -1)
+			dirPath = strings.ReplaceAll(dirPath, "{driver}", fmtDriver)
 		}
 
 		// parse ENV vars in migrations path
@@ -173,20 +180,36 @@ func checkDatabaseConfig(dbCfg *Database) error {
 	return nil
 }
 
+const (
+	EnvDBDSN    = "DATABASE_DSN"
+	EnvDBDriver = "DATABASE_DRIVER"
+	// EnvDBSqlDriver database driver for go sql/database package. default: DATABASE_DRIVER
+	EnvDBSqlDriver    = "DATABASE_SQL_DRIVER"
+	EnvMigrationsPath = "MIGRATIONS_PATH"
+	// EnvDBURL database url. equals DATABASE_DRIVER + DATABASE_DSN
+	EnvDBURL = "DATABASE_URL"
+	// EnvPrefix prefix for environment variables
+	EnvPrefix = "MIGLITE_ENV_PREFIX"
+)
+
+func getEnvVal(key string) string {
+	return os.Getenv(envPrefix + key)
+}
+
 func setDBConfigFromENV(dbCfg *Database) error {
-	if dsn := os.Getenv("DATABASE_DSN"); dsn != "" {
+	if dsn := getEnvVal(EnvDBDSN); dsn != "" {
 		dbCfg.DSN = dsn
 	}
-	if driver := os.Getenv("DATABASE_DRIVER"); driver != "" {
+	if driver := getEnvVal(EnvDBDriver); driver != "" {
 		dbCfg.Driver = driver
 		dbCfg.SqlDriver = driver
 	}
-	if sqlDriver := os.Getenv("DATABASE_SQL_DRIVER"); sqlDriver != "" {
+	if sqlDriver := getEnvVal(EnvDBSqlDriver); sqlDriver != "" {
 		dbCfg.SqlDriver = sqlDriver
 	}
 
 	// Infer driver from DATABASE_URL
-	if dbURL := os.Getenv("DATABASE_URL"); dbURL != "" {
+	if dbURL := getEnvVal(EnvDBURL); dbURL != "" {
 		driver, dsn, err := parseDatabaseURL(dbURL)
 		if err != nil {
 			return err
