@@ -1,7 +1,7 @@
 github.com/goccy/go-yaml v1.19.2 h1:PmFC1S6h8ljIz6gMRBopkjP1TVT7xuwrButHID66PoM=
 github.com/goccy/go-yaml v1.19.2/go.mod h1:XBurs7gK8ATbW4ZPGKgcbrY1Br56PdM69F7LkFRi1kA=
-github.com/gookit/goutil v0.7.3 h1:nXDd/AB17nEjqVCNDGioDhVL/gVqdlqRMfFergKDjHE=
-github.com/gookit/goutil v0.7.3/go.mod h1:vJS9HXctYTCLtCsZot5L5xF+O1oR17cDYO9R0HxBmnU=
+github.com/gookit/goutil v0.7.5-0.20260501141109-e40f11079592 h1:CUo8/M6/UMJ1EnBInd/0L93m//lT2jGJuAIFTQ5e87A=
+github.com/gookit/goutil v0.7.5-0.20260501141109-e40f11079592/go.mod h1:vJS9HXctYTCLtCsZot5L5xF+O1oR17cDYO9R0HxBmnU=
 golang.org/x/sync v0.11.0 h1:GGz8+XQP4FvTTrjZPzNKTMFtSXH80RAzG+5ghFPgK9w=
 golang.org/x/sync v0.11.0/go.mod h1:Czt+wKu1gCyEFDUtn0jG5QVvpJ6rzVqr5aXyt9drQfk=
 golang.org/x/sys v0.30.0 h1:QjkSwP/36a20jFYWkSue1YwXzLmsV5Gfq7Eiy72C1uc=
