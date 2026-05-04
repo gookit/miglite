@@ -14,7 +14,8 @@
 - Developed based on `database/sql` without adding any driver dependencies by default
 - Migration SQL is executed within transactions to ensure data consistency
 - Uses raw SQL files as migration files
-  - SQL filename format: `YYYYMMDD-HHMMSS-{migration-name}.sql`
+  - SQL filename format: `YYYYMMDD-NNNNNN-{migration-name}.sql`
+  - The `YYYYMMDD` date must be valid; the next 6 digits only need to be comparable numbers
 - By default, all SQL files (including subdirectories) in the migration directory are recursively searched
   - Directories starting with `_` (eg. `_backup/xx.sql`) are ignored when looking for SQL files
   - Migration directories support the use of environment variables (eg `.migrations/${MODULE_NAME}`)
@@ -111,7 +112,7 @@ DATABASE_URL="postgres://host=localhost port=5432 user=username password=passwor
 miglite create add-users-table
 ```
 
-This will create an SQL file named with the current date in the `./migrations/` directory, with the format `YYYYMMDD-HHMMSS-add-users-table.sql`.
+This will create an SQL file named with the current timestamp in the `./migrations/` directory, with the format `YYYYMMDD-HHMMSS-add-users-table.sql`.
 
 ```text
 ./migrations/20251105-102325-create-users-table.sql

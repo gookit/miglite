@@ -18,6 +18,8 @@ type Migration struct {
 	Contents string
 	// time from filename
 	Timestamp time.Time
+	// SortKey comparable filename prefix, eg: 20260504-100070
+	SortKey string
 	// Version same as filename
 	Version string
 	// UpSection UP section contents
@@ -98,6 +100,7 @@ func NewMigration(filePath string) (*Migration, error) {
 		FileName:  fileName,
 		FilePath:  filePath,
 		Timestamp: fi.Time,
+		SortKey:   fi.Date,
 		Version:   fileName,
 	}, nil
 }
@@ -178,5 +181,11 @@ func (m *Migration) ResetContents() {
 
 // IsBefore 判断当前迁移文件是否早于指定迁移文件
 func (m *Migration) IsBefore(other *Migration) bool {
+	if m.SortKey != "" && other.SortKey != "" {
+		if m.SortKey == other.SortKey {
+			return m.FileName < other.FileName
+		}
+		return m.SortKey < other.SortKey
+	}
 	return m.Timestamp.Before(other.Timestamp)
 }

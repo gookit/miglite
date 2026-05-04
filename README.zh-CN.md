@@ -14,7 +14,8 @@
 - 基于 `database/sql` 进行开发，默认不添加任何驱动依赖包
 - 迁移 SQL 都在事物中执行，确保数据一致性
 - 基于原始 SQL 方式作为迁移文件
-    - 固定文件名格式为 `YYYYMMDD-HHMMSS-{migration-name}.sql`
+    - 固定文件名格式为 `YYYYMMDD-NNNNNN-{migration-name}.sql`
+    - `YYYYMMDD` 必须是有效日期，后 6 位只要求是可比较的数字
 - 默认会递归搜索迁移目录下的所有sql文件(含子目录)
     - 查找sql文件时会忽略以 `_` 开始的目录(eg. `_backup/xx.sql`)
     - 迁移目录支持使用环境变量(eg `./migrations/${MODULE_NAME}`)
@@ -111,7 +112,7 @@ DATABASE_URL="postgres://host=localhost port=5432 user=username password=passwor
 miglite create add-users-table
 ```
 
-这将在 `./migrations/` 目录下创建一个以当前日期命名的 SQL 文件，格式为 `YYYYMMDD-HHMMSS-add-users-table.sql`。
+这将在 `./migrations/` 目录下创建一个以当前时间戳命名的 SQL 文件，格式为 `YYYYMMDD-HHMMSS-add-users-table.sql`。
 
 ```text
 ./migrations/20251105-102325-create-users-table.sql
@@ -253,5 +254,4 @@ func main() {
 - [golang-migrate](https://github.com/golang-migrate/migrate)
 - [pressly/goose](https://github.com/pressly/goose)
 - [amacneil/dbmate](https://github.com/amacneil/dbmate)
-
 

@@ -30,6 +30,16 @@ func TestParseFile(t *testing.T) {
 	assert.Empty(t, m.DownSection)
 }
 
+func TestMigration_IsBeforeSortsByComparablePrefix(t *testing.T) {
+	m1, err := NewMigration("testdata/20260504-100070-create-vp-audit-log.sql")
+	assert.NoError(t, err)
+	m2, err := NewMigration("testdata/20260504-100071-add-vp-audit-index.sql")
+	assert.NoError(t, err)
+
+	assert.True(t, m1.IsBefore(m2))
+	assert.False(t, m2.IsBefore(m1))
+}
+
 func TestMigration_ParseContents(t *testing.T) {
 	m := &Migration{}
 	m.Contents = string(testContents)

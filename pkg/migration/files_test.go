@@ -16,6 +16,17 @@ func TestParseFilename(t *testing.T) {
 	assert.Eq(t, "2025-11-05 10:24:30", fi.Time.Format("2006-01-02 15:04:05"))
 	assert.Eq(t, "add-age-index", fi.Name)
 
+	fi, err = parseFilename("20260504-100070-create-vp-audit-log.sql")
+	assert.Nil(t, err)
+	assert.NotNil(t, fi)
+	assert.Eq(t, "20260504-100070", fi.Date)
+	assert.Eq(t, "2026-05-04 00:00:00", fi.Time.Format("2006-01-02 15:04:05"))
+	assert.Eq(t, "create-vp-audit-log", fi.Name)
+
+	fi, err = parseFilename("20261340-100070-create-vp-audit-log.sql")
+	assert.Err(t, err)
+	assert.Nil(t, fi)
+
 	// invalid format
 	fi, err = parseFilename("20251105-add-age-index")
 	assert.Err(t, err)

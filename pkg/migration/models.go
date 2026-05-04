@@ -20,7 +20,8 @@ const (
 	MarkDown = "-- Migrate:DOWN"
 	// DateLayout defines the layout for migration filename
 	DateLayout   = "20060102-150405"
-	PrefixFormat = "YYYYMMDD-HHMMSS"
+	DayLayout    = "20060102"
+	PrefixFormat = "YYYYMMDD-NNNNNN"
 )
 
 // StatusText returns the text representation of a migration status

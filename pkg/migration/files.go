@@ -77,9 +77,9 @@ func CreateMigration(migrationsDir, name string) (string, error) {
 	return filePath, nil
 }
 
-// FindMigrations finds all migration files in the specified directory, and returns them sorted by timestamp
+// FindMigrations finds all migration files in the specified directory, and returns them sorted by filename prefix
 //
-//  - migrationsDir: allow multiple directories separated by comma
+//   - migrationsDir: allow multiple directories separated by comma
 func FindMigrations(migrationsDir string, recursive bool) ([]*Migration, error) {
 	var migrations []*Migration
 	ccolor.Printf("🔎  Discovering migrations from <green>%s</>\n", migrationsDir)
@@ -157,8 +157,8 @@ func findMigrations(dirPath string, recursive bool) ([]*Migration, error) {
 
 // defines the regex pattern for extracting the date prefix from a filename
 //
-// format: YYYYMMDD-HHMMSS-{name}.sql
-var regexFilename = regexp.MustCompile(`^(\d{8}-\d{6})([\w-]+)\.sql$`)
+// format: YYYYMMDD-NNNNNN-{name}.sql
+var regexFilename = regexp.MustCompile(`^(\d{8})-(\d{6})([\w-]+)\.sql$`)
 
 // FilenameInfo represents the information extracted from a migration filename
 //
@@ -177,15 +177,18 @@ func parseFilename(filename string) (*FilenameInfo, error) {
 		return nil, fmt.Errorf("invalid filename format: %s, expected %s-{name}.sql", filename, PrefixFormat)
 	}
 
-	dateStr := matches[1]
+	dateStr := matches[1] + "-" + matches[2]
 	createTime, err := time.Parse(DateLayout, dateStr)
 	if err != nil {
-		return nil, fmt.Errorf("invalid datetime in filename: %s", filename)
+		createTime, err = time.Parse(DayLayout, matches[1])
+		if err != nil {
+			return nil, fmt.Errorf("invalid date in filename: %s", filename)
+		}
 	}
 
 	return &FilenameInfo{
 		Time: createTime,
 		Date: dateStr,
-		Name: strings.TrimLeft(matches[2], "-_"),
+		Name: strings.TrimLeft(matches[3], "-_"),
 	}, nil
 }
