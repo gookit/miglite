@@ -1,92 +1,133 @@
-# link https://github.com/humbug/box/blob/master/Makefile
-#SHELL = /bin/sh
-.DEFAULT_GOAL := help
-# 每行命令之前必须有一个tab键。如果想用其他键，可以用内置变量.RECIPEPREFIX 声明
-# mac 下这条声明 没起作用 !!
-#.RECIPEPREFIX = >
-.PHONY: all usage help clean
+## Miglite — Makefile
 
-# 需要注意的是，每行命令在一个单独的shell中执行。这些Shell之间没有继承关系。
-# - 解决办法是将两行命令写在一行，中间用分号分隔。
-# - 或者在换行符前加反斜杠转义 \
+APP     := miglite
+MAIN_DIR := ./cmd/miglite
+GOEXE = $(shell go env GOEXE)
+BINARY  := $(APP)$(GOEXE)
 
-# 接收命令行传入参数 make COMMAND tag=v2.0.4
-# TAG=$(tag)
-
-BIN_NAME=miglite
-MAIN_SRC_FILE=./main.go
-#ROOT_PACKAGE := main
-#VERSION=$(shell git for-each-ref refs/tags/ --count=1 --sort=-version:refname --format='%(refname:short)' 1 |  sed 's/^v//')
+# Build metadata
+BUILD_TIME := $(shell date +%Y-%m-%dT%H:%M:%S)
+GIT_HASH  := $(shell git rev-parse --short=8 HEAD 2>/dev/null || echo "unknown")
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null | sed 's/^v//' || echo "dev-$(GIT_HASH)")
 GO_VERSION := $(shell go version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 
-# git commit id
-COMMIT_ID := $(shell git rev-parse HEAD 2> /dev/null || echo 'unknown')
-SHORT_HASH := $(shell git rev-parse --short HEAD 2> /dev/null || echo 'unknown')
-# set dev version unless VERSION is explicitly set via environment
-# manual set: make VERSION=1.2.3
-VERSION ?= $(shell echo "$$(git for-each-ref refs/tags/ --count=1 --sort=-version:refname --format='%(refname:short)' | echo 'dev' 2>/dev/null)-$(SHORT_HASH)" | sed 's/^v//')
-BUILD_DATE := $(shell date +%Y/%m/%d-%H:%M:%S)
+LDFLAGS := -s -w \
+	-X main.Version=$(VERSION) \
+	-X main.GitCommit=$(GIT_HASH) \
+	-X main.GoVersion=$(GO_VERSION) \
+	-X main.BuildTime=$(BUILD_TIME)
 
-# Full build flags used when building binaries. Not used for test compilation/execution.
-BUILD_FLAGS := -ldflags \
-  " -s -w \
-   -X main.Version=$(VERSION)\
-   -X main.GoVersion=$(GO_VERSION)\
-   -X main.BuildTime=$(BUILD_DATE)\
-   -X main.GitCommit=$(COMMIT_ID)"
+.PHONY: all build backend clean help latest
 
-##there some make command for the project
-##
+## all: build (default)
+all: build
 
-help:
-	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//' | sed -e 's/: / /'
+## build: build Go binary (current platform)
+build:
+	@echo "🐹 Building Go binary ($(VERSION) @ $(GIT_HASH))..."
+	cd $(MAIN_DIR) && go build -ldflags "$(LDFLAGS)" -o $(BINARY) .
+	@echo "📦 Compressing binary..."
+	@upx -6 --no-progress $(BINARY)
+	@echo "✅ Binary: $(BINARY) ($$(du -sh $(BINARY) | cut -f1))"
 
-##Available Commands:
+## install: install Go binary to $GOPATH/bin
+install:
+	cd $(MAIN_DIR) && go install -ldflags "$(LDFLAGS)" .
+	upx -6 --no-progress $(GOPATH)/bin/$(BINARY)
+	@echo "✅ Installed to GOPATH/bin"
 
-install: ## Install to GOPATH/bin(local dev)
-	cd cmd/miglite && go install $(BUILD_FLAGS) .
-	#chmod +x $(GOPATH)/bin/miglite
+## run: build and run with current directory
+run: build
+	./$(BINARY)
 
-build-all: win linux linux-arm darwin darwin-arm ## Build for Linux,ARM,OSX,Windows
-	ls -alh ./build
+# ─── Cross Compilation ────────────────────────────────────────────────────────
 
-linux: ## Build for Linux AMD64
-	mkdir -p build
-	cd cmd/miglite && GOOS=linux GOARCH=amd64 go build $(BUILD_FLAGS) -o miglite-linux-amd64 $(MAIN_SRC_FILE)
-	cp cmd/miglite/miglite-linux-amd64 build/miglite-linux-amd64
-	chmod +x build/miglite-linux-amd64
+DIST_DIR := dist
+DIST_DIR_PATH := cmd/dist
 
-linux-arm: ## Build for ARM64
-	mkdir -p build
-	cd cmd/miglite && GOOS=linux GOARCH=arm64 go build $(BUILD_FLAGS) -o miglite-linux-arm64 $(MAIN_SRC_FILE)
-	cp cmd/miglite/miglite-linux-arm64 build/miglite-linux-arm64
-	chmod +x build/miglite-linux-arm64
+## build-all: cross-compile for all platforms
+build-all: dump-info build-linux build-linux-arm64 build-darwin build-darwin-arm64 build-windows latest-yaml
+	ls -lh $(DIST_DIR_PATH)
 
-darwin: ## Build for OSX AMD64
-	mkdir -p build
-	cd cmd/miglite && GOOS=darwin GOARCH=amd64 go build $(BUILD_FLAGS) -o miglite-darwin-amd64 $(MAIN_SRC_FILE)
-	cp cmd/miglite/miglite-darwin-amd64 build/miglite-darwin-amd64
-	chmod +x build/miglite-darwin-amd64
+## dump-info: dump build info
+dump-info:
+	@echo "Build Info:"
+	@echo "  VERSION: $(VERSION)"
+	@echo "  GIT_HASH: $(GIT_HASH)"
+	@echo "  BUILD_TIME: $(BUILD_TIME)"
 
-darwin-arm: ## Build for OSX ARM64
-	mkdir -p build
-	cd cmd/miglite && GOOS=darwin GOARCH=arm64 go build $(BUILD_FLAGS) -o miglite-darwin-arm64 $(MAIN_SRC_FILE)
-	cp cmd/miglite/miglite-darwin-arm64 build/miglite-darwin-arm64
-	chmod +x build/miglite-darwin-arm64
+## latest-yaml: generate latest.yaml release metadata
+latest-yaml:
+	@mkdir -p $(DIST_DIR_PATH)
+	@{ \
+		echo "name: $(APP)"; \
+		echo "version: $(VERSION)"; \
+		echo "released_at: $(BUILD_TIME)"; \
+	} > $(DIST_DIR_PATH)/latest.yaml
+	@echo "   → $(DIST_DIR_PATH)/latest.yaml"
 
-win: ## Build for Windows AMD64
-	mkdir -p build
-	cd cmd/miglite && GOOS=windows GOARCH=amd64 go build $(BUILD_FLAGS) -o miglite-windows-amd64.exe $(MAIN_SRC_FILE)
-	cp cmd/miglite/miglite-windows-amd64.exe build/miglite-windows-amd64.exe
+## build-linux: compile for Linux amd64
+build-linux:
+	@echo "🐧 linux/amd64..."
+	@mkdir -p $(DIST_DIR_PATH)
+	@cd $(MAIN_DIR) && GOOS=linux GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o ../$(DIST_DIR)/$(APP)-linux-amd64 .
+	@upx -6 --no-progress $(DIST_DIR_PATH)/$(APP)-linux-amd64
+	@chmod +x $(DIST_DIR_PATH)/$(APP)-linux-amd64
+	@echo "   → $(DIST_DIR_PATH)/$(APP)-linux-amd64"
 
-  clean:     ## Clean all created artifacts
+## build-linux-arm64: compile for Linux arm64
+build-linux-arm64:
+	@echo "🐧 linux/arm64..."
+	@mkdir -p $(DIST_DIR_PATH)
+	@cd $(MAIN_DIR) && GOOS=linux GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -o ../$(DIST_DIR)/$(APP)-linux-arm64 .
+	@upx -6 --no-progress $(DIST_DIR_PATH)/$(APP)-linux-arm64
+	@chmod +x $(DIST_DIR_PATH)/$(APP)-linux-arm64
+	@echo "   → $(DIST_DIR_PATH)/$(APP)-linux-arm64"
+
+## build-darwin: compile for macOS amd64
+build-darwin:
+	@echo "🍎 darwin/amd64..."
+	@mkdir -p $(DIST_DIR_PATH)
+	@cd $(MAIN_DIR) && GOOS=darwin GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o ../$(DIST_DIR)/$(APP)-darwin-amd64 .
+	@chmod +x $(DIST_DIR_PATH)/$(APP)-darwin-amd64
+	@echo "   → $(DIST_DIR_PATH)/$(APP)-darwin-amd64"
+
+## build-darwin-arm64: compile for macOS Apple Silicon
+build-darwin-arm64:
+	@echo "🍎 darwin/arm64..."
+	@mkdir -p $(DIST_DIR_PATH)
+	@cd $(MAIN_DIR) && GOOS=darwin GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -o ../$(DIST_DIR)/$(APP)-darwin-arm64 .
+	# upx -6 --no-progress $(DIST_DIR_PATH)/$(APP)-darwin-arm64 # 压缩有问题在 macos 12+
+	@echo "   → $(DIST_DIR_PATH)/$(APP)-darwin-arm64"
+
+## build-windows: compile for Windows amd64
+build-windows:
+	@echo "🪟 windows/amd64..."
+	@mkdir -p $(DIST_DIR_PATH)
+	@cd $(MAIN_DIR) && GOOS=windows GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o ../$(DIST_DIR)/$(APP)-windows-amd64.exe .
+	@upx -6 --no-progress $(DIST_DIR_PATH)/$(APP)-windows-amd64.exe
+	@echo "   → $(DIST_DIR_PATH)/$(APP)-windows-amd64.exe"
+
+.PHONY: release
+release: build-all ## Create release archives for all platforms TODO 还未启用的
+	@echo "Creating release archives..."
+	@mkdir -p cmd/release
+	@cd $(DIST_DIR) && \
+	tar -czf ../release/$(APP)-linux-amd64.tar.gz $(APP)-linux-amd64; \
+	tar -czf ../release/$(APP)-linux-arm64.tar.gz $(APP)-linux-arm64; \
+	tar -czf ../release/$(APP)-darwin-amd64.tar.gz $(APP)-darwin-amd64; \
+	tar -czf ../release/$(APP)-darwin-arm64.tar.gz $(APP)-darwin-arm64; \
+	zip ../release/$(APP)-windows-amd64.zip $(APP)-windows-amd64.exe;
+	@echo "Release archives created in cmd/release/"
+
+## clean: remove build artifacts
 clean:
-	git clean --exclude=.idea/ -fdx
+	@rm -f $(BINARY)
+	@rm -rf $(DIST_DIR)
+	@echo "🧹 Cleaned"
 
-  cs-fix:        ## Fix code style for all files
-cs-fix:
-	gofmt -w ./
-
-  cs-diff:        ## Display code style error files
-cs-diff:
-	gofmt -l ./
+## help: show this help
+help:
+	@echo "Skillc Build System"
+	@echo ""
+	@grep -E '^## ' $(MAKEFILE_LIST) | sed 's/## /  /'

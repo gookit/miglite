@@ -41,7 +41,7 @@ jobs:
         run: |
           curl https://github.com/gookit/gitw/releases/latest/download/chlog-linux-amd64 -L -o /usr/local/bin/chlog
           chmod a+x /usr/local/bin/chlog
-          chlog -c .github/changelog.yml -o changelog.md prev last 
+          chlog -c .github/changelog.yml -o changelog.md prev last
 
       # https://github.com/softprops/action-gh-release
       - name: Create release and upload assets
@@ -54,8 +54,4 @@ jobs:
           body_path: changelog.md
           token: ${{ secrets.GITHUB_TOKEN }}
           files: |
-            build/miglite-darwin-amd64
-            build/miglite-darwin-arm64
-            build/miglite-linux-amd64
-            build/miglite-linux-arm64
-            build/miglite-windows-amd64.exe
+            cmd/dist/*

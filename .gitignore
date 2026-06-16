@@ -17,6 +17,7 @@ vendor/
 .xenv.toml
 
 pkg/*/testdata/
+dist/
 build/
 specs/
 .qwen/
