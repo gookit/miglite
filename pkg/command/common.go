@@ -43,6 +43,7 @@ func initLoadConfig() error {
 	if cfg != nil {
 		return nil
 	}
+	syncEnvOptions()
 
 	// Load configuration
 	var err error

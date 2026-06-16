@@ -26,6 +26,7 @@ func SetBuildInfo(version, goVer, buildTime, gitCommit string) {
 }
 
 var envPrefix string
+var envFile string
 var showVersion bool
 
 var (
@@ -39,6 +40,7 @@ func bindCommonFlags(c *capp.Cmd) {
 	// Add global flags
 	c.BoolVar(&ShowVerbose, "verbose", false, "Enable verbose output;;v")
 	c.StringVar(&ConfigFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
+	c.StringVar(&envFile, "env-file", "", "Path to the environment file;;efile")
 }
 
 // NewApp creates a new CLI application
@@ -47,6 +49,7 @@ func NewApp(name, version, description string) *capp.App {
 
 	// Add global flags
 	app.StringVar(&envPrefix, "env-prefix", "", "Environment variable prefix. same as MIGLITE_ENV_PREFIX;;pfx")
+	app.StringVar(&envFile, "env-file", "", "Path to the environment file;;efile")
 	app.BoolVar(&showVersion, "version", false, "Show version and exit;;V")
 	app.BoolVar(&ShowVerbose, "verbose", false, "Enable verbose output;;v")
 	app.StringVar(&ConfigFile, "config", "./miglite.yaml", "Path to the configuration file;;c")
@@ -81,8 +84,15 @@ func beforeRun(app *capp.App) bool {
 		return false
 	}
 
+	syncEnvOptions()
+	return true
+}
+
+func syncEnvOptions() {
 	if envPrefix != "" {
 		config.EnvPrefix = envPrefix
 	}
-	return true
+	if envFile != "" {
+		config.EnvFile = envFile
+	}
 }

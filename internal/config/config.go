@@ -78,17 +78,27 @@ type Config struct {
 // EnvPrefix prefix for environment variables
 var EnvPrefix string
 
+// EnvFile path to the dotenv file
+var EnvFile string
+
 // Load loads configuration from YAML file and environment variables
 //   - configFile: if not exist, will skip load it.
 //
 // NOTE: will auto load .env file on working directory.
 func Load(configFile string) (*Config, error) {
 	// load .env file
-	_ = envutil.DotenvLoad(func(cfg *envutil.Dotenv) {
-		cfg.IgnoreNotExist = true
+	if err := envutil.DotenvLoad(func(cfg *envutil.Dotenv) {
 		cfg.LoadFirstExist = true
-		cfg.Files = []string{".env.local", ".env.dev", ".env"}
-	})
+		if EnvFile != "" {
+			cfg.IgnoreNotExist = false
+			cfg.Files = []string{EnvFile}
+		} else {
+			cfg.IgnoreNotExist = true
+			cfg.Files = []string{".env.local", ".env.dev", ".env"}
+		}
+	}); err != nil {
+		return nil, err
+	}
 	// load env prefix after load .env file
 	if EnvPrefix == "" {
 		EnvPrefix = os.Getenv(EnvPrefixKey)

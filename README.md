@@ -71,6 +71,7 @@ Using the `miglite` command-line tool directly.
 
 - Can work without a configuration file, using the environment variable `DATABASE_URL` directly
 - Configuration file defaults to `./miglite.yaml`, but can be specified via the `--config` parameter
+- Dotenv files are auto-loaded from `.env.local`, `.env.dev`, `.env` by default; specify another file with `--env-file` or `--efile`
 
 #### miglite.yaml Example
 
@@ -102,6 +103,13 @@ DATABASE_URL="sqlite://path/to/your.db"
 DATABASE_URL="mysql://user:passwd@tcp(127.0.0.1:3306)/local_test?charset=utf8mb4&parseTime=True&loc=Local"
 # postgresql
 DATABASE_URL="postgres://host=localhost port=5432 user=username password=password dbname=dbname sslmode=disable"
+```
+
+Use a custom env file:
+
+```bash
+miglite --env-file ./configs/dev.env status
+miglite up --efile ./configs/dev.env
 ```
 
 > **NOTE**: mysql DSNs must be tagged with the 'tcp(...)' protocol. Otherwise, it will throw an error.

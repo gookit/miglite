@@ -71,6 +71,7 @@ go get github.com/gookit/miglite
 
 - 可以允许没有配置文件，直接使用环境变量 `DATABASE_URL`
 - 配置文件默认为 `./miglite.yaml`，也可以通过 `--config` 参数指定
+- 默认会按 `.env.local`, `.env.dev`, `.env` 自动加载环境变量文件；也可以通过 `--env-file` 或 `--efile` 指定其他文件
 
 #### miglite.yaml 示例
 
@@ -102,6 +103,13 @@ DATABASE_URL="sqlite://path/to/your.db"
 DATABASE_URL="mysql://user:passwd@tcp(127.0.0.1:3306)/local_test?charset=utf8mb4&parseTime=True&loc=Local"
 # postgresql
 DATABASE_URL="postgres://host=localhost port=5432 user=username password=password dbname=dbname sslmode=disable"
+```
+
+指定自定义 env 文件:
+
+```bash
+miglite --env-file ./configs/dev.env status
+miglite up --efile ./configs/dev.env
 ```
 
 > **NOTE**: mysql 的 DSN 必须带上 `tcp(...)` 协议标记，否则会报错。
@@ -254,4 +262,3 @@ func main() {
 - [golang-migrate](https://github.com/golang-migrate/migrate)
 - [pressly/goose](https://github.com/pressly/goose)
 - [amacneil/dbmate](https://github.com/amacneil/dbmate)
-
