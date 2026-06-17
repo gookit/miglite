@@ -35,7 +35,7 @@ jobs:
       - name: Build bin package
         run: |
           make build-all
-          ./cmd/build/miglite-linux-amd64 -V
+          ./cmd/dist/miglite-linux-amd64 -V
 
       - name: Generate changelog
         run: |
