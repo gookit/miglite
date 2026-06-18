@@ -11,5 +11,8 @@ const (
 // DefaultConfigFile default config file.
 const DefaultConfigFile = "./miglite.yaml"
 
+// DefaultConfigFiles default config files.
+var DefaultConfigFiles = []string{"./miglite.yaml", "./miglite.local.yaml"}
+
 // DefaultMigrationsDir default migrations dirpath. can override by env: MIGRATIONS_PATH
 const DefaultMigrationsDir = "./migrations"

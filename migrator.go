@@ -6,7 +6,6 @@ import (
 	"github.com/gookit/miglite/internal/config"
 	"github.com/gookit/miglite/internal/database"
 	"github.com/gookit/miglite/pkg/command"
-	"github.com/gookit/miglite/pkg/migcom"
 )
 
 // Migrator manage the migration
@@ -22,7 +21,7 @@ type Migrator struct {
 
 // NewAuto creates a new Migrator instance with autoload default config
 func NewAuto(fns ...ConfigFn) (*Migrator, error) {
-	return New(migcom.DefaultConfigFile, fns...)
+	return New("", fns...)
 }
 
 // New creates a new Migrator instance, with optional configuration functions

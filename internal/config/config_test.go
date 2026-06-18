@@ -125,3 +125,111 @@ database:
 	assert.Err(t, err)
 	assert.ErrMsg(t, err, "missing sqlite dsn")
 }
+
+func TestLoadUsesDefaultConfigFiles(t *testing.T) {
+	t.Run("loads miglite yaml first", func(t *testing.T) {
+		clearConfigEnv(t)
+		tmpDir := t.TempDir()
+		assert.NoErr(t, os.WriteFile(filepath.Join(tmpDir, "miglite.yaml"), []byte(`
+database:
+  driver: sqlite
+  dsn: default.db
+`), 0644))
+		assert.NoErr(t, os.WriteFile(filepath.Join(tmpDir, "miglite.local.yaml"), []byte(`
+database:
+  driver: sqlite
+  dsn: local.db
+`), 0644))
+
+		oldWd, err := os.Getwd()
+		assert.NoErr(t, err)
+		assert.NoErr(t, os.Chdir(tmpDir))
+		t.Cleanup(func() {
+			assert.NoErr(t, os.Chdir(oldWd))
+		})
+
+		envutil.StdDotenv().Reset()
+		config.EnvPrefix = ""
+		config.EnvFile = ""
+		t.Cleanup(func() {
+			envutil.StdDotenv().Reset()
+			config.EnvPrefix = ""
+			config.EnvFile = ""
+		})
+
+		cfg, err := config.Load("")
+		assert.Require(t, assert.NoErr(t, err))
+		assert.Eq(t, "./miglite.yaml", cfg.ConfigFile)
+		assert.Eq(t, "default.db", cfg.Database.DSN)
+	})
+
+	t.Run("loads local yaml when default is missing", func(t *testing.T) {
+		clearConfigEnv(t)
+		tmpDir := t.TempDir()
+		assert.NoErr(t, os.WriteFile(filepath.Join(tmpDir, "miglite.local.yaml"), []byte(`
+database:
+  driver: sqlite
+  dsn: local.db
+`), 0644))
+
+		oldWd, err := os.Getwd()
+		assert.NoErr(t, err)
+		assert.NoErr(t, os.Chdir(tmpDir))
+		t.Cleanup(func() {
+			assert.NoErr(t, os.Chdir(oldWd))
+		})
+
+		envutil.StdDotenv().Reset()
+		config.EnvPrefix = ""
+		config.EnvFile = ""
+		t.Cleanup(func() {
+			envutil.StdDotenv().Reset()
+			config.EnvPrefix = ""
+			config.EnvFile = ""
+		})
+
+		cfg, err := config.Load("")
+		assert.Require(t, assert.NoErr(t, err))
+		assert.Eq(t, "./miglite.local.yaml", cfg.ConfigFile)
+		assert.Eq(t, "local.db", cfg.Database.DSN)
+	})
+}
+
+func TestLoadExplicitConfigFileDoesNotFallback(t *testing.T) {
+	clearConfigEnv(t)
+	tmpDir := t.TempDir()
+	assert.NoErr(t, os.WriteFile(filepath.Join(tmpDir, "miglite.yaml"), []byte(`
+database:
+  driver: sqlite
+  dsn: default.db
+`), 0644))
+
+	oldWd, err := os.Getwd()
+	assert.NoErr(t, err)
+	assert.NoErr(t, os.Chdir(tmpDir))
+	t.Cleanup(func() {
+		assert.NoErr(t, os.Chdir(oldWd))
+	})
+
+	envutil.StdDotenv().Reset()
+	config.EnvPrefix = ""
+	config.EnvFile = ""
+	t.Cleanup(func() {
+		envutil.StdDotenv().Reset()
+		config.EnvPrefix = ""
+		config.EnvFile = ""
+	})
+
+	_, err = config.Load("missing.yaml")
+	assert.Err(t, err)
+	assert.ErrMsg(t, err, "database driver is required")
+}
+
+func clearConfigEnv(t *testing.T) {
+	t.Setenv(config.EnvDBDSN, "")
+	t.Setenv(config.EnvDBDriver, "")
+	t.Setenv(config.EnvDBSqlDriver, "")
+	t.Setenv(config.EnvDBURL, "")
+	t.Setenv(config.EnvMigrationsPath, "")
+	t.Setenv(config.EnvPrefixKey, "")
+}

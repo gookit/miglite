@@ -22,7 +22,7 @@
   - Migration directories support adding multiple paths using comma `,` splitting
 - Can run migrations with zero configuration via environment variables (e.g., `DATABASE_URL`, `MIGRATIONS_PATH`)
   - Automatically attempts to load `.env` file in the directory(Optional)
-  - Automatically loads default configuration file `./miglite.yaml`(Optional)
+  - Automatically tries default configuration files `./miglite.yaml`, `./miglite.local.yaml`(Optional)
 - Built-in support for executing SQL statements via `miglite exec`, convenient for debugging and testing
 - Supports `mysql`, `sqlite`, `postgres` databases
   - When used as a library, you need to add your own DB driver dependencies
@@ -70,7 +70,8 @@ Using the `miglite` command-line tool directly.
 `miglite` supports configuration via `miglite.yaml` file or environment variables.
 
 - Can work without a configuration file, using the environment variable `DATABASE_URL` directly
-- Configuration file defaults to `./miglite.yaml`, but can be specified via the `--config` parameter
+- When `--config` is not specified, `miglite` tries `./miglite.yaml`, then `./miglite.local.yaml`
+- A specific configuration file can be set with the `--config` parameter
 - Dotenv files are auto-loaded from `.env.local`, `.env.dev`, `.env` by default; specify another file with `--env-file` or `--efile`
 
 #### miglite.yaml Example

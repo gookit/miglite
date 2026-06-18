@@ -55,3 +55,29 @@ func TestBindCommonFlagsEnvFile(t *testing.T) {
 	syncEnvOptions()
 	assert.Eq(t, "cmd.env", config.EnvFile)
 }
+
+func TestConfigFlagDefault(t *testing.T) {
+	t.Cleanup(func() {
+		ConfigFile = ""
+	})
+
+	cmd := capp.NewCmd("noop", "noop")
+	bindCommonFlags(cmd)
+
+	err := cmd.Parse([]string{})
+	assert.NoErr(t, err)
+	assert.Eq(t, "", ConfigFile)
+}
+
+func TestConfigFlagValue(t *testing.T) {
+	t.Cleanup(func() {
+		ConfigFile = ""
+	})
+
+	cmd := capp.NewCmd("noop", "noop")
+	bindCommonFlags(cmd)
+
+	err := cmd.Parse([]string{"--config", "custom.yaml"})
+	assert.NoErr(t, err)
+	assert.Eq(t, "custom.yaml", ConfigFile)
+}

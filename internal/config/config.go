@@ -109,8 +109,8 @@ func Load(configFile string) (*Config, error) {
 		Migrations: Migrations{Recursive: true},
 	}
 
-	// Load from YAML file if it exists
-	if fsutil.FileExist(configFile) {
+	configFile = resolveConfigFile(configFile)
+	if configFile != "" {
 		config.ConfigFile = configFile
 		data, err := os.ReadFile(configFile)
 		if err != nil {
@@ -142,6 +142,22 @@ func Load(configFile string) (*Config, error) {
 	initMigrationsConfig(&config.Migrations, config.Database.Driver)
 
 	return config, nil
+}
+
+func resolveConfigFile(configFile string) string {
+	if configFile != "" {
+		if fsutil.FileExist(configFile) {
+			return configFile
+		}
+		return ""
+	}
+
+	for _, file := range migcom.DefaultConfigFiles {
+		if fsutil.FileExist(file) {
+			return file
+		}
+	}
+	return ""
 }
 
 func initMigrationsConfig(migConfig *Migrations, fmtDriver string) {

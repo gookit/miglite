@@ -22,7 +22,7 @@
     - 迁移目录支持使用逗号 `,` 分割添加多个路径
 - 可以通过环境变量零配置直接运行迁移(eg: `DATABASE_URL`, `MIGRATIONS_PATH`)
     - 会自动尝试加载目录下的 `.env` 文件(可选)
-    - 会自动加载默认配置文件 `./miglite.yaml`(可选)
+    - 会自动尝试加载默认配置文件 `./miglite.yaml`, `./miglite.local.yaml`(可选)
 - 内置支持通过 `miglite exec` 执行 SQL 语句，方便调试和测试
 - 支持 `mysql`, `sqlite`, `postgres` 数据库
     - 作为库使用时，需要自己添加DB驱动依赖
@@ -70,7 +70,8 @@ go get github.com/gookit/miglite
 `miglite` 支持通过 `miglite.yaml` 文件 或 环境变量 进行配置。
 
 - 可以允许没有配置文件，直接使用环境变量 `DATABASE_URL` (更简单方便)
-- 配置文件默认为 `./miglite.yaml`，也可以通过 `--config` 参数指定
+- 未指定 `--config` 时，会按 `./miglite.yaml`, `./miglite.local.yaml` 顺序尝试加载
+- 可以通过 `--config` 参数指定某个配置文件
 - 默认会按 `.env.local`, `.env.dev`, `.env` 自动加载环境变量文件；也可以通过 `--env-file` 或 `--efile` 指定其他文件
 
 #### miglite.yaml 示例
