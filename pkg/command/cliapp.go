@@ -39,7 +39,7 @@ var (
 func bindCommonFlags(c *capp.Cmd) {
 	// Add global flags
 	c.BoolVar(&ShowVerbose, "verbose", false, "Enable verbose output;;v")
-	c.StringVar(&ConfigFile, "config", "", "Path to the configuration file, default ./miglite[.local].yaml;;c")
+	c.StringVar(&ConfigFile, "config", "", "Path to the configuration file, default <mga>./miglite[.local].yaml</>;;c")
 	c.StringVar(&envFile, "env-file", "", "Path to the environment file;;efile")
 }
 
@@ -48,11 +48,11 @@ func NewApp(name, version, description string) *capp.App {
 	app := capp.NewWith(name, version, description)
 
 	// Add global flags
-	app.StringVar(&envPrefix, "env-prefix", "", "Environment variable prefix. same as MIGLITE_ENV_PREFIX;;pfx")
+	app.StringVar(&envPrefix, "env-prefix", "", "Environment variable prefix. same as <mga>MIGLITE_ENV_PREFIX</>;;pfx")
 	app.StringVar(&envFile, "env-file", "", "Path to the environment file;;efile")
 	app.BoolVar(&showVersion, "version", false, "Show version and exit;;V")
 	app.BoolVar(&ShowVerbose, "verbose", false, "Enable verbose output;;v")
-	app.StringVar(&ConfigFile, "config", "", "Path to the configuration file, default ./miglite[.local].yaml;;c")
+	app.StringVar(&ConfigFile, "config", "", "Path to the configuration file, default <mga>./miglite[.local].yaml</>;;c")
 
 	// Add commands to the app
 	app.Add(
