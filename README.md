@@ -78,10 +78,20 @@ Using the `miglite` command-line tool directly.
 ```yaml
 database:
   driver: sqlite  # or mysql, postgresql
-  dsn: ./miglite.db  # or connection string for other databases
+  # Prefer dsn for database connection.
+  dsn: ./sqlite_test.db
+  # These split connection settings are used when dsn is empty.
+  host: localhost
+  port: 5432
+  user: ${PG_DB_USER}
+  password: ${PG_DB_PWD | pg1234abcd}
+  dbname: pg_test_db
+  ssl_mode: disable
 migrations:
   path: ./migrations
 ```
+
+> As shown above, config file values also support ENV placeholders.
 
 #### Environment Variables
 

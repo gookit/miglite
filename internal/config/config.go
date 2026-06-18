@@ -116,7 +116,14 @@ func Load(configFile string) (*Config, error) {
 		if err != nil {
 			return nil, err
 		}
-		if err = yaml.Unmarshal(data, config); err != nil {
+
+		// Expand ENV placeholders before decoding YAML.
+		dataStr, err1 := envutil.ParseOrErr(string(data))
+		if err1 != nil {
+			return nil, err1
+		}
+
+		if err = yaml.Unmarshal([]byte(dataStr), config); err != nil {
 			return nil, err
 		}
 	}

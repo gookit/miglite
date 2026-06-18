@@ -67,9 +67,9 @@ go get github.com/gookit/miglite
 
 ### 配置
 
-`miglite` 支持通过 `miglite.yaml` 文件或环境变量进行配置。
+`miglite` 支持通过 `miglite.yaml` 文件 或 环境变量 进行配置。
 
-- 可以允许没有配置文件，直接使用环境变量 `DATABASE_URL`
+- 可以允许没有配置文件，直接使用环境变量 `DATABASE_URL` (更简单方便)
 - 配置文件默认为 `./miglite.yaml`，也可以通过 `--config` 参数指定
 - 默认会按 `.env.local`, `.env.dev`, `.env` 自动加载环境变量文件；也可以通过 `--env-file` 或 `--efile` 指定其他文件
 
@@ -78,10 +78,20 @@ go get github.com/gookit/miglite
 ```yaml
 database:
   driver: sqlite  # or mysql, postgresql
-  dsn: ./miglite.db  # or connection string for other databases
+  # 优先使用 dsn 配置连接
+  dsn: ./sqlite_test.db
+  # 也可以使用以下配置连接(没有配置 dsn 时)
+  host: localhost
+  port: 5432
+  user: ${PG_DB_USER}
+  password: ${PG_DB_PWD | pg1234abcd}
+  dbname: pg_test_db
+  ssl_mode: disable
 migrations:
   path: ./migrations
 ```
+
+> 📢 如示例配置所示，配置文件里的 value 也支持使用 ENV 变量
 
 #### 环境变量
 
