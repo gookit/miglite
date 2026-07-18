@@ -41,6 +41,11 @@ An empty `--db` value makes no change.
 
 ## Tests
 
+- Move the existing `testdrv` package to `cmd/miglite/testdrv` before feature
+  work. Keep its package name, move its YAML fixture, update the migration path
+  to `../../../migrations/{driver}`, and delete the standalone `testdrv/go.mod`
+  and `testdrv/go.sum`. The integration tests then share the CLI module's
+  existing MySQL, PostgreSQL, and SQLite driver dependencies.
 - Unit-test SQL splitting around quoted text, identifiers, comments, and empty
   statements.
 - Use SQLite to verify multiple writes, individual query execution, commit, and
@@ -55,8 +60,9 @@ Tests use `github.com/gookit/goutil/x/assert` as required by the project.
 
 Deliver two focused commits:
 
-1. `feat(exec): support transactional multi-statement SQL`
-2. `feat(cli): add database name override option`
+1. `refactor(testdrv): share CLI module dependencies`
+2. `feat(exec): support transactional multi-statement SQL`
+3. `feat(cli): add database name override option`
 
-The second commit also updates the English and Chinese README examples and
+The third commit also updates the English and Chinese README examples and
 checks both completed items in `.github/TODO.md`.
