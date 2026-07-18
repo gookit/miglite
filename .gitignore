@@ -21,6 +21,7 @@ dist/
 build/
 .qwen/
 .specify/
+.worktrees/
 go.wor*
 miglite-d*
 miglite-l*
