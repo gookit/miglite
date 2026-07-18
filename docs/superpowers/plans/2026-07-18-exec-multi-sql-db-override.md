@@ -210,7 +210,7 @@ git commit -m "feat(exec): support transactional multi-statement SQL"
 - Produces: package option variable `command.DBName string`
 - Consumes: override in `initLoadConfig` before `OnConfigLoaded` and connection creation
 
-- [ ] **Step 1: Write failing config tests**
+- [x] **Step 1: Write failing config tests**
 
 Add `TestOverrideDBName` using `t.Run` and `assert` for:
 
@@ -225,7 +225,7 @@ Add `TestOverrideDBName` using `t.Run` and `assert` for:
 
 Assert both `DSN` and `DBName`. Add a split-config YAML test proving `Load` stores its generated DSN. Add malformed MySQL and unsupported-driver cases expecting errors.
 
-- [ ] **Step 2: Verify config tests fail**
+- [x] **Step 2: Verify config tests fail**
 
 ```powershell
 go test ./internal/config -run TestOverrideDBName -count=1
@@ -233,13 +233,13 @@ go test ./internal/config -run TestOverrideDBName -count=1
 
 Expected: build failure because `OverrideDBName` is undefined.
 
-- [ ] **Step 3: Implement DSN rewriting**
+- [x] **Step 3: Implement DSN rewriting**
 
 In `checkDatabaseConfig`, assign `dbCfg.DSN = buildDSNFromConfig(dbCfg)` for split settings.
 
 Add `OverrideDBName`: return for an empty name; SQLite assigns the file path; MySQL replaces the segment after the final slash and before query parameters; PostgreSQL uses `net/url` for URLs, path replacement for stripped URLs, and a case-insensitive `dbname` field replacement for keyword DSNs; MSSQL replaces the case-insensitive `database` field. Append PostgreSQL/MSSQL fields when absent. Set `DBName` only after a successful rewrite. Return descriptive errors for malformed DSNs or unsupported drivers. Use only `net/url`, `regexp`, and `strings`.
 
-- [ ] **Step 4: Verify config tests pass**
+- [x] **Step 4: Verify config tests pass**
 
 ```powershell
 gofmt -w internal/config/config.go internal/config/config_test.go
@@ -248,7 +248,7 @@ go test ./internal/config -count=1
 
 Expected: package passes.
 
-- [ ] **Step 5: Write failing CLI tests**
+- [x] **Step 5: Write failing CLI tests**
 
 Extend `pkg/command/cliapp_test.go` to reset global state in cleanup and verify:
 
@@ -259,7 +259,7 @@ Extend `pkg/command/cliapp_test.go` to reset global state in cleanup and verify:
 
 Both forms must populate `DBName`. Add `TestInitLoadConfigDBOverride`: set `DATABASE_URL=sqlite://old.db`, set `DBName="new.db"`, call `initLoadConfig`, and assert `Cfg().Database.DSN == "new.db"` before connection creation.
 
-- [ ] **Step 6: Verify CLI tests fail**
+- [x] **Step 6: Verify CLI tests fail**
 
 ```powershell
 go test ./pkg/command -run 'Test.*DB.*Flag|TestInitLoadConfigDBOverride' -count=1
@@ -267,7 +267,7 @@ go test ./pkg/command -run 'Test.*DB.*Flag|TestInitLoadConfigDBOverride' -count=
 
 Expected: failures because `--db` and `DBName` do not exist.
 
-- [ ] **Step 7: Bind and apply `--db`**
+- [x] **Step 7: Bind and apply `--db`**
 
 Add package variable `DBName string` in `pkg/command/cliapp.go` and bind it in `bindCommonFlags`:
 
@@ -283,7 +283,7 @@ if err = config.OverrideDBName(&cfg.Database, DBName); err != nil {
 }
 ```
 
-- [ ] **Step 8: Verify Task 2 code**
+- [x] **Step 8: Verify Task 2 code**
 
 ```powershell
 gofmt -w internal/config/config.go internal/config/config_test.go pkg/command/cliapp.go pkg/command/cliapp_test.go pkg/command/common.go
@@ -293,7 +293,7 @@ go test ./... -count=1
 
 Expected: all commands exit 0.
 
-- [ ] **Step 9: Update docs and TODO**
+- [x] **Step 9: Update docs and TODO**
 
 In both READMEs, document that `--db` overrides YAML/environment DSNs and SQLite treats it as a file path. Add:
 
@@ -304,7 +304,7 @@ miglite exec --db new_db --yes "SELECT current_database();"
 
 Change both `.github/TODO.md` checkboxes from `[ ]` to `[x]`.
 
-- [ ] **Step 10: Verify and commit Task 2**
+- [x] **Step 10: Verify and commit Task 2**
 
 Run root tests, then `go test ./... -count=1` from `cmd/miglite/`, followed by `git diff --check`. Change Task 2 checkboxes to `[x]`, then:
 
@@ -321,14 +321,14 @@ git commit -m "feat(cli): add database name override option"
 
 **Interfaces:** Consumes both feature commits and produces delivery evidence.
 
-- [ ] **Step 1: Build the real CLI**
+- [x] **Step 1: Build the real CLI**
 
 Run `go build ./...` from `cmd/miglite/`. Expected: exit 0.
 
-- [ ] **Step 2: Run final checks**
+- [x] **Step 2: Run final checks**
 
 From root run `go test ./... -count=1`, `git diff --check`, and `git status --short`. From `cmd/miglite/` run `go test ./... -count=1`. Expected: tests pass and no unexpected worktree changes exist.
 
-- [ ] **Step 3: Record final progress**
+- [x] **Step 3: Record final progress**
 
 Change Task 3 checkboxes to `[x]`, stage this plan, and amend the Task 2 commit with `git commit --amend --no-edit`. Re-run `git status --short`; expected: clean worktree.

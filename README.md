@@ -73,6 +73,7 @@ Using the `miglite` command-line tool directly.
 - When `--config` is not specified, `miglite` tries `./miglite.yaml`, then `./miglite.local.yaml`
 - A specific configuration file can be set with the `--config` parameter
 - Dotenv files are auto-loaded from `.env.local`, `.env.dev`, `.env` by default; specify another file with `--env-file` or `--efile`
+- `--db` overrides the database name from YAML, `DATABASE_DSN`, or `DATABASE_URL`; for SQLite, it overrides the database file path
 
 #### miglite.yaml Example
 
@@ -121,6 +122,13 @@ Use a custom env file:
 ```bash
 miglite --env-file ./configs/dev.env status
 miglite up --efile ./configs/dev.env
+```
+
+Override the target database:
+
+```bash
+miglite --db new_db status
+miglite exec --db new_db --yes "SELECT current_database();"
 ```
 
 > **NOTE**: mysql DSNs must be tagged with the 'tcp(...)' protocol. Otherwise, it will throw an error.

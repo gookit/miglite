@@ -73,6 +73,7 @@ go get github.com/gookit/miglite
 - 未指定 `--config` 时，会按 `./miglite.yaml`, `./miglite.local.yaml` 顺序尝试加载
 - 可以通过 `--config` 参数指定某个配置文件
 - 默认会按 `.env.local`, `.env.dev`, `.env` 自动加载环境变量文件；也可以通过 `--env-file` 或 `--efile` 指定其他文件
+- `--db` 可以覆盖 YAML、`DATABASE_DSN` 或 `DATABASE_URL` 中的数据库名；SQLite 下覆盖的是数据库文件路径
 
 #### miglite.yaml 示例
 
@@ -121,6 +122,13 @@ DATABASE_URL="postgres://host=localhost port=5432 user=username password=passwor
 ```bash
 miglite --env-file ./configs/dev.env status
 miglite up --efile ./configs/dev.env
+```
+
+覆盖目标数据库：
+
+```bash
+miglite --db new_db status
+miglite exec --db new_db --yes "SELECT current_database();"
 ```
 
 > **NOTE**: mysql 的 DSN 必须带上 `tcp(...)` 协议标记，否则会报错。

@@ -51,6 +51,9 @@ func initLoadConfig() error {
 	if err != nil {
 		return fmt.Errorf("failed to load config: %v", err)
 	}
+	if err = config.OverrideDBName(&cfg.Database, DBName); err != nil {
+		return fmt.Errorf("failed to override database name: %v", err)
+	}
 
 	// fire OnConfigLoaded hook
 	if OnConfigLoaded != nil {

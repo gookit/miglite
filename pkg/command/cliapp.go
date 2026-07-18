@@ -34,6 +34,8 @@ var (
 	ShowVerbose bool
 	// ConfigFile path to the configuration file
 	ConfigFile string
+	// DBName overrides the configured database name.
+	DBName string
 )
 
 func bindCommonFlags(c *capp.Cmd) {
@@ -41,6 +43,7 @@ func bindCommonFlags(c *capp.Cmd) {
 	c.BoolVar(&ShowVerbose, "verbose", false, "Enable verbose output;;v")
 	c.StringVar(&ConfigFile, "config", "", "Path to the configuration file, default <mga>./miglite[.local].yaml</>;;c")
 	c.StringVar(&envFile, "env-file", "", "Path to the environment file;;efile")
+	c.StringVar(&DBName, "db", "", "Override the configured database name")
 }
 
 // NewApp creates a new CLI application
@@ -53,6 +56,7 @@ func NewApp(name, version, description string) *capp.App {
 	app.BoolVar(&showVersion, "version", false, "Show version and exit;;V")
 	app.BoolVar(&ShowVerbose, "verbose", false, "Enable verbose output;;v")
 	app.StringVar(&ConfigFile, "config", "", "Path to the configuration file, default <mga>./miglite[.local].yaml</>;;c")
+	app.StringVar(&DBName, "db", "", "Override the configured database name")
 
 	// Add commands to the app
 	app.Add(

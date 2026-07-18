@@ -225,6 +225,75 @@ database:
 	assert.ErrMsg(t, err, "database driver is required")
 }
 
+func TestOverrideDBName(t *testing.T) {
+	tests := []struct {
+		name   string
+		db     config.Database
+		dbName string
+		want   string
+	}{
+		{"sqlite", config.Database{Driver: "sqlite", DSN: "old.db"}, "new.db", "new.db"},
+		{"mysql", config.Database{Driver: "mysql", DSN: "user:pass@tcp(localhost:3306)/old?parseTime=true"}, "new", "user:pass@tcp(localhost:3306)/new?parseTime=true"},
+		{"postgres keywords", config.Database{Driver: "postgres", DSN: "host=localhost user=user dbname=old sslmode=disable"}, "new", "host=localhost user=user dbname=new sslmode=disable"},
+		{"postgres URL", config.Database{Driver: "postgres", DSN: "postgres://user:pass@localhost/old?sslmode=disable"}, "new", "postgres://user:pass@localhost/new?sslmode=disable"},
+		{"postgres stripped URL", config.Database{Driver: "postgres", DSN: "user:pass@localhost/old?sslmode=disable"}, "new", "user:pass@localhost/new?sslmode=disable"},
+		{"mssql", config.Database{Driver: "mssql", DSN: "server=localhost;database=old;user id=sa;"}, "new", "server=localhost;database=new;user id=sa;"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := config.OverrideDBName(&tt.db, tt.dbName)
+			assert.NoErr(t, err)
+			assert.Eq(t, tt.want, tt.db.DSN)
+			assert.Eq(t, tt.dbName, tt.db.DBName)
+		})
+	}
+
+	t.Run("empty name", func(t *testing.T) {
+		db := config.Database{Driver: "sqlite", DSN: "old.db", DBName: "old"}
+		assert.NoErr(t, config.OverrideDBName(&db, ""))
+		assert.Eq(t, "old.db", db.DSN)
+		assert.Eq(t, "old", db.DBName)
+	})
+
+	t.Run("invalid mysql DSN", func(t *testing.T) {
+		db := config.Database{Driver: "mysql", DSN: "user:pass@tcp(localhost:3306)", DBName: "old"}
+		assert.Err(t, config.OverrideDBName(&db, "new"))
+		assert.Eq(t, "old", db.DBName)
+	})
+
+	t.Run("unsupported driver", func(t *testing.T) {
+		db := config.Database{Driver: "oracle", DSN: "old", DBName: "old"}
+		assert.Err(t, config.OverrideDBName(&db, "new"))
+		assert.Eq(t, "old", db.DBName)
+	})
+}
+
+func TestLoadBuildsDSNFromSplitConfig(t *testing.T) {
+	clearConfigEnv(t)
+	configFile := filepath.Join(t.TempDir(), "miglite.yaml")
+	assert.NoErr(t, os.WriteFile(configFile, []byte(`
+database:
+  driver: postgres
+  host: localhost
+  user: test_user
+  password: test_pass
+  dbname: old_db
+  ssl_mode: disable
+`), 0644))
+
+	config.EnvPrefix = ""
+	config.EnvFile = ""
+	t.Cleanup(func() {
+		config.EnvPrefix = ""
+		config.EnvFile = ""
+	})
+
+	cfg, err := config.Load(configFile)
+	assert.Require(t, assert.NoErr(t, err))
+	assert.Eq(t, "host=localhost port=5432 user=test_user password=test_pass dbname=old_db sslmode=disable", cfg.Database.DSN)
+}
+
 func clearConfigEnv(t *testing.T) {
 	t.Setenv(config.EnvDBDSN, "")
 	t.Setenv(config.EnvDBDriver, "")

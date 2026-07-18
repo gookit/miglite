@@ -2,7 +2,9 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/goccy/go-yaml"
@@ -197,8 +199,8 @@ func checkDatabaseConfig(dbCfg *Database) error {
 
 	// check DSN
 	if dbCfg.DSN == "" {
-		dbDSN := buildDSNFromConfig(dbCfg)
-		if dbDSN == "" {
+		dbCfg.DSN = buildDSNFromConfig(dbCfg)
+		if dbCfg.DSN == "" {
 			return fmt.Errorf("database DSN is required")
 		}
 	} else if fmtDriver == migcom.DriverMySQL {
@@ -213,6 +215,76 @@ func checkDatabaseConfig(dbCfg *Database) error {
 		}
 	}
 	return nil
+}
+
+// OverrideDBName replaces the target database in a validated database config.
+func OverrideDBName(dbCfg *Database, dbName string) error {
+	if dbName == "" {
+		return nil
+	}
+
+	var dsn string
+	var err error
+	switch migutil.FmtDriverName(dbCfg.Driver) {
+	case migcom.DriverSQLite:
+		dsn = dbName
+	case migcom.DriverMySQL:
+		dsn, err = replaceDSNPath(dbCfg.DSN, dbName)
+	case migcom.DriverPostgres:
+		dsn, err = replacePostgresDBName(dbCfg.DSN, dbName)
+	case migcom.DriverMSSQL:
+		dsn = replaceDSNField(dbCfg.DSN, `(?i)database=[^;]*`, "database=", dbName, ";")
+	default:
+		return fmt.Errorf("cannot override database name for driver %q", dbCfg.Driver)
+	}
+	if err != nil {
+		return err
+	}
+
+	dbCfg.DBName = dbName
+	dbCfg.DSN = dsn
+	return nil
+}
+
+func replacePostgresDBName(dsn, dbName string) (string, error) {
+	if strings.Contains(dsn, "://") {
+		dbURL, err := url.Parse(dsn)
+		if err != nil || dbURL.Host == "" {
+			return "", fmt.Errorf("invalid postgres DSN %q", dsn)
+		}
+		dbURL.Path = "/" + dbName
+		return dbURL.String(), nil
+	}
+	if strings.Contains(dsn, "@") {
+		return replaceDSNPath(dsn, dbName)
+	}
+	if strings.Contains(dsn, "=") {
+		return replaceDSNField(dsn, `(?i)dbname=(?:'[^']*'|\S+)`, "dbname=", dbName, " "), nil
+	}
+	return "", fmt.Errorf("invalid postgres DSN %q", dsn)
+}
+
+func replaceDSNPath(dsn, dbName string) (string, error) {
+	pathEnd := len(dsn)
+	if queryAt := strings.IndexByte(dsn, '?'); queryAt >= 0 {
+		pathEnd = queryAt
+	}
+	slashAt := strings.LastIndexByte(dsn[:pathEnd], '/')
+	if slashAt < 0 {
+		return "", fmt.Errorf("cannot find database name in DSN %q", dsn)
+	}
+	return dsn[:slashAt+1] + dbName + dsn[pathEnd:], nil
+}
+
+func replaceDSNField(dsn, pattern, prefix, dbName, separator string) string {
+	re := regexp.MustCompile(pattern)
+	if re.MatchString(dsn) {
+		return re.ReplaceAllStringFunc(dsn, func(string) string { return prefix + dbName })
+	}
+	if dsn != "" && !strings.HasSuffix(dsn, separator) {
+		dsn += separator
+	}
+	return dsn + prefix + dbName
 }
 
 const (
