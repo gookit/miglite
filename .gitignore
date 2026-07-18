@@ -19,7 +19,6 @@ vendor/
 pkg/*/testdata/
 dist/
 build/
-specs/
 .qwen/
 .specify/
 go.wor*
