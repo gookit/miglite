@@ -21,12 +21,68 @@
 
 ---
 
+### Task 0: Share CLI Module Dependencies with Driver Tests
+
+**Files:**
+- Move: `testdrv/*.go` to `cmd/miglite/testdrv/`
+- Move and modify: `testdrv/miglite.yaml` to `cmd/miglite/testdrv/miglite.yaml`
+- Delete: `testdrv/go.mod`
+- Delete: `testdrv/go.sum`
+- Modify: this plan file for progress tracking
+
+**Interfaces:**
+- Preserves: package name `testdrv` and the existing test entry points.
+- Consumes: driver dependencies from `cmd/miglite/go.mod`.
+
+- [ ] **Step 1: Move the existing test package**
+
+Use `git mv` to move the five Go test files and `miglite.yaml` into
+`cmd/miglite/testdrv/`. Delete the standalone `testdrv/go.mod` and
+`testdrv/go.sum`; do not add a replacement module file.
+
+- [ ] **Step 2: Update the migration fixture path**
+
+Change `cmd/miglite/testdrv/miglite.yaml` from:
+
+```yaml
+path: ../migrations/{driver}
+```
+
+to:
+
+```yaml
+path: ../../../migrations/{driver}
+```
+
+- [ ] **Step 3: Verify the shared module**
+
+Run from `cmd/miglite/`:
+
+```powershell
+go test ./... -count=1
+```
+
+Expected: both `github.com/gookit/miglite/cmd/miglite` and
+`github.com/gookit/miglite/cmd/miglite/testdrv` pass without modifying
+`cmd/miglite/go.mod` or `cmd/miglite/go.sum`.
+
+- [ ] **Step 4: Update progress and commit Task 0**
+
+Change Task 0 checkboxes to `[x]`, then:
+
+```powershell
+git add testdrv cmd/miglite/testdrv docs/superpowers/plans/2026-07-18-exec-multi-sql-db-override.md
+git commit -m "refactor(testdrv): share CLI module dependencies"
+```
+
+---
+
 ### Task 1: Transactional Multi-Statement Exec
 
 **Files:**
 - Create: `pkg/command/sql_split.go`
 - Create: `pkg/command/sql_split_test.go`
-- Create: `testdrv/exec_sqlite_test.go`
+- Create: `cmd/miglite/testdrv/exec_sqlite_test.go`
 - Modify: `pkg/command/exec_cmd.go`
 - Modify: this plan file for progress tracking
 
@@ -73,7 +129,7 @@ Run the Step 2 command again. Expected: `ok github.com/gookit/miglite/pkg/comman
 
 - [ ] **Step 5: Write failing SQLite transaction tests**
 
-Create `testdrv/exec_sqlite_test.go` using `t.TempDir()`, the registered SQLite driver, `database.NewWithSqlDB`, `command.SetDB`, and `command.SetCfg`.
+Create `cmd/miglite/testdrv/exec_sqlite_test.go` using `t.TempDir()`, the registered SQLite driver, `database.NewWithSqlDB`, `command.SetDB`, and `command.SetCfg`.
 
 Success input:
 
@@ -91,7 +147,7 @@ Reopen the file and assert `name == "updated"`. A rollback subtest executes `CRE
 
 - [ ] **Step 6: Verify SQLite tests fail**
 
-Run from `testdrv/`:
+Run from `cmd/miglite/`:
 
 ```powershell
 go test ./... -run TestExecMultiSQL -count=1
@@ -113,10 +169,10 @@ go test ./pkg/command -count=1
 go test ./... -count=1
 ```
 
-Run from `testdrv/`:
+Run from `cmd/miglite/`:
 
 ```powershell
-gofmt -w exec_sqlite_test.go
+gofmt -w testdrv/exec_sqlite_test.go
 go test ./... -run TestExecMultiSQL -count=1
 ```
 
@@ -127,7 +183,7 @@ Expected: all commands exit 0.
 Change Task 1 checkboxes to `[x]`, then:
 
 ```powershell
-git add pkg/command/exec_cmd.go pkg/command/sql_split.go pkg/command/sql_split_test.go testdrv/exec_sqlite_test.go docs/superpowers/plans/2026-07-18-exec-multi-sql-db-override.md
+git add pkg/command/exec_cmd.go pkg/command/sql_split.go pkg/command/sql_split_test.go cmd/miglite/testdrv/exec_sqlite_test.go docs/superpowers/plans/2026-07-18-exec-multi-sql-db-override.md
 git commit -m "feat(exec): support transactional multi-statement SQL"
 ```
 
@@ -245,7 +301,7 @@ Change both `.github/TODO.md` checkboxes from `[ ]` to `[x]`.
 
 - [ ] **Step 10: Verify and commit Task 2**
 
-Run root tests, then `go test ./... -count=1` from `testdrv/`, followed by `git diff --check`. Change Task 2 checkboxes to `[x]`, then:
+Run root tests, then `go test ./... -count=1` from `cmd/miglite/`, followed by `git diff --check`. Change Task 2 checkboxes to `[x]`, then:
 
 ```powershell
 git add internal/config/config.go internal/config/config_test.go pkg/command/cliapp.go pkg/command/cliapp_test.go pkg/command/common.go README.md README.zh-CN.md .github/TODO.md docs/superpowers/plans/2026-07-18-exec-multi-sql-db-override.md
@@ -266,7 +322,7 @@ Run `go build ./...` from `cmd/miglite/`. Expected: exit 0.
 
 - [ ] **Step 2: Run final checks**
 
-From root run `go test ./... -count=1`, `git diff --check`, and `git status --short`. From `testdrv/` run `go test ./... -count=1`. Expected: tests pass and no unexpected worktree changes exist.
+From root run `go test ./... -count=1`, `git diff --check`, and `git status --short`. From `cmd/miglite/` run `go test ./... -count=1`. Expected: tests pass and no unexpected worktree changes exist.
 
 - [ ] **Step 3: Record final progress**
 
