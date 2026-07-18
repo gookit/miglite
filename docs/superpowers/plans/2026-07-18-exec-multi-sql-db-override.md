@@ -34,13 +34,13 @@
 - Preserves: package name `testdrv` and the existing test entry points.
 - Consumes: driver dependencies from `cmd/miglite/go.mod`.
 
-- [ ] **Step 1: Move the existing test package**
+- [x] **Step 1: Move the existing test package**
 
 Use `git mv` to move the five Go test files and `miglite.yaml` into
 `cmd/miglite/testdrv/`. Delete the standalone `testdrv/go.mod` and
 `testdrv/go.sum`; do not add a replacement module file.
 
-- [ ] **Step 2: Update the migration fixture path**
+- [x] **Step 2: Update the migration fixture path**
 
 Change `cmd/miglite/testdrv/miglite.yaml` from:
 
@@ -51,10 +51,10 @@ path: ../migrations/{driver}
 to:
 
 ```yaml
-path: ../../../migrations/{driver}
+path: ../../../testdata/migrations/{driver}
 ```
 
-- [ ] **Step 3: Verify the shared module**
+- [x] **Step 3: Verify the shared module**
 
 Run from `cmd/miglite/`:
 
@@ -66,7 +66,12 @@ Expected: both `github.com/gookit/miglite/cmd/miglite` and
 `github.com/gookit/miglite/cmd/miglite/testdrv` pass without modifying
 `cmd/miglite/go.mod` or `cmd/miglite/go.sum`.
 
-- [ ] **Step 4: Update progress and commit Task 0**
+If the migrated SQLite test reuses `command.DB()` after `HandleInit`, replace
+that invalid setup with a test-owned SQLite connection created by
+`database.NewDB`. Use `../../../testdata/migrations/sqlite` as its fixture
+directory; `HandleInit` intentionally closes its CLI connection before return.
+
+- [x] **Step 4: Update progress and commit Task 0**
 
 Change Task 0 checkboxes to `[x]`, then:
 

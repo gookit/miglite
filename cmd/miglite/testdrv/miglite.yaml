@@ -1,5 +1,5 @@
 migrations:
-  path: ../migrations/{driver}
+  path: ../../../testdata/migrations/{driver}
 database:
   driver: sqlite # sqlite, postgres, mysql, mssql
   # 使用 dsn 配置连接

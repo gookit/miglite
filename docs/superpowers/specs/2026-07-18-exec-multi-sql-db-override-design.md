@@ -43,9 +43,11 @@ An empty `--db` value makes no change.
 
 - Move the existing `testdrv` package to `cmd/miglite/testdrv` before feature
   work. Keep its package name, move its YAML fixture, update the migration path
-  to `../../../migrations/{driver}`, and delete the standalone `testdrv/go.mod`
-  and `testdrv/go.sum`. The integration tests then share the CLI module's
-  existing MySQL, PostgreSQL, and SQLite driver dependencies.
+  to `../../../testdata/migrations/{driver}`, and delete the standalone
+  `testdrv/go.mod` and `testdrv/go.sum`. The migration integration test owns
+  its SQLite connection instead of reusing the connection closed by the CLI
+  `init` handler. The tests then share the CLI module's existing MySQL,
+  PostgreSQL, and SQLite driver dependencies.
 - Unit-test SQL splitting around quoted text, identifiers, comments, and empty
   statements.
 - Use SQLite to verify multiple writes, individual query execution, commit, and
