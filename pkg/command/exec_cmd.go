@@ -1,6 +1,8 @@
 package command
 
 import (
+	stdsql "database/sql"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,8 +13,11 @@ import (
 	"github.com/gookit/goutil/strutil"
 	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/goutil/x/stdio"
-	"github.com/gookit/miglite/internal/database"
 )
+
+type queryer interface {
+	Query(query string, args ...any) (*stdsql.Rows, error)
+}
 
 // ExecOption represents options for the exec command
 type ExecOption struct {
@@ -43,7 +48,7 @@ func NewExecCommand() *capp.Cmd {
 }
 
 // HandleExec handles the exec command logic
-func HandleExec(opt ExecOption) error {
+func HandleExec(opt ExecOption) (err error) {
 	// Validate options
 	sqlOrFile := strings.TrimSpace(opt.SQLOrFile)
 	if sqlOrFile == "" {
@@ -51,7 +56,7 @@ func HandleExec(opt ExecOption) error {
 	}
 
 	// Load configuration and connect to database
-	err := initConfigAndDB()
+	err = initConfigAndDB()
 	if err != nil {
 		return err
 	}
@@ -89,33 +94,50 @@ func HandleExec(opt ExecOption) error {
 		}
 	}
 
-	// 检查是否为查询语句
-	sqlLower := strings.ToLower(sql)
-	isQuery := strings.HasPrefix(sqlLower, "select") ||
-		strings.HasPrefix(sqlLower, "describe") || // mysql
-		strings.HasPrefix(sqlLower, "pragma") || // sqlite
-		strings.HasPrefix(sqlLower, "show")
-
-	// 执行查询
-	if isQuery {
-		return execQuery(db, sql)
+	statements := splitSQLStatements(sql)
+	if len(statements) == 0 {
+		return fmt.Errorf("no SQL statements to execute")
 	}
 
-	// Execute DDL statement
-	ccolor.Printf("🚀  Executing SQL...\n")
-	result, err := db.Exec(sql)
+	tx, err := db.Begin()
 	if err != nil {
-		return fmt.Errorf("failed to execute SQL: %v", err)
+		return fmt.Errorf("failed to begin SQL transaction: %v", err)
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			if rollbackErr := tx.Rollback(); rollbackErr != nil && !errors.Is(rollbackErr, stdsql.ErrTxDone) {
+				err = errors.Join(err, fmt.Errorf("failed to rollback SQL transaction: %v", rollbackErr))
+			}
+		}
+	}()
+
+	for i, statement := range statements {
+		ccolor.Printf("🚀  Executing SQL statement %d/%d...\n", i+1, len(statements))
+		if isQuerySQL(statement) {
+			if err = execQuery(tx, statement); err != nil {
+				return fmt.Errorf("failed to execute SQL statement %d: %w", i+1, err)
+			}
+			continue
+		}
+
+		result, execErr := tx.Exec(statement)
+		if execErr != nil {
+			return fmt.Errorf("failed to execute SQL statement %d: %w", i+1, execErr)
+		}
+
+		rowsAffected, resultErr := result.RowsAffected()
+		if resultErr != nil {
+			ccolor.Printf("✅  SQL executed successfully (result info not available)\n")
+		} else {
+			ccolor.Printf("✅  SQL executed successfully, rows affected: <green>%d</>\n", rowsAffected)
+		}
 	}
 
-	// Print execution result
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		ccolor.Printf("✅  SQL executed successfully (result info not available)\n")
-	} else {
-		ccolor.Printf("✅  SQL executed successfully, rows affected: <green>%d</>\n", rowsAffected)
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit SQL transaction: %v", err)
 	}
-
+	committed = true
 	return nil
 }
 
@@ -140,7 +162,7 @@ func readSQLFromFile(filePath string) (string, error) {
 	return strings.TrimSpace(string(data)), nil
 }
 
-func execQuery(db *database.DB, sql string) error {
+func execQuery(db queryer, sql string) error {
 	rows, err := db.Query(sql)
 	if err != nil {
 		return fmt.Errorf("failed to execute query: %v", err)

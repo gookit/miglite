@@ -96,7 +96,7 @@ git commit -m "refactor(testdrv): share CLI module dependencies"
 - Produces: `isQuerySQL(sqlText string) bool`
 - Changes: `execQuery(queryer interface { Query(string, ...any) (*sql.Rows, error) }, sqlText string) error`
 
-- [ ] **Step 1: Write failing scanner tests**
+- [x] **Step 1: Write failing scanner tests**
 
 Create table-driven `TestSplitSQLStatements` cases with `assert.Eq` for:
 
@@ -112,7 +112,7 @@ Create table-driven `TestSplitSQLStatements` cases with `assert.Eq` for:
 
 Add table-driven `TestIsQuerySQL` for leading whitespace/comments and `SELECT`, `DESCRIBE`, `PRAGMA`, `SHOW`, plus a non-query.
 
-- [ ] **Step 2: Verify the tests fail**
+- [x] **Step 2: Verify the tests fail**
 
 Run from the repository root:
 
@@ -122,17 +122,17 @@ go test ./pkg/command -run 'TestSplitSQLStatements|TestIsQuerySQL' -count=1
 
 Expected: build failure because both functions are undefined.
 
-- [ ] **Step 3: Implement the scanner**
+- [x] **Step 3: Implement the scanner**
 
 Create `pkg/command/sql_split.go` with normal, single-quote, double-quote, backtick, line-comment, and block-comment states. Treat doubled quote characters and backslash-escaped bytes as content. Recognize `--` and `#` line comments and `/* ... */` block comments. Split only on a semicolon in normal state, trim with `strings.TrimSpace`, and omit empty statements.
 
 Implement `isQuerySQL` by removing leading whitespace/comments, lowercasing the remaining prefix, and checking the four approved keywords with a word boundary.
 
-- [ ] **Step 4: Verify scanner tests pass**
+- [x] **Step 4: Verify scanner tests pass**
 
 Run the Step 2 command again. Expected: `ok github.com/gookit/miglite/pkg/command`.
 
-- [ ] **Step 5: Write failing SQLite transaction tests**
+- [x] **Step 5: Write failing SQLite transaction tests**
 
 Create `cmd/miglite/testdrv/exec_sqlite_test.go` using `t.TempDir()`, the registered SQLite driver, `database.NewWithSqlDB`, `command.SetDB`, and `command.SetCfg`.
 
@@ -150,7 +150,7 @@ err := command.HandleExec(command.ExecOption{
 
 Reopen the file and assert `name == "updated"`. A rollback subtest executes `CREATE TABLE`, a valid insert, then an insert into a missing table; reopen the file and assert querying `items` returns a missing-table error.
 
-- [ ] **Step 6: Verify SQLite tests fail**
+- [x] **Step 6: Verify SQLite tests fail**
 
 Run from `cmd/miglite/`:
 
@@ -160,11 +160,11 @@ go test ./... -run TestExecMultiSQL -count=1
 
 Expected: current batch execution fails the atomic/per-statement assertions.
 
-- [ ] **Step 7: Make `HandleExec` transactional**
+- [x] **Step 7: Make `HandleExec` transactional**
 
 In `pkg/command/exec_cmd.go`, define the small `queryer` interface and change `execQuery` to accept it. After the existing confirmation, split input and reject an empty result. Begin one transaction, defer rollback until a `committed` flag is true, and iterate with one-based statement numbers. Query statements call `execQuery(tx, statement)`; other statements call `tx.Exec(statement)` and print affected rows. Wrap execution errors as `failed to execute SQL statement %d: %w`. Commit after the loop.
 
-- [ ] **Step 8: Verify Task 1**
+- [x] **Step 8: Verify Task 1**
 
 Run from the root:
 
@@ -183,7 +183,7 @@ go test ./... -run TestExecMultiSQL -count=1
 
 Expected: all commands exit 0.
 
-- [ ] **Step 9: Update progress and commit Task 1**
+- [x] **Step 9: Update progress and commit Task 1**
 
 Change Task 1 checkboxes to `[x]`, then:
 
