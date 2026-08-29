@@ -93,8 +93,10 @@ func (r *Runtime) DownWithHooks(opt DownOption, hooks MigrationHooks) error {
 	}
 	e := migration.NewExecutor(r.db, r.cfg.Verbose)
 	for i, rec := range recs {
+		found := false
 		for _, m := range ms {
 			if m.Version == rec.Version {
+				found = true
 				if hooks.Before != nil {
 					if err := hooks.Before(i, len(recs), m); err != nil {
 						return err
@@ -116,6 +118,9 @@ func (r *Runtime) DownWithHooks(opt DownOption, hooks MigrationHooks) error {
 				}
 				break
 			}
+		}
+		if !found {
+			return fmt.Errorf("migration file not found for version: %s", rec.Version)
 		}
 	}
 	return nil
