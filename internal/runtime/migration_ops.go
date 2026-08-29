@@ -17,6 +17,10 @@ type DownOption struct {
 type SkipOption struct{ FileNames []string }
 
 func (r *Runtime) Up(opt UpOption) error {
+	return r.UpWithHooks(opt, MigrationHooks{})
+}
+
+func (r *Runtime) UpWithHooks(opt UpOption, hooks MigrationHooks) error {
 	if err := r.ensureDB(); err != nil {
 		return err
 	}
@@ -32,18 +36,32 @@ func (r *Runtime) Up(opt UpOption) error {
 			return err
 		}
 		if applied || status == migration.StatusSkip {
+			if hooks.Skip != nil {
+				hooks.Skip(i, len(ms), m, status)
+			}
 			continue
+		}
+		if hooks.Before != nil {
+			if err := hooks.Before(i, len(ms), m); err != nil {
+				return err
+			}
 		}
 		if err = m.Parse(); err != nil {
 			return err
 		}
 		if err = e.ExecuteUp(m); err != nil {
+			if hooks.Error != nil {
+				hooks.Error(i, len(ms), m, err)
+			}
 			if opt.SkipErr {
 				continue
 			}
 			return fmt.Errorf("failed to execute migration %s: %v", m.FileName, err)
 		}
 		n++
+		if hooks.After != nil {
+			hooks.After(i, len(ms), m)
+		}
 		if opt.Number > 0 && n >= opt.Number {
 			break
 		}
@@ -52,6 +70,10 @@ func (r *Runtime) Up(opt UpOption) error {
 }
 
 func (r *Runtime) Down(opt DownOption) error {
+	return r.DownWithHooks(opt, MigrationHooks{})
+}
+
+func (r *Runtime) DownWithHooks(opt DownOption, hooks MigrationHooks) error {
 	if opt.Number <= 0 {
 		return fmt.Errorf("count must be greater than 0")
 	}
@@ -67,16 +89,27 @@ func (r *Runtime) Down(opt DownOption) error {
 		return err
 	}
 	e := migration.NewExecutor(r.db, r.cfg.Verbose)
-	for _, rec := range recs {
+	for i, rec := range recs {
 		for _, m := range ms {
 			if m.Version == rec.Version {
+				if hooks.Before != nil {
+					if err := hooks.Before(i, len(recs), m); err != nil {
+						return err
+					}
+				}
 				if err = m.Parse(); err != nil {
 					return err
 				}
 				if m.DownSection != "" {
 					if err = e.ExecuteDown(m); err != nil {
+						if hooks.Error != nil {
+							hooks.Error(i, len(recs), m, err)
+						}
 						return err
 					}
+				}
+				if hooks.After != nil {
+					hooks.After(i, len(recs), m)
 				}
 				break
 			}
@@ -86,6 +119,10 @@ func (r *Runtime) Down(opt DownOption) error {
 }
 
 func (r *Runtime) Skip(opt SkipOption) error {
+	return r.SkipWithHooks(opt, MigrationHooks{})
+}
+
+func (r *Runtime) SkipWithHooks(opt SkipOption, hooks MigrationHooks) error {
 	if err := r.ensureDB(); err != nil {
 		return err
 	}
@@ -93,9 +130,20 @@ func (r *Runtime) Skip(opt SkipOption) error {
 	if err != nil {
 		return err
 	}
-	for _, m := range ms {
+	for i, m := range ms {
+		if hooks.Before != nil {
+			if err := hooks.Before(i, len(ms), m); err != nil {
+				return err
+			}
+		}
 		if err = migration.SaveRecord(r.db, m.Version, migration.StatusSkip, nil); err != nil {
+			if hooks.Error != nil {
+				hooks.Error(i, len(ms), m, err)
+			}
 			return err
+		}
+		if hooks.After != nil {
+			hooks.After(i, len(ms), m)
 		}
 	}
 	return nil

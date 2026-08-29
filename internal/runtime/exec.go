@@ -13,6 +13,10 @@ type ExecOption struct {
 }
 
 func (r *Runtime) Exec(opt ExecOption) error {
+	return r.ExecWithHooks(opt, ExecHooks{})
+}
+
+func (r *Runtime) ExecWithHooks(opt ExecOption, hooks ExecHooks) error {
 	if err := r.ensureDB(); err != nil {
 		return err
 	}
@@ -42,8 +46,18 @@ func (r *Runtime) Exec(opt ExecOption) error {
 		}
 	}()
 	for i, statement := range statements {
-		if _, err = tx.Exec(statement); err != nil {
+		if hooks.BeforeStatement != nil {
+			if err = hooks.BeforeStatement(i, len(statements), statement); err != nil {
+				return err
+			}
+		}
+		result, execErr := tx.Exec(statement)
+		if execErr != nil {
+			err = execErr
 			return fmt.Errorf("failed to execute SQL statement %d: %w", i+1, err)
+		}
+		if hooks.AfterStatement != nil {
+			hooks.AfterStatement(i, len(statements), statement, result)
 		}
 	}
 	if err = tx.Commit(); err != nil {
