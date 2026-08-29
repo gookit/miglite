@@ -9,6 +9,7 @@ import (
 	"github.com/gookit/goutil/strutil"
 	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/miglite/internal/database"
+	"github.com/gookit/miglite/internal/runtime"
 )
 
 // ShowOption represents options for the show command
@@ -45,21 +46,64 @@ func HandleShow(opt ShowOption) error {
 	if opt.Tables && opt.Schema != "" {
 		return fmt.Errorf("--tables and --schema cannot be used together")
 	}
-
-	// Load configuration and connect to database
-	if err := initConfigAndDB(); err != nil {
+	r, cleanup, err := legacyRuntime()
+	if err != nil {
 		return err
 	}
-	defer cleanupDB()
-
-	// Show database tables
-	if opt.Tables {
-		return showTables(db)
+	defer cleanup()
+	result, err := r.Show(runtime.ShowOption{Tables: opt.Tables, Schema: opt.Schema})
+	if err != nil {
+		return err
 	}
+	if opt.Tables {
+		return showTablesResult(result.([]string))
+	}
+	return showSchemaResult(result.([]database.ColumnInfo), opt.Schema)
+	/*
+	   // Load configuration and connect to database
 
-	// Show table schema
-	if opt.Schema != "" {
-		return showTableSchema(db, opt.Schema)
+	   	if err := initConfigAndDB(); err != nil {
+	   		return err
+	   	}
+
+	   defer cleanupDB()
+
+	   // Show database tables
+
+	   	if opt.Tables {
+	   		return showTables(db)
+	   	}
+
+	   // Show table schema
+
+	   	if opt.Schema != "" {
+	   		return showTableSchema(db, opt.Schema)
+	   	}
+
+	   return nil
+	*/
+}
+
+func showTablesResult(tables []string) error { return showTablesList(tables) }
+func showTablesList(tables []string) error {
+	ccolor.Println("🔍  Fetching database tables...")
+	if len(tables) == 0 {
+		ccolor.Infoln("No tables found in the database.")
+		return nil
+	}
+	ccolor.Printf("📋  Found <green>%d</> table(s):\n", len(tables))
+	for i, t := range tables {
+		ccolor.Printf("  %d. %s\n", i+1, t)
+	}
+	return nil
+}
+func showSchemaResult(columns []database.ColumnInfo, table string) error {
+	return showTableSchemaColumns(columns, table)
+}
+func showTableSchemaColumns(columns []database.ColumnInfo, table string) error {
+	ccolor.Printf("🔍  Fetching schema for table: <green>%s</>\n", table)
+	if len(columns) == 0 {
+		ccolor.Warnf("No columns found for table: %s\n", table)
 	}
 	return nil
 }
