@@ -24,6 +24,9 @@ func (r *Runtime) UpWithHooks(opt UpOption, hooks MigrationHooks) error {
 	if err := r.ensureDB(); err != nil {
 		return err
 	}
+	if err := r.db.InitSchema(); err != nil {
+		return fmt.Errorf("failed to initialize schema: %v", err)
+	}
 	ms, err := migration.FindMigrations(r.cfg.Migrations.Path, r.cfg.Migrations.Recursive)
 	if err != nil {
 		return err
