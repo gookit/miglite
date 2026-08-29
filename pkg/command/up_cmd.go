@@ -1,13 +1,8 @@
 package command
 
 import (
-	"fmt"
-	"time"
-
 	"github.com/gookit/goutil/cflag/capp"
-	"github.com/gookit/goutil/cliutil"
-	"github.com/gookit/goutil/x/ccolor"
-	"github.com/gookit/miglite/pkg/migration"
+	"github.com/gookit/miglite/internal/runtime"
 )
 
 // UpOption represents options for the up command
@@ -43,84 +38,97 @@ func NewUpCommand() *capp.Cmd {
 
 // HandleUp executes pending migrations
 func HandleUp(opt UpOption) error {
-	// Load configuration and connect to database
-	if err1 := initConfigAndDB(); err1 != nil {
-		return fmt.Errorf("failed to connect to database: %v", err1)
+	r, cleanup, err := legacyRuntime()
+	if err != nil {
+		return err
 	}
-	defer cleanupDB()
+	defer cleanup()
+	return r.Up(runtime.UpOption{Yes: opt.Yes, SkipErr: opt.SkipErr, Number: opt.Number, StartTime: opt.StartTime})
+	/*
+	   // Load configuration and connect to database
 
-	// Initialize schema if needed
-	if err := db.InitSchema(); err != nil {
-		return fmt.Errorf("failed to initialize schema: %v", err)
-	}
+	   	if err1 := initConfigAndDB(); err1 != nil {
+	   		return fmt.Errorf("failed to connect to database: %v", err1)
+	   	}
 
-	// Discover migrations
-	migrations, err2 := findMigrations()
-	if err2 != nil {
-		return fmt.Errorf("failed to discover migrations: %v", err2)
-	}
+	   defer cleanupDB()
 
-	if len(migrations) == 0 {
-		ccolor.Infoln("🔎  No migrations found.")
-		return nil
-	}
+	   // Initialize schema if needed
 
-	// Get executor
-	executor := migration.NewExecutor(db, ShowVerbose)
-	startTime := time.Now()
+	   	if err := db.InitSchema(); err != nil {
+	   		return fmt.Errorf("failed to initialize schema: %v", err)
+	   	}
 
-	var appliedNum, skippedNum int
-	var splitSkipped = !ShowVerbose
-	confirmTip := "Are you sure you want to execute this migration?"
-	ccolor.Printf("🚀  Starting exec migrations(<green>founds=%d</>). Start at: %s\n\n", len(migrations), formatTime(startTime))
+	   // Discover migrations
+	   migrations, err2 := findMigrations()
 
-	// Execute pending migrations
-	for idx, mig := range migrations {
-		// Check if migration is already applied
-		applied, status, err := migration.IsApplied(db, mig.FileName)
-		if err != nil {
-			return err
-		}
-		if applied || status == migration.StatusSkip {
-			skippedNum++
-			if ShowVerbose {
-				ccolor.Printf("%d. ⏭️  <ylw>Skipping</> %s migration: %s\n", idx+1, migration.StatusText(status), mig.FileName)
-			} else {
-				ccolor.Infop(".")
-				splitSkipped = true
-			}
-			continue
-		}
+	   	if err2 != nil {
+	   		return fmt.Errorf("failed to discover migrations: %v", err2)
+	   	}
 
-		if splitSkipped {
-			fmt.Println()
-			splitSkipped = false
-		}
+	   	if len(migrations) == 0 {
+	   		ccolor.Infoln("🔎  No migrations found.")
+	   		return nil
+	   	}
 
-		// not applied OR status=down
-		ccolor.Printf("<green>%d.</> 🔄  Executing migration file: <green>%s</>\n", idx+1, mig.FileName)
-		if !opt.Yes && !cliutil.Confirm(confirmTip) {
-			ccolor.Warnln("Exiting run migrations!")
-			break
-		}
+	   // Get executor
+	   executor := migration.NewExecutor(db, ShowVerbose)
+	   startTime := time.Now()
 
-		if err = mig.Parse(); err != nil {
-			return err
-		}
-		if err = executor.ExecuteUp(mig); err != nil {
-			return fmt.Errorf("failed to execute migration %s: %v\nUpSQL:\n%s", mig.FileName, err, mig.UpSection)
-		}
+	   var appliedNum, skippedNum int
+	   var splitSkipped = !ShowVerbose
+	   confirmTip := "Are you sure you want to execute this migration?"
+	   ccolor.Printf("🚀  Starting exec migrations(<green>founds=%d</>). Start at: %s\n\n", len(migrations), formatTime(startTime))
 
-		// free memory
-		mig.ResetContents()
-		ccolor.Printf("✅  Successfully executed migration: %s\n", mig.FileName)
+	   // Execute pending migrations
 
-		appliedNum++
-		if opt.Number > 0 && appliedNum >= opt.Number {
-			break
-		}
-	}
+	   	for idx, mig := range migrations {
+	   		// Check if migration is already applied
+	   		applied, status, err := migration.IsApplied(db, mig.FileName)
+	   		if err != nil {
+	   			return err
+	   		}
+	   		if applied || status == migration.StatusSkip {
+	   			skippedNum++
+	   			if ShowVerbose {
+	   				ccolor.Printf("%d. ⏭️  <ylw>Skipping</> %s migration: %s\n", idx+1, migration.StatusText(status), mig.FileName)
+	   			} else {
+	   				ccolor.Infop(".")
+	   				splitSkipped = true
+	   			}
+	   			continue
+	   		}
 
-	ccolor.Successf("\n\n🎉  All migrations applied successfully! 📘 apply:%d, skip:%d ⏱️ duration: %s\n", appliedNum, skippedNum, time.Since(startTime))
-	return nil
+	   		if splitSkipped {
+	   			fmt.Println()
+	   			splitSkipped = false
+	   		}
+
+	   		// not applied OR status=down
+	   		ccolor.Printf("<green>%d.</> 🔄  Executing migration file: <green>%s</>\n", idx+1, mig.FileName)
+	   		if !opt.Yes && !cliutil.Confirm(confirmTip) {
+	   			ccolor.Warnln("Exiting run migrations!")
+	   			break
+	   		}
+
+	   		if err = mig.Parse(); err != nil {
+	   			return err
+	   		}
+	   		if err = executor.ExecuteUp(mig); err != nil {
+	   			return fmt.Errorf("failed to execute migration %s: %v\nUpSQL:\n%s", mig.FileName, err, mig.UpSection)
+	   		}
+
+	   		// free memory
+	   		mig.ResetContents()
+	   		ccolor.Printf("✅  Successfully executed migration: %s\n", mig.FileName)
+
+	   		appliedNum++
+	   		if opt.Number > 0 && appliedNum >= opt.Number {
+	   			break
+	   		}
+	   	}
+
+	   ccolor.Successf("\n\n🎉  All migrations applied successfully! 📘 apply:%d, skip:%d ⏱️ duration: %s\n", appliedNum, skippedNum, time.Since(startTime))
+	   return nil
+	*/
 }

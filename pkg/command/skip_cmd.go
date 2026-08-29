@@ -1,10 +1,8 @@
 package command
 
 import (
-	"github.com/gookit/goutil/arrutil"
 	"github.com/gookit/goutil/cflag/capp"
-	"github.com/gookit/goutil/x/ccolor"
-	"github.com/gookit/miglite/pkg/migration"
+	"github.com/gookit/miglite/internal/runtime"
 )
 
 // SkipOption skip migration file option
@@ -29,41 +27,54 @@ func SkipCommand() *capp.Cmd {
 
 // HandleSkip skips one or multi migration file(s)
 func HandleSkip(opt SkipOption) error {
-	if err := initConfigAndDB(); err != nil {
-		return err
-	}
-	defer cleanupDB()
-
-	migFiles, err := migration.MigrationsFrom(cfg.Migrations.Path, opt.FileNames)
+	r, cleanup, err := legacyRuntime()
 	if err != nil {
 		return err
 	}
+	defer cleanup()
+	return r.Skip(runtime.SkipOption{FileNames: opt.FileNames})
+	/*
+	   	if err := initConfigAndDB(); err != nil {
+	   		return err
+	   	}
 
-	// get migration status from database
-	records, err := migration.GetMigrationsStatus(db, migFiles)
-	if err != nil {
-		return err
-	}
-	recordMap := arrutil.ToMap(records, func(item migration.Record) (string, migration.Record) {
-		return item.Version, item
-	})
+	   defer cleanupDB()
 
-	ccolor.Magentaf("🚀  Start ignore %d migrations:\n\n", len(migFiles))
-	for _, migFile := range migFiles {
-		if record, ok := recordMap[migFile.Version]; ok {
-			if record.Status == migration.StatusUp {
-				ccolor.Warnf("Migration %s already skipped", migFile.Version)
-				continue
-			}
-		}
+	   migFiles, err := migration.MigrationsFrom(cfg.Migrations.Path, opt.FileNames)
 
-		// update migration status to skipped
-		err = migration.SaveRecord(db, migFile.Version, migration.StatusSkip, nil)
-		if err != nil {
-			return err
-		}
-		ccolor.Printf("- Migration <green>%s</> skipped", migFile.Version)
-	}
+	   	if err != nil {
+	   		return err
+	   	}
 
-	return nil
+	   // get migration status from database
+	   records, err := migration.GetMigrationsStatus(db, migFiles)
+
+	   	if err != nil {
+	   		return err
+	   	}
+
+	   	recordMap := arrutil.ToMap(records, func(item migration.Record) (string, migration.Record) {
+	   		return item.Version, item
+	   	})
+
+	   ccolor.Magentaf("🚀  Start ignore %d migrations:\n\n", len(migFiles))
+
+	   	for _, migFile := range migFiles {
+	   		if record, ok := recordMap[migFile.Version]; ok {
+	   			if record.Status == migration.StatusUp {
+	   				ccolor.Warnf("Migration %s already skipped", migFile.Version)
+	   				continue
+	   			}
+	   		}
+
+	   		// update migration status to skipped
+	   		err = migration.SaveRecord(db, migFile.Version, migration.StatusSkip, nil)
+	   		if err != nil {
+	   			return err
+	   		}
+	   		ccolor.Printf("- Migration <green>%s</> skipped", migFile.Version)
+	   	}
+
+	   return nil
+	*/
 }
