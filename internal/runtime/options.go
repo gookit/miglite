@@ -2,16 +2,23 @@ package runtime
 
 import (
 	"database/sql"
+	"errors"
 	"github.com/gookit/miglite/pkg/migration"
 )
 
 type MigrationHooks struct {
-	Before  func(index, total int, mig *migration.Migration) error
-	After   func(index, total int, mig *migration.Migration)
-	Skip    func(index, total int, mig *migration.Migration, status string)
-	Error   func(index, total int, mig *migration.Migration, err error)
-	Confirm func(message string) bool
+	Start    func(total int)
+	Complete func(result MigrationResult)
+	Before   func(index, total int, mig *migration.Migration) error
+	After    func(index, total int, mig *migration.Migration)
+	Skip     func(index, total int, mig *migration.Migration, status string)
+	Error    func(index, total int, mig *migration.Migration, err error)
+	Confirm  func(message string) bool
 }
+
+var ErrCancelled = errors.New("operation cancelled")
+
+type MigrationResult struct{ Total, Applied, Skipped, Failed int }
 
 type ExecHooks struct {
 	BeforeStatement func(index, total int, statement string) error

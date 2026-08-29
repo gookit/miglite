@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"errors"
 	"fmt"
 	"github.com/gookit/miglite/pkg/migration"
 )
@@ -31,6 +32,15 @@ func (r *Runtime) UpWithHooks(opt UpOption, hooks MigrationHooks) error {
 	if err != nil {
 		return err
 	}
+	if hooks.Start != nil {
+		hooks.Start(len(ms))
+	}
+	result := MigrationResult{Total: len(ms)}
+	defer func() {
+		if hooks.Complete != nil {
+			hooks.Complete(result)
+		}
+	}()
 	e := migration.NewExecutor(r.db, r.cfg.Verbose)
 	n := 0
 	for i, m := range ms {
@@ -39,6 +49,7 @@ func (r *Runtime) UpWithHooks(opt UpOption, hooks MigrationHooks) error {
 			return err
 		}
 		if applied || status == migration.StatusSkip {
+			result.Skipped++
 			if hooks.Skip != nil {
 				hooks.Skip(i, len(ms), m, status)
 			}
@@ -46,6 +57,9 @@ func (r *Runtime) UpWithHooks(opt UpOption, hooks MigrationHooks) error {
 		}
 		if hooks.Before != nil {
 			if err := hooks.Before(i, len(ms), m); err != nil {
+				if errors.Is(err, ErrCancelled) {
+					return nil
+				}
 				return err
 			}
 		}
@@ -62,6 +76,7 @@ func (r *Runtime) UpWithHooks(opt UpOption, hooks MigrationHooks) error {
 			return fmt.Errorf("failed to execute migration %s: %v", m.FileName, err)
 		}
 		n++
+		result.Applied++
 		if hooks.After != nil {
 			hooks.After(i, len(ms), m)
 		}
@@ -86,6 +101,9 @@ func (r *Runtime) DownWithHooks(opt DownOption, hooks MigrationHooks) error {
 	recs, err := migration.GetAppliedSortedByVersion(r.db, opt.Number)
 	if err != nil {
 		return err
+	}
+	if hooks.Start != nil {
+		hooks.Start(len(recs))
 	}
 	ms, err := migration.FindMigrations(r.cfg.Migrations.Path, r.cfg.Migrations.Recursive)
 	if err != nil {

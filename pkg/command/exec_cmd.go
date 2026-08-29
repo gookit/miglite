@@ -28,6 +28,7 @@ func HandleExec(o ExecOption) error {
 		return e
 	}
 	defer cl()
+	ccolor.Printf("📄 Input SQL: %s\n", o.SQLOrFile)
 	if !o.Yes && !cliutil.Confirm("Continue?") {
 		return nil
 	}

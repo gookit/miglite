@@ -1,7 +1,6 @@
 package command
 
 import (
-	"fmt"
 	"github.com/gookit/goutil/cflag/capp"
 	"github.com/gookit/goutil/cliutil"
 	"github.com/gookit/goutil/x/ccolor"
@@ -29,10 +28,10 @@ func HandleDown(o DownOption) error {
 		return e
 	}
 	defer cl()
-	h := runtime.MigrationHooks{Before: func(i, _ int, m *migration.Migration) error {
+	h := runtime.MigrationHooks{Start: func(total int) { ccolor.Printf("🚀 Will roll back recent %d migrations:\n", total) }, Before: func(i, _ int, m *migration.Migration) error {
 		ccolor.Printf("%d. Rolling back migration: <ylw>%s</>\n", i+1, m.FileName)
 		if !o.Yes && !cliutil.Confirm("Are you sure you want to roll back the migration?") {
-			return fmt.Errorf("migration rollback cancelled")
+			return runtime.ErrCancelled
 		}
 		return nil
 	}, After: func(_, _ int, m *migration.Migration) {
