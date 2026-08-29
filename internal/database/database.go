@@ -48,6 +48,7 @@ func Connect(driver, sqlDriver, dsn string) (*DB, error) {
 
 	// Test the connection
 	if err1 := db.Ping(); err1 != nil {
+		_ = db.Close()
 		return nil, err1
 	}
 

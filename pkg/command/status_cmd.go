@@ -36,7 +36,7 @@ func HandleStatus(_ StatusOption) error {
 	if err := initConfigAndDB(); err != nil {
 		return err
 	}
-	defer db.SilentClose()
+	defer cleanupDB()
 
 	// Discover migrations
 	migrations, err := findMigrations()

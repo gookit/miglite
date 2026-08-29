@@ -22,6 +22,7 @@ var OnConfigLoaded = func(cfg *config.Config) error {
 // cache for testing
 var cfg *config.Config
 var db *database.DB
+var dbOwned bool
 
 // Cfg get config instance
 func Cfg() *config.Config { return cfg }
@@ -37,7 +38,24 @@ func SetCfg(c *config.Config) {
 func DB() *database.DB { return db }
 
 // SetDB set database instance. use on manual run logic.
-func SetDB(d *database.DB) { db = d }
+func SetDB(d *database.DB) {
+	if db != nil && dbOwned && db != d {
+		db.SilentClose()
+	}
+	db = d
+	dbOwned = false
+}
+
+func cleanupDB() {
+	if db == nil {
+		return
+	}
+	if dbOwned {
+		db.SilentClose()
+	}
+	db = nil
+	dbOwned = false
+}
 
 func initLoadConfig() error {
 	if cfg != nil {
@@ -88,6 +106,7 @@ func initConfigAndDB() (err error) {
 		if err != nil {
 			return fmt.Errorf("failed to connect to database: %v", err)
 		}
+		dbOwned = true
 		ccolor.Printf("✅  Database connect successful! driver: <green>%s</>\n", db.Driver())
 	}
 

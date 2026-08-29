@@ -47,7 +47,7 @@ func HandleUp(opt UpOption) error {
 	if err1 := initConfigAndDB(); err1 != nil {
 		return fmt.Errorf("failed to connect to database: %v", err1)
 	}
-	defer db.SilentClose()
+	defer cleanupDB()
 
 	// Initialize schema if needed
 	if err := db.InitSchema(); err != nil {

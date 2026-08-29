@@ -32,7 +32,7 @@ func HandleSkip(opt SkipOption) error {
 	if err := initConfigAndDB(); err != nil {
 		return err
 	}
-	defer db.SilentClose()
+	defer cleanupDB()
 
 	migFiles, err := migration.MigrationsFrom(cfg.Migrations.Path, opt.FileNames)
 	if err != nil {

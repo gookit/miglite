@@ -50,7 +50,7 @@ func HandleShow(opt ShowOption) error {
 	if err := initConfigAndDB(); err != nil {
 		return err
 	}
-	defer db.SilentClose()
+	defer cleanupDB()
 
 	// Show database tables
 	if opt.Tables {

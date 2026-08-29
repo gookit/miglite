@@ -30,7 +30,7 @@ func HandleInit(opt InitOption) error {
 	if err := initConfigAndDB(); err != nil {
 		return err
 	}
-	defer db.SilentClose()
+	defer cleanupDB()
 
 	// Drop existing schema if needed
 	if opt.Drop {

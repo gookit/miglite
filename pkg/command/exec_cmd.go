@@ -60,7 +60,7 @@ func HandleExec(opt ExecOption) (err error) {
 	if err != nil {
 		return err
 	}
-	defer db.SilentClose()
+	defer cleanupDB()
 
 	// Prepare SQL to execute
 	var sql = sqlOrFile
