@@ -87,6 +87,7 @@ func HandleShow(opt ShowOption) error {
 func showTablesResult(tables []string) error { return showTablesList(tables) }
 func showTablesList(tables []string) error {
 	ccolor.Println("🔍  Fetching database tables...")
+	tables = arrutil.Filter(tables, func(s string) bool { return s != database.SchemaTableName })
 	if len(tables) == 0 {
 		ccolor.Infoln("No tables found in the database.")
 		return nil
@@ -104,7 +105,18 @@ func showTableSchemaColumns(columns []database.ColumnInfo, table string) error {
 	ccolor.Printf("🔍  Fetching schema for table: <green>%s</>\n", table)
 	if len(columns) == 0 {
 		ccolor.Warnf("No columns found for table: %s\n", table)
+		return nil
 	}
+	hLine := strings.Repeat("-", 110)
+	ccolor.Printf("📋  Table <green>%s</> has <green>%d</> column(s):\n", table, len(columns))
+	fmt.Println(hLine)
+	ccolor.Printf(" %-20s | %-30s | %-4s | %-20s | %-10s | %-15s\n", "Name", "Type", "Null", "Default", "Key", "Extra")
+	fmt.Println(hLine)
+	for _, col := range columns {
+		defVal := strutil.OrCond(col.Default.Valid, col.Default.String, "NULL")
+		fmt.Printf(" %-20s | %-30s | %-4s | %-20s | %-10s | %-15s\n", col.Name, col.Type, col.NotNull, defVal, col.Key, col.Extra)
+	}
+	fmt.Println(hLine)
 	return nil
 }
 
