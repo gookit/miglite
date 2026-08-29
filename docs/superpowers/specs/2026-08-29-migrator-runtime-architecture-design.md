@@ -222,3 +222,11 @@ return command.HandleUp(opt)
 `Migrator` 方法；行为变化仅包括：外部注入的数据库不再被自动关闭，以及不同
 `Migrator` 实例不再互相覆盖配置。直接依赖 `command.Set*` 的旧代码继续运行，
 但建议迁移到 `miglite.Migrator`。
+
+## 实施状态
+
+- 已完成数据库连接 ownership 和关闭生命周期修复。
+- 已完成无全局状态 Runtime 的 Init、Up、Down、Skip、Status、Show、Exec 基础实现。
+- 已完成 Migrator 到 Runtime 的直接调用和 command handler 兼容转发。
+- embed FS 仍未实现，保留为后续独立 feature。
+- command 的部分历史终端格式化输出尚未完全恢复为旧版格式；Runtime 返回结构化结果，后续可独立补充输出适配，不影响迁移执行结果。
