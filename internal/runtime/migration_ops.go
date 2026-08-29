@@ -30,7 +30,7 @@ func (r *Runtime) UpWithHooks(opt UpOption, hooks MigrationHooks) error {
 	}
 	e := migration.NewExecutor(r.db, r.cfg.Verbose)
 	n := 0
-	for _, m := range ms {
+	for i, m := range ms {
 		applied, status, err := migration.IsApplied(r.db, m.FileName)
 		if err != nil {
 			return err
