@@ -64,6 +64,23 @@ func SplitSQL(input string) []string {
 
 func IsQuerySQL(sqlText string) bool {
 	s := strings.ToLower(strings.TrimSpace(sqlText))
+	for {
+		if strings.HasPrefix(s, "--") || strings.HasPrefix(s, "#") {
+			if i := strings.IndexByte(s, '\n'); i >= 0 {
+				s = strings.TrimSpace(s[i+1:])
+				continue
+			}
+			return false
+		}
+		if strings.HasPrefix(s, "/*") {
+			if i := strings.Index(s[2:], "*/"); i >= 0 {
+				s = strings.TrimSpace(s[i+4:])
+				continue
+			}
+			return false
+		}
+		break
+	}
 	for _, keyword := range []string{"select", "describe", "pragma", "show"} {
 		if strings.HasPrefix(s, keyword) && (len(s) == len(keyword) || s[len(keyword)] < 'a' || s[len(keyword)] > 'z') {
 			return true

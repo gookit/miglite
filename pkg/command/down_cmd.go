@@ -7,6 +7,7 @@ import (
 	"github.com/gookit/goutil/cliutil"
 	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/miglite/internal/database"
+	"github.com/gookit/miglite/internal/runtime"
 	"github.com/gookit/miglite/pkg/migration"
 )
 
@@ -33,6 +34,21 @@ func DownCommand() *capp.Cmd {
 
 // HandleDown migration logic
 func HandleDown(opt DownOption) error {
+	r, cleanup, err := legacyRuntime()
+	if err != nil {
+		return err
+	}
+	defer cleanup()
+	hooks := runtime.MigrationHooks{Before: func(i, _ int, m *migration.Migration) error {
+		ccolor.Printf("%d. Rolling back migration: <ylw>%s</>\n", i+1, m.FileName)
+		if !opt.Yes && !cliutil.Confirm("Are you sure you want to roll back the migration?") {
+			return fmt.Errorf("migration rollback cancelled")
+		}
+		return nil
+	}, After: func(_, _ int, m *migration.Migration) {
+		ccolor.Printf("✅  Success rolled back migration: %s\n", m.FileName)
+	}}
+	return r.DownWithHooks(runtime.DownOption{Number: opt.Number, Yes: true}, hooks)
 	// Load configuration and connect to database
 	if err := initConfigAndDB(); err != nil {
 		return err

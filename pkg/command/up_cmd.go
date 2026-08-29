@@ -7,6 +7,7 @@ import (
 	"github.com/gookit/goutil/cflag/capp"
 	"github.com/gookit/goutil/cliutil"
 	"github.com/gookit/goutil/x/ccolor"
+	"github.com/gookit/miglite/internal/runtime"
 	"github.com/gookit/miglite/pkg/migration"
 )
 
@@ -43,6 +44,21 @@ func NewUpCommand() *capp.Cmd {
 
 // HandleUp executes pending migrations
 func HandleUp(opt UpOption) error {
+	r, cleanup, err := legacyRuntime()
+	if err != nil {
+		return err
+	}
+	defer cleanup()
+	hooks := runtime.MigrationHooks{Before: func(i, _ int, m *migration.Migration) error {
+		ccolor.Printf("<green>%d.</> 🔄  Executing migration file: <green>%s</>\n", i+1, m.FileName)
+		if !opt.Yes && !cliutil.Confirm("Are you sure you want to execute this migration?") {
+			return fmt.Errorf("migration execution cancelled")
+		}
+		return nil
+	}, After: func(_, _ int, m *migration.Migration) {
+		ccolor.Printf("✅  Successfully executed migration: %s\n", m.FileName)
+	}}
+	return r.UpWithHooks(runtime.UpOption{Yes: true, SkipErr: opt.SkipErr, Number: opt.Number, StartTime: opt.StartTime}, hooks)
 	// Load configuration and connect to database
 	if err1 := initConfigAndDB(); err1 != nil {
 		return fmt.Errorf("failed to connect to database: %v", err1)

@@ -13,7 +13,7 @@ import (
 	"github.com/gookit/goutil/strutil"
 	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/goutil/x/stdio"
-	"github.com/gookit/miglite/internal/migutil"
+	"github.com/gookit/miglite/internal/runtime"
 )
 
 type queryer interface {
@@ -50,6 +50,25 @@ func NewExecCommand() *capp.Cmd {
 
 // HandleExec handles the exec command logic
 func HandleExec(opt ExecOption) (err error) {
+	r, cleanup, err := legacyRuntime()
+	if err != nil {
+		return err
+	}
+	defer cleanup()
+	if strings.TrimSpace(opt.SQLOrFile) == "" {
+		return fmt.Errorf("either SQL or sql-file must be provided")
+	}
+	if !opt.Yes && !cliutil.Confirm("Continue?") {
+		return nil
+	}
+	return r.ExecWithHooks(runtime.ExecOption{SQLOrFile: opt.SQLOrFile, Yes: true}, runtime.ExecHooks{BeforeStatement: func(i, total int, s string) error {
+		ccolor.Printf("🚀  Executing SQL statement %d/%d...\n", i+1, total)
+		return nil
+	}, AfterStatement: func(_, _ int, _ string, result stdsql.Result) {
+		if n, e := result.RowsAffected(); e == nil {
+			ccolor.Printf("✅  SQL executed successfully, rows affected: <green>%d</>\n", n)
+		}
+	}})
 	// Validate options
 	sqlOrFile := strings.TrimSpace(opt.SQLOrFile)
 	if sqlOrFile == "" {
@@ -95,7 +114,7 @@ func HandleExec(opt ExecOption) (err error) {
 		}
 	}
 
-	statements := migutil.SplitSQL(sql)
+	statements := splitSQLStatements(sql)
 	if len(statements) == 0 {
 		return fmt.Errorf("no SQL statements to execute")
 	}
@@ -115,7 +134,7 @@ func HandleExec(opt ExecOption) (err error) {
 
 	for i, statement := range statements {
 		ccolor.Printf("🚀  Executing SQL statement %d/%d...\n", i+1, len(statements))
-		if migutil.IsQuerySQL(statement) {
+		if isQuerySQL(statement) {
 			if err = execQuery(tx, statement); err != nil {
 				return fmt.Errorf("failed to execute SQL statement %d: %w", i+1, err)
 			}
