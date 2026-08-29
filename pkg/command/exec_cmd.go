@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/gookit/goutil/cflag/capp"
+	"github.com/gookit/goutil/cliutil"
 	"github.com/gookit/goutil/strutil"
 	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/goutil/x/stdio"
@@ -53,6 +54,9 @@ func HandleExec(opt ExecOption) (err error) {
 		return err
 	}
 	defer cleanup()
+	if !opt.Yes && !cliutil.Confirm("Continue SQL execution?") {
+		return nil
+	}
 	return r.Exec(runtime.ExecOption{SQLOrFile: opt.SQLOrFile, Yes: opt.Yes})
 	/*
 	   // Validate options

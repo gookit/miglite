@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"fmt"
+	"github.com/gookit/miglite/internal/migutil"
 	"os"
 	"strings"
 )
@@ -26,7 +27,7 @@ func (r *Runtime) Exec(opt ExecOption) error {
 		}
 		sqlText = string(data)
 	}
-	statements := splitSQLStatements(sqlText)
+	statements := migutil.SplitSQL(sqlText)
 	if len(statements) == 0 {
 		return fmt.Errorf("no SQL statements to execute")
 	}

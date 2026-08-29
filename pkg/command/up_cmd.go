@@ -2,6 +2,7 @@ package command
 
 import (
 	"github.com/gookit/goutil/cflag/capp"
+	"github.com/gookit/goutil/cliutil"
 	"github.com/gookit/miglite/internal/runtime"
 )
 
@@ -43,6 +44,9 @@ func HandleUp(opt UpOption) error {
 		return err
 	}
 	defer cleanup()
+	if !opt.Yes && !cliutil.Confirm("Are you sure you want to execute migrations?") {
+		return nil
+	}
 	return r.Up(runtime.UpOption{Yes: opt.Yes, SkipErr: opt.SkipErr, Number: opt.Number, StartTime: opt.StartTime})
 	/*
 	   // Load configuration and connect to database

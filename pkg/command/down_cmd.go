@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gookit/goutil/cflag/capp"
+	"github.com/gookit/goutil/cliutil"
 	"github.com/gookit/miglite/internal/database"
 	"github.com/gookit/miglite/internal/runtime"
 	"github.com/gookit/miglite/pkg/migration"
@@ -37,6 +38,9 @@ func HandleDown(opt DownOption) error {
 		return err
 	}
 	defer cleanup()
+	if !opt.Yes && !cliutil.Confirm("Are you sure you want to roll back migrations?") {
+		return nil
+	}
 	return r.Down(runtime.DownOption{Number: opt.Number, Yes: opt.Yes})
 	/*
 	   // Load configuration and connect to database
