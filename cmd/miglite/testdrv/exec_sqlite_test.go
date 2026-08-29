@@ -60,5 +60,5 @@ func setCommandSQLiteDB(t *testing.T, dbPath string) {
 	db, err := database.NewDB(migcom.DriverSQLite, "sqlite", dbPath)
 	assert.Require(t, assert.NoErr(t, err))
 	command.SetDB(db)
-	t.Cleanup(func() { command.SetDB(nil) })
+	t.Cleanup(func() { _ = db.Close(); command.SetDB(nil) })
 }
