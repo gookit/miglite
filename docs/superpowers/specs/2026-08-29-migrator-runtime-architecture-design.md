@@ -51,7 +51,7 @@ type Runtime struct {
 }
 ```
 
-Runtime 负责执行 `Init`、`Up`、`Down`、`Skip`、`Status`、`Show`，并调用现有
+Runtime 负责执行 `Init`、`Up`、`Down`、`Skip`、`Status`、`Show`、`Exec`，并调用现有
 `pkg/migration`、`internal/database` 逻辑。它不负责 flag 解析、命令注册、确认
 提示或全局状态。
 
@@ -88,9 +88,10 @@ func (m *Migrator) Close() error
 
 不增加各种 DB/FS 组合构造函数；组合场景通过 setter 完成。
 
-`Migrator.Init/Up/Down/Skip/Status/Show` 直接调用 runtime，不再调用
-`command.Handle*`。现有 option 类型暂时继续使用 `command.*Option`，在进入
-runtime 时做内部转换，以保持源码兼容。
+`Migrator.Init/Up/Down/Skip/Status/Show/Exec` 直接调用 runtime，不再调用
+`command.Handle*`。Runtime 自己定义运行选项；`command.*Option` 只保留在
+command 兼容层，handler 在转发时显式转换。Migrator 方法第一阶段可继续接受
+`command.*Option` 以保持源码兼容，但不得让 runtime 依赖 command。
 
 ## 数据库所有权与生命周期
 
@@ -109,7 +110,7 @@ runtime 时做内部转换，以保持源码兼容。
 - `Migrator` 和 Runtime 不关闭调用方的 `*sql.DB`；
 - 调用方负责连接生命周期。
 
-操作方法 `Up`、`Down`、`Status` 等不隐式关闭 Migrator 持有的连接；关闭由
+操作方法 `Init`、`Up`、`Down`、`Skip`、`Status`、`Show`、`Exec` 等不隐式关闭 Migrator 持有的连接；关闭由
 `Close()` 或明确的 CLI 生命周期负责。
 
 ## command 兼容层
@@ -132,13 +133,13 @@ HandleShow
 这些 API 标记为兼容入口，内部状态可重命名为 `legacyCfg`、`legacyDB`，避免
 新代码误用。
 
-每个 `Handle*` 通过统一的 `legacyRuntime()` 构造 Runtime：
+每个 `Handle*`（包括 `HandleExec`）通过统一的 `legacyRuntime()` 构造 Runtime：
 
 1. 读取旧 API 设置的配置和数据库；
 2. 没有配置时按原有逻辑加载配置；
 3. 没有数据库时创建连接并标记 `ownDB = true`；
 4. 执行 Runtime 对应方法；
-5. 只清理 Runtime 自己拥有的数据库连接。
+5. 只清理 Runtime 自己拥有的数据库连接；清理后将 legacy 全局 db 置 nil，避免复用已关闭连接。
 
 这样旧代码继续有效：
 
@@ -157,6 +158,8 @@ return command.HandleUp(opt)
 - `command` 全局配置只存在于兼容模式；
 - legacy handler 创建 Runtime 时一次性形成最终配置，不能混用旧的全局 flag、
   环境变量和已缓存对象；
+- `SetCfg(nil)`、`SetDB(nil)`、重复 `SetSqlDB`、`Close` 后再次执行和重复 `Close`
+  的行为必须在 API 契约中定义并测试；推荐 nil 返回明确错误，Close 幂等。
 - 本次不把 `fs.FS` 放进 YAML 或环境变量。
 
 ## 分阶段实施
@@ -166,12 +169,14 @@ return command.HandleUp(opt)
 - 区分内部创建连接与外部注入连接；
 - 外部 `SetSqlDB` 连接不再被 handler 关闭；
 - 自动创建连接关闭后清空引用；
+- 修改全部 handler（包括 Exec）的 cleanup 路径；
+- `database.Connect` 在 Ping 失败时关闭已打开的 `*sql.DB`，避免泄漏；
 - 保持现有 command API 和执行路径。
 
 ### 阶段二：抽离 Runtime
 
 - 新增 `internal/runtime`；
-- 迁移 `HandleInit/Up/Down/Skip/Status/Show` 的业务逻辑；
+- 迁移 `HandleInit/Up/Down/Skip/Status/Show/Exec` 的业务逻辑；
 - `Migrator` 直接调用 Runtime；
 - command handler 改为构造 Runtime 后转发。
 
@@ -198,6 +203,9 @@ return command.HandleUp(opt)
 - command 和 Migrator 对同一 SQLite 数据库产生一致结果；
 - 重复调用同一 Migrator 的生命周期行为明确且有测试；
 - 本阶段暂不承诺旧 command API 的并发安全。
+- `database.SchemaTableName`、SQL provider registry、`config.EnvPrefix` 等现有
+  进程级全局扩展点本阶段不实例化；文档明确它们仍要求进程级配置，不能据此
+  宣称多个 Migrator 完全并发隔离。
 
 ## 非目标
 
@@ -205,6 +213,7 @@ return command.HandleUp(opt)
 - 不在本阶段实现 embed FS；
 - 不重写 SQL 解析、数据库 provider 或迁移记录模型；
 - 不一次性把 CLI 重构成全新的命令框架；
+- 不在本阶段重构 schema table name、provider registry 或环境变量为实例状态；
 - 不为尚无需求的并发执行增加复杂锁或全局调度器。
 
 ## 兼容和迁移策略
@@ -213,4 +222,3 @@ return command.HandleUp(opt)
 `Migrator` 方法；行为变化仅包括：外部注入的数据库不再被自动关闭，以及不同
 `Migrator` 实例不再互相覆盖配置。直接依赖 `command.Set*` 的旧代码继续运行，
 但建议迁移到 `miglite.Migrator`。
-
