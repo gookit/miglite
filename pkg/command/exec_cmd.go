@@ -2,17 +2,16 @@ package command
 
 import (
 	stdsql "database/sql"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/gookit/goutil/cflag/capp"
-	"github.com/gookit/goutil/cliutil"
 	"github.com/gookit/goutil/strutil"
 	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/goutil/x/stdio"
+	"github.com/gookit/miglite/internal/runtime"
 )
 
 type queryer interface {
@@ -49,96 +48,114 @@ func NewExecCommand() *capp.Cmd {
 
 // HandleExec handles the exec command logic
 func HandleExec(opt ExecOption) (err error) {
-	// Validate options
-	sqlOrFile := strings.TrimSpace(opt.SQLOrFile)
-	if sqlOrFile == "" {
-		return fmt.Errorf("either SQL or sql-file must be provided")
-	}
-
-	// Load configuration and connect to database
-	err = initConfigAndDB()
+	r, cleanup, err := legacyRuntime()
 	if err != nil {
 		return err
 	}
-	defer cleanupDB()
+	defer cleanup()
+	return r.Exec(runtime.ExecOption{SQLOrFile: opt.SQLOrFile, Yes: opt.Yes})
+	/*
+	   // Validate options
+	   sqlOrFile := strings.TrimSpace(opt.SQLOrFile)
 
-	// Prepare SQL to execute
-	var sql = sqlOrFile
-	var sqlFile string
-	confirmTip := "Are you sure you want to execute the following SQL statement?"
+	   	if sqlOrFile == "" {
+	   		return fmt.Errorf("either SQL or sql-file must be provided")
+	   	}
 
-	// if sqlOrFile is a sql file path, read SQL from file
-	if len(sqlOrFile) < 128 && strings.HasSuffix(sqlOrFile, ".sql") {
-		sqlFile = sqlOrFile
-		confirmTip = fmt.Sprintf("Are you sure you want to execute SQL from file: %s", sqlFile)
+	   // Load configuration and connect to database
+	   err = initConfigAndDB()
 
-		// Read SQL from file
-		sql, err = readSQLFromFile(sqlFile)
-		if err != nil {
-			return fmt.Errorf("failed to read SQL file: %v", err)
-		}
-		if sql == "" {
-			return fmt.Errorf("no SQL contents in file: %s", sqlFile)
-		}
-	}
+	   	if err != nil {
+	   		return err
+	   	}
 
-	ccolor.Infop("📄  Input SQL: ")
-	fmt.Println(sql)
+	   defer cleanupDB()
 
-	// Confirmation prompt if --yes is not set
-	if !opt.Yes {
-		ccolor.Warnf("⚠️  %s\n", confirmTip)
-		if !cliutil.Confirm("Continue?") {
-			ccolor.Magentaln("Exiting SQL execution!")
-			return nil
-		}
-	}
+	   // Prepare SQL to execute
+	   var sql = sqlOrFile
+	   var sqlFile string
+	   confirmTip := "Are you sure you want to execute the following SQL statement?"
 
-	statements := splitSQLStatements(sql)
-	if len(statements) == 0 {
-		return fmt.Errorf("no SQL statements to execute")
-	}
+	   // if sqlOrFile is a sql file path, read SQL from file
 
-	tx, err := db.Begin()
-	if err != nil {
-		return fmt.Errorf("failed to begin SQL transaction: %v", err)
-	}
-	committed := false
-	defer func() {
-		if !committed {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil && !errors.Is(rollbackErr, stdsql.ErrTxDone) {
-				err = errors.Join(err, fmt.Errorf("failed to rollback SQL transaction: %v", rollbackErr))
-			}
-		}
-	}()
+	   	if len(sqlOrFile) < 128 && strings.HasSuffix(sqlOrFile, ".sql") {
+	   		sqlFile = sqlOrFile
+	   		confirmTip = fmt.Sprintf("Are you sure you want to execute SQL from file: %s", sqlFile)
 
-	for i, statement := range statements {
-		ccolor.Printf("🚀  Executing SQL statement %d/%d...\n", i+1, len(statements))
-		if isQuerySQL(statement) {
-			if err = execQuery(tx, statement); err != nil {
-				return fmt.Errorf("failed to execute SQL statement %d: %w", i+1, err)
-			}
-			continue
-		}
+	   		// Read SQL from file
+	   		sql, err = readSQLFromFile(sqlFile)
+	   		if err != nil {
+	   			return fmt.Errorf("failed to read SQL file: %v", err)
+	   		}
+	   		if sql == "" {
+	   			return fmt.Errorf("no SQL contents in file: %s", sqlFile)
+	   		}
+	   	}
 
-		result, execErr := tx.Exec(statement)
-		if execErr != nil {
-			return fmt.Errorf("failed to execute SQL statement %d: %w", i+1, execErr)
-		}
+	   ccolor.Infop("📄  Input SQL: ")
+	   fmt.Println(sql)
 
-		rowsAffected, resultErr := result.RowsAffected()
-		if resultErr != nil {
-			ccolor.Printf("✅  SQL executed successfully (result info not available)\n")
-		} else {
-			ccolor.Printf("✅  SQL executed successfully, rows affected: <green>%d</>\n", rowsAffected)
-		}
-	}
+	   // Confirmation prompt if --yes is not set
 
-	if err = tx.Commit(); err != nil {
-		return fmt.Errorf("failed to commit SQL transaction: %v", err)
-	}
-	committed = true
-	return nil
+	   	if !opt.Yes {
+	   		ccolor.Warnf("⚠️  %s\n", confirmTip)
+	   		if !cliutil.Confirm("Continue?") {
+	   			ccolor.Magentaln("Exiting SQL execution!")
+	   			return nil
+	   		}
+	   	}
+
+	   statements := splitSQLStatements(sql)
+
+	   	if len(statements) == 0 {
+	   		return fmt.Errorf("no SQL statements to execute")
+	   	}
+
+	   tx, err := db.Begin()
+
+	   	if err != nil {
+	   		return fmt.Errorf("failed to begin SQL transaction: %v", err)
+	   	}
+
+	   committed := false
+
+	   	defer func() {
+	   		if !committed {
+	   			if rollbackErr := tx.Rollback(); rollbackErr != nil && !errors.Is(rollbackErr, stdsql.ErrTxDone) {
+	   				err = errors.Join(err, fmt.Errorf("failed to rollback SQL transaction: %v", rollbackErr))
+	   			}
+	   		}
+	   	}()
+
+	   	for i, statement := range statements {
+	   		ccolor.Printf("🚀  Executing SQL statement %d/%d...\n", i+1, len(statements))
+	   		if isQuerySQL(statement) {
+	   			if err = execQuery(tx, statement); err != nil {
+	   				return fmt.Errorf("failed to execute SQL statement %d: %w", i+1, err)
+	   			}
+	   			continue
+	   		}
+
+	   		result, execErr := tx.Exec(statement)
+	   		if execErr != nil {
+	   			return fmt.Errorf("failed to execute SQL statement %d: %w", i+1, execErr)
+	   		}
+
+	   		rowsAffected, resultErr := result.RowsAffected()
+	   		if resultErr != nil {
+	   			ccolor.Printf("✅  SQL executed successfully (result info not available)\n")
+	   		} else {
+	   			ccolor.Printf("✅  SQL executed successfully, rows affected: <green>%d</>\n", rowsAffected)
+	   		}
+	   	}
+
+	   	if err = tx.Commit(); err != nil {
+	   		return fmt.Errorf("failed to commit SQL transaction: %v", err)
+	   	}
+
+	   committed = true
+	   return nil
+	*/
 }
 
 // readSQLFromFile reads SQL content from file
