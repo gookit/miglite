@@ -2,6 +2,7 @@ package miglite
 
 import (
 	"database/sql"
+	"fmt"
 	"io/fs"
 
 	"github.com/gookit/miglite/internal/config"
@@ -111,7 +112,10 @@ func (m *Migrator) Skip(opt command.SkipOption) error {
 func (m *Migrator) Status(opt command.StatusOption) error {
 	r := m.runtime()
 	defer r.Close()
-	_, err := r.Status(runtime.StatusOption{})
+	records, err := r.Status(runtime.StatusOption{})
+	for _, record := range records {
+		fmt.Printf("%s %s\n", record.Status, record.Version)
+	}
 	return err
 }
 
@@ -119,7 +123,10 @@ func (m *Migrator) Status(opt command.StatusOption) error {
 func (m *Migrator) Show(opt command.ShowOption) error {
 	r := m.runtime()
 	defer r.Close()
-	_, err := r.Show(runtime.ShowOption{Tables: opt.Tables, Schema: opt.Schema})
+	result, err := r.Show(runtime.ShowOption{Tables: opt.Tables, Schema: opt.Schema})
+	if err == nil {
+		fmt.Printf("%v\n", result)
+	}
 	return err
 }
 
