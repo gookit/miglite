@@ -3,7 +3,7 @@ package command
 import (
 	"testing"
 
-	"github.com/gookit/goutil/testutil/assert"
+	"github.com/gookit/goutil/x/assert"
 )
 
 func TestShowCommand(t *testing.T) {
