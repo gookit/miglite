@@ -2,15 +2,20 @@ package miglite
 
 import (
 	"database/sql"
+	"io/fs"
 
 	"github.com/gookit/miglite/internal/config"
 	"github.com/gookit/miglite/internal/database"
+	"github.com/gookit/miglite/internal/runtime"
 	"github.com/gookit/miglite/pkg/command"
 )
 
 // Migrator manage the migration
 type Migrator struct {
-	cfg *Config
+	cfg   *Config
+	db    *database.DB
+	fsys  fs.FS
+	ownDB bool
 	// TODO add migrations by go code
 	//
 	// Example:
@@ -41,42 +46,86 @@ func New(configFile string, fns ...ConfigFn) (*Migrator, error) {
 
 // NewWithConfig creates a new Migrator instance with a pre-configured Config
 func NewWithConfig(cfg *Config) *Migrator {
-	command.SetCfg(cfg)
 	return &Migrator{cfg: cfg}
 }
 
 // SetSqlDB sets the database connection
-func (m *Migrator) SetSqlDB(db *sql.DB) {
-	dbCfg := m.cfg.Database
-	command.SetDB(database.NewWithSqlDB(dbCfg.Driver, db))
+func (m *Migrator) SetSqlDB(db *sql.DB) *Migrator {
+	if db == nil {
+		m.db = nil
+		m.ownDB = false
+		return m
+	}
+	m.db = database.NewWithSqlDB(m.cfg.Database.Driver, db)
+	m.ownDB = false
+	return m
+}
+
+func (m *Migrator) SetFS(fsys fs.FS) *Migrator { m.fsys = fsys; return m }
+
+func (m *Migrator) runtime() *runtime.Runtime {
+	r := runtime.NewWithDatabase(m.cfg, m.db, m.ownDB)
+	r.SetFS(m.fsys)
+	return r
+}
+
+func (m *Migrator) Close() error {
+	if m.db == nil || !m.ownDB {
+		return nil
+	}
+	err := m.db.Close()
+	m.db = nil
+	m.ownDB = false
+	return err
 }
 
 // Init initializes the migration schema
 func (m *Migrator) Init(opt command.InitOption) error {
-	return command.HandleInit(opt)
+	r := m.runtime()
+	defer r.Close()
+	return r.Init(runtime.InitOption{Drop: opt.Drop})
 }
 
 // Up runs the migration up operation.
 func (m *Migrator) Up(opt command.UpOption) error {
-	return command.HandleUp(opt)
+	r := m.runtime()
+	defer r.Close()
+	return r.Up(runtime.UpOption{Yes: opt.Yes, SkipErr: opt.SkipErr, Number: opt.Number, StartTime: opt.StartTime})
 }
 
 // Down runs the migration down operation.
 func (m *Migrator) Down(opt command.DownOption) error {
-	return command.HandleDown(opt)
+	r := m.runtime()
+	defer r.Close()
+	return r.Down(runtime.DownOption{Number: opt.Number, Yes: opt.Yes})
 }
 
 // Skip skips some migration files.
 func (m *Migrator) Skip(opt command.SkipOption) error {
-	return command.HandleSkip(opt)
+	r := m.runtime()
+	defer r.Close()
+	return r.Skip(runtime.SkipOption{FileNames: opt.FileNames})
 }
 
 // Status shows the status of the migrations.
 func (m *Migrator) Status(opt command.StatusOption) error {
-	return command.HandleStatus(opt)
+	r := m.runtime()
+	defer r.Close()
+	_, err := r.Status(runtime.StatusOption{})
+	return err
 }
 
 // Show displays all tables in the database.
 func (m *Migrator) Show(opt command.ShowOption) error {
-	return command.HandleShow(opt)
+	r := m.runtime()
+	defer r.Close()
+	_, err := r.Show(runtime.ShowOption{Tables: opt.Tables, Schema: opt.Schema})
+	return err
+}
+
+// Exec executes SQL or a SQL file in a transaction.
+func (m *Migrator) Exec(opt command.ExecOption) error {
+	r := m.runtime()
+	defer r.Close()
+	return r.Exec(runtime.ExecOption{SQLOrFile: opt.SQLOrFile, Yes: opt.Yes})
 }

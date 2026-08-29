@@ -18,7 +18,7 @@ type Runtime struct {
 
 func New(cfg *config.Config, db *sql.DB) *Runtime {
 	r := &Runtime{cfg: cfg}
-	if db != nil {
+	if db != nil && cfg != nil {
 		r.db = database.NewWithSqlDB(cfg.Database.Driver, db)
 	}
 	return r
