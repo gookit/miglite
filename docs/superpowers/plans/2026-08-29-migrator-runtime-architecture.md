@@ -66,6 +66,16 @@ Runtime option 独立定义在 `internal/runtime`，不能引用 `pkg/command`�
 - [ ] 运行 `go test ./internal/runtime -count=1`。
 - [ ] 提交 `refactor(runtime): extract transactional sql execution`。
 
+#### Task 2d: Command 输出适配器
+
+**Files:** create `pkg/command/output.go`; modify `internal/runtime/status.go`, `show.go`; test `pkg/command/cliapp_test.go`.
+
+- [ ] 定义 Runtime 返回的结构化 Status/Show/Exec 结果，不包含 ccolor、确认提示或全局 verbose 状态。
+- [ ] 将现有 command 表格、颜色和提示文本移到 command 输出适配器，确保官方 CLI 输出保持不变。
+- [ ] 为 tables、schema、migration status 和 query result 增加快照式最小测试。
+- [ ] 运行 `go test ./pkg/command ./internal/runtime -count=1`。
+- [ ] 提交 `refactor(command): adapt runtime results to cli output`。
+
 ### Task 3: 让 Migrator 使用实例 Runtime
 
 **Files:** `migrator.go`; `miglite.go`; `miglite_test.go`.
