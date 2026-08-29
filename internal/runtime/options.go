@@ -16,7 +16,13 @@ type MigrationHooks struct {
 type ExecHooks struct {
 	BeforeStatement func(index, total int, statement string) error
 	AfterStatement  func(index, total int, statement string, result sql.Result)
+	QueryResult     func(index, total int, statement string, result QueryResult)
 	Confirm         func(message string) bool
+}
+
+type QueryResult struct {
+	Columns []string
+	Rows    [][]any
 }
 
 type InitOption struct{ Drop bool }

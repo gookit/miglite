@@ -5,6 +5,7 @@ import (
 	"github.com/gookit/goutil/cliutil"
 	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/miglite/internal/runtime"
+	"strings"
 )
 
 type ExecOption struct {
@@ -33,5 +34,11 @@ func HandleExec(o ExecOption) error {
 	return r.ExecWithHooks(runtime.ExecOption{SQLOrFile: o.SQLOrFile, Yes: true}, runtime.ExecHooks{BeforeStatement: func(i, total int, _ string) error {
 		ccolor.Printf("🚀 Executing SQL statement %d/%d...\n", i+1, total)
 		return nil
+	}, QueryResult: func(_, _ int, _ string, qr runtime.QueryResult) {
+		ccolor.Printf("📘 Query Results(size=%d):\n", len(qr.Rows))
+		ccolor.Printf("  %s\n", strings.Join(qr.Columns, "  | "))
+		for _, row := range qr.Rows {
+			ccolor.Printf("  %v\n", row)
+		}
 	}})
 }
