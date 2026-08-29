@@ -9,7 +9,6 @@ import (
 	"github.com/gookit/goutil/strutil"
 	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/miglite/internal/database"
-	"github.com/gookit/miglite/internal/runtime"
 )
 
 // ShowOption represents options for the show command
@@ -39,52 +38,30 @@ func NewShowCommand() *capp.Cmd {
 
 // HandleShow handles the show command logic
 func HandleShow(opt ShowOption) error {
+	// Validate options
 	if !opt.Tables && opt.Schema == "" {
 		return fmt.Errorf("either --tables or --schema must be provided")
 	}
 	if opt.Tables && opt.Schema != "" {
 		return fmt.Errorf("--tables and --schema cannot be used together")
 	}
-	r, cleanup, err := legacyRuntime()
-	if err != nil {
+
+	// Load configuration and connect to database
+	if err := initConfigAndDB(); err != nil {
 		return err
 	}
-	defer cleanup()
-	_, err = r.Show(runtime.ShowOption{Tables: opt.Tables, Schema: opt.Schema})
-	return err
-	/*
-	   // Validate options
+	defer cleanupDB()
 
-	   	if !opt.Tables && opt.Schema == "" {
-	   		return fmt.Errorf("either --tables or --schema must be provided")
-	   	}
+	// Show database tables
+	if opt.Tables {
+		return showTables(db)
+	}
 
-	   	if opt.Tables && opt.Schema != "" {
-	   		return fmt.Errorf("--tables and --schema cannot be used together")
-	   	}
-
-	   // Load configuration and connect to database
-
-	   	if err := initConfigAndDB(); err != nil {
-	   		return err
-	   	}
-
-	   defer cleanupDB()
-
-	   // Show database tables
-
-	   	if opt.Tables {
-	   		return showTables(db)
-	   	}
-
-	   // Show table schema
-
-	   	if opt.Schema != "" {
-	   		return showTableSchema(db, opt.Schema)
-	   	}
-
-	   return nil
-	*/
+	// Show table schema
+	if opt.Schema != "" {
+		return showTableSchema(db, opt.Schema)
+	}
+	return nil
 }
 
 // showTables displays all tables in the database
