@@ -28,14 +28,19 @@ func HandleDown(o DownOption) error {
 		return e
 	}
 	defer cl()
-	h := runtime.MigrationHooks{Start: func(total int) { ccolor.Printf("🚀 Will roll back recent %d migrations:\n", total) }, Before: func(i, _ int, m *migration.Migration) error {
-		ccolor.Printf("%d. Rolling back migration: <ylw>%s</>\n", i+1, m.FileName)
-		if !o.Yes && !cliutil.Confirm("Are you sure you want to roll back the migration?") {
-			return runtime.ErrCancelled
-		}
-		return nil
-	}, After: func(_, _ int, m *migration.Migration) {
-		ccolor.Printf("✅ Success rolled back migration: %s\n", m.FileName)
-	}}
+	h := runtime.MigrationHooks{
+		Start: func(total int) {
+			ccolor.Printf("🚀 Will roll back recent %d migrations:\n", total)
+		},
+		Before: func(i, _ int, m *migration.Migration) error {
+			ccolor.Printf("%d. Rolling back migration: <ylw>%s</>\n", i+1, m.FileName)
+			if !o.Yes && !cliutil.Confirm("Are you sure you want to roll back the migration?") {
+				return runtime.ErrCancelled
+			}
+			return nil
+		},
+		After: func(_, _ int, m *migration.Migration) {
+			ccolor.Printf("✅ Success rolled back migration: %s\n", m.FileName)
+		}}
 	return r.DownWithHooks(runtime.DownOption{Number: o.Number, Yes: true}, h)
 }

@@ -30,16 +30,21 @@ func HandleUp(o UpOption) error {
 		return e
 	}
 	defer cl()
-	h := runtime.MigrationHooks{Start: func(total int) { ccolor.Printf("🚀 Starting exec migrations(founds=%d)\n", total) }, Complete: func(res runtime.MigrationResult) {
-		ccolor.Printf("🎉 All migrations applied successfully! apply:%d, skip:%d\n", res.Applied, res.Skipped)
-	}, Before: func(i, _ int, m *migration.Migration) error {
-		ccolor.Printf("<green>%d.</> Executing migration: <green>%s</>\n", i+1, m.FileName)
-		if !o.Yes && !cliutil.Confirm("Are you sure you want to execute this migration?") {
-			return runtime.ErrCancelled
-		}
-		return nil
-	}, After: func(_, _ int, m *migration.Migration) {
-		ccolor.Printf("✅ Successfully executed migration: %s\n", m.FileName)
-	}}
+	h := runtime.MigrationHooks{
+		Start: func(total int) { ccolor.Printf("🚀 Starting exec migrations(founds=%d)\n", total) },
+		Complete: func(res runtime.MigrationResult) {
+			ccolor.Printf("🎉 All migrations applied successfully! apply:%d, skip:%d\n", res.Applied, res.Skipped)
+		},
+		Before: func(i, _ int, m *migration.Migration) error {
+			ccolor.Printf("<green>%d.</> Executing migration: <green>%s</>\n", i+1, m.FileName)
+			if !o.Yes && !cliutil.Confirm("Are you sure you want to execute this migration?") {
+				return runtime.ErrCancelled
+			}
+			return nil
+		},
+		After: func(_, _ int, m *migration.Migration) {
+			ccolor.Printf("✅ Successfully executed migration: %s\n", m.FileName)
+		},
+	}
 	return r.UpWithHooks(runtime.UpOption{Yes: true, SkipErr: o.SkipErr, Number: o.Number, StartTime: o.StartTime}, h)
 }

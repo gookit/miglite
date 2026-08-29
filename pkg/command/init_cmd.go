@@ -2,6 +2,7 @@ package command
 
 import (
 	"github.com/gookit/goutil/cflag/capp"
+	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/miglite/internal/runtime"
 )
 
@@ -30,7 +31,13 @@ func HandleInit(opt InitOption) error {
 		return err
 	}
 	defer cleanup()
-	return r.Init(runtime.InitOption{Drop: opt.Drop})
+
+	err = r.Init(runtime.InitOption{Drop: opt.Drop})
+	if err == nil {
+		ccolor.Infoln("🎉  Migration schema initialized successfully.")
+	}
+	return err
+
 	/*
 	   	if err := initConfigAndDB(); err != nil {
 	   		return err
