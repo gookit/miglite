@@ -32,15 +32,39 @@
 - [ ] 运行 `go test ./pkg/command ./internal/database; go test ./...`。
 - [ ] 提交 `fix(command): define database ownership lifecycle`。
 
-### Task 2: 新增无全局状态的 Runtime
+### Task 2: 新增无全局状态的 Runtime（分片执行）
 
-**Files:** create `internal/runtime/{runtime,options,init,up,down,skip,status,show,exec}.go`; test `internal/runtime/runtime_test.go`.
+Runtime option 独立定义在 `internal/runtime`，不能引用 `pkg/command`。每个分片
+都必须先有针对性测试，再迁移逻辑；输出和确认通过 Runtime 回调/策略注入，不能
+复制 command 全局变量。
 
-- [ ] 在 runtime 定义独立 option 类型，不能引用 `pkg/command`；覆盖 Init、Up、Down、Skip、Status、Show、Exec 当前使用的字段。
-- [ ] 写 SQLite 失败测试，覆盖迁移执行、回滚、状态、跳过、Exec，以及外部注入 DB 不被关闭。
-- [ ] 实现 `Runtime{cfg, db, fsys fs.FS, ownDB}`、构造、Close 和所有操作方法；业务逻辑从 command handler 下沉，保留现有错误和迁移行为。
+#### Task 2a: Runtime 基础和 Init/Status/Show
+
+**Files:** create `internal/runtime/runtime.go`, `options.go`, `schema.go`, `status.go`, `show.go`; test `internal/runtime/runtime_test.go`.
+
+- [ ] 定义 `Runtime{cfg, db, fsys fs.FS, ownDB}`、构造、`SetFS`、幂等 `Close` 和 DB 校验。
+- [ ] 定义 Init/Status/Show option 与结果类型；Status 返回 migration records，Show 返回 tables/schema 数据，不在 runtime 打印终端输出。
+- [ ] 用 SQLite 写并运行失败测试，覆盖 Init、Status、Show 和外部 DB 不被关闭。
+- [ ] 实现最小逻辑并运行 `go test ./internal/runtime -count=1`。
+- [ ] 提交 `refactor(runtime): add explicit schema and inspection operations`。
+
+#### Task 2b: Runtime Up/Down/Skip
+
+**Files:** create `internal/runtime/up.go`, `down.go`, `skip.go`; modify `options.go`; test `internal/runtime/runtime_test.go`.
+
+- [ ] 写失败测试覆盖 pending migration、rollback、skip、number/skip-error 语义和错误回滚。
+- [ ] 将现有 migration executor 调用迁移到 Runtime；通过回调暴露确认和进度事件，Runtime 不读取 ShowVerbose 或 command 全局变量。
+- [ ] 运行 `go test ./internal/runtime -count=1`，确认磁盘迁移行为与旧 handler 一致。
+- [ ] 提交 `refactor(runtime): move migration lifecycle operations`。
+
+#### Task 2c: Runtime Exec
+
+**Files:** create `internal/runtime/exec.go`; modify `options.go`; test `internal/runtime/exec_test.go`.
+
+- [ ] 复用现有 SQL splitter 和 query/result 格式化逻辑；先将 splitter/result printer 抽为无 command 全局依赖的 helper，再写失败测试覆盖引号、注释、查询、事务提交和回滚。
+- [ ] Runtime `Exec` 只返回结构化结果/错误；确认提示和终端打印留在 command 适配层。
 - [ ] 运行 `go test ./internal/runtime -count=1`。
-- [ ] 提交 `refactor(runtime): extract migration execution core`。
+- [ ] 提交 `refactor(runtime): extract transactional sql execution`。
 
 ### Task 3: 让 Migrator 使用实例 Runtime
 
@@ -81,4 +105,3 @@
 - owned DB 关闭后引用清空，避免复用已关闭连接。
 - nil setter、重复 Close、Close 后操作和重复 Migrator 已定义并测试。
 - 剩余进程级全局状态明确为非目标。
-
