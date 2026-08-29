@@ -9,6 +9,7 @@ import (
 	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/miglite/internal/config"
 	"github.com/gookit/miglite/internal/database"
+	runtimepkg "github.com/gookit/miglite/internal/runtime"
 	"github.com/gookit/miglite/pkg/migration"
 )
 
@@ -55,6 +56,14 @@ func cleanupDB() {
 	}
 	db = nil
 	dbOwned = false
+}
+
+func legacyRuntime() (*runtimepkg.Runtime, func(), error) {
+	if err := initConfigAndDB(); err != nil {
+		return nil, func() {}, err
+	}
+	r := runtimepkg.NewWithDatabase(cfg, db, dbOwned)
+	return r, func() { _ = r.Close(); db = nil; dbOwned = false }, nil
 }
 
 func initLoadConfig() error {

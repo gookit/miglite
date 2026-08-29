@@ -1,10 +1,8 @@
 package command
 
 import (
-	"fmt"
-
 	"github.com/gookit/goutil/cflag/capp"
-	"github.com/gookit/goutil/x/ccolor"
+	"github.com/gookit/miglite/internal/runtime"
 )
 
 type InitOption struct {
@@ -27,23 +25,34 @@ func InitCommand() *capp.Cmd {
 
 // HandleInit handles the init command logic
 func HandleInit(opt InitOption) error {
-	if err := initConfigAndDB(); err != nil {
+	r, cleanup, err := legacyRuntime()
+	if err != nil {
 		return err
 	}
-	defer cleanupDB()
+	defer cleanup()
+	return r.Init(runtime.InitOption{Drop: opt.Drop})
+	/*
+	   	if err := initConfigAndDB(); err != nil {
+	   		return err
+	   	}
 
-	// Drop existing schema if needed
-	if opt.Drop {
-		if err := db.DropSchema(); err != nil {
-			return fmt.Errorf("failed to drop schema: %v", err)
-		}
-	}
+	   defer cleanupDB()
 
-	// Initialize schema if needed
-	if err := db.InitSchema(); err != nil {
-		return fmt.Errorf("failed to initialize schema: %v", err)
-	}
+	   // Drop existing schema if needed
 
-	ccolor.Infoln("🎉  Migration schema initialized successfully.")
-	return nil
+	   	if opt.Drop {
+	   		if err := db.DropSchema(); err != nil {
+	   			return fmt.Errorf("failed to drop schema: %v", err)
+	   		}
+	   	}
+
+	   // Initialize schema if needed
+
+	   	if err := db.InitSchema(); err != nil {
+	   		return fmt.Errorf("failed to initialize schema: %v", err)
+	   	}
+
+	   ccolor.Infoln("🎉  Migration schema initialized successfully.")
+	   return nil
+	*/
 }
