@@ -131,6 +131,9 @@ func (r *Runtime) DownWithHooks(opt DownOption, hooks MigrationHooks) error {
 						return err
 					}
 				}
+				if m.DownSection == "" && hooks.Skip != nil {
+					hooks.Skip(i, len(recs), m, "empty_down")
+				}
 				if hooks.After != nil {
 					hooks.After(i, len(recs), m)
 				}
@@ -157,6 +160,16 @@ func (r *Runtime) SkipWithHooks(opt SkipOption, hooks MigrationHooks) error {
 		return err
 	}
 	for i, m := range ms {
+		applied, status, err := migration.IsApplied(r.db, m.Version)
+		if err != nil {
+			return err
+		}
+		if applied && status == migration.StatusUp {
+			if hooks.Skip != nil {
+				hooks.Skip(i, len(ms), m, status)
+			}
+			continue
+		}
 		if hooks.Before != nil {
 			if err := hooks.Before(i, len(ms), m); err != nil {
 				return err
