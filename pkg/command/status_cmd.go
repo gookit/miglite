@@ -1,31 +1,22 @@
 package command
 
 import (
+	"fmt"
 	"github.com/gookit/goutil/cflag/capp"
 	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/miglite/internal/runtime"
+	"strings"
 )
 
-// StatusOption status command option
-type StatusOption struct {
-}
+type StatusOption struct{}
 
-// StatusCommand shows the status of migrations
 func StatusCommand() *capp.Cmd {
-	opt := StatusOption{}
-
-	// List applied and pending migrations
-	c := capp.NewCmd("status", "Show the status of migrations", func(c *capp.Cmd) error {
-		return HandleStatus(opt)
-	})
-
-	c.Aliases = []string{"st"} // , "list", "ls"
+	c := capp.NewCmd("status", "Show the status of migrations", func(*capp.Cmd) error { return HandleStatus(StatusOption{}) })
+	c.Aliases = []string{"st"}
 	bindCommonFlags(c)
-
 	return c
 }
 
-// HandleStatus display migration status
 func HandleStatus(_ StatusOption) error {
 	r, cleanup, err := legacyRuntime()
 	if err != nil {
@@ -34,60 +25,23 @@ func HandleStatus(_ StatusOption) error {
 	defer cleanup()
 	statuses, err := r.Status(runtime.StatusOption{})
 	if err != nil {
-		if len(statuses) == 0 {
-			return err
-		}
 		return err
 	}
 	ccolor.Cyanf("\n📊  Migrations Status:(total=%d)\n", len(statuses))
+	fmt.Println(strings.Repeat("==", 44))
+	ccolor.Printf("  <b>Status</>  | %13s<b>Version(migration file)</>%13s    |   <b>Operate Time</> \n", "", "")
+	fmt.Println(strings.Repeat("--", 44))
 	for _, st := range statuses {
-		ccolor.Printf("  %-8s | %-52s | %s\n", st.Status, st.Version, formatTime(st.AppliedAt))
+		statusIcon := "<mga>pending</>"
+		switch st.Status {
+		case "up":
+			statusIcon = "<green>applied</>"
+		case "down":
+			statusIcon = "<ylw>rolled</> "
+		case "skip":
+			statusIcon = "<gray>skipped</>"
+		}
+		ccolor.Printf("  %s | %-52s | %s\n", statusIcon, st.Version, formatTime(st.AppliedAt))
 	}
 	return nil
-	/*
-	   // Load configuration and connect to database
-
-	   	if err := initConfigAndDB(); err != nil {
-	   		return err
-	   	}
-
-	   defer cleanupDB()
-
-	   // Discover migrations
-	   migrations, err := findMigrations()
-
-	   	if err != nil {
-	   		return fmt.Errorf("failed to discover migrations: %v", err)
-	   	}
-
-	   // Get migration statuses
-	   statuses, err := migration.GetMigrationsStatus(db, migrations)
-
-	   	if err != nil {
-	   		if migutil.IsTableNotExists(db.Driver(), err.Error()) {
-	   			err = errors.New("migration table does not exist. please run `miglite init` to create it")
-	   		}
-	   		return err
-	   	}
-
-	   // Print status table
-	   ccolor.Cyanf("\n📊  Migrations Status:(total=%d)\n", len(statuses))
-	   fmt.Println(strings.Repeat("==", 44))
-	   ccolor.Printf("  <b>Status</>  | %13s<b>Version(migration file)</>%13s    |   <b>Operate Time</> \n", "", "")
-	   fmt.Println(strings.Repeat("--", 44))
-
-	   	for _, st := range statuses {
-	   		statusIcon := "<mga>pending</>" // ⏳  pending
-	   		if st.Status == "up" {
-	   			statusIcon = "<green>applied</>" // ✅ applied
-	   		} else if st.Status == "down" {
-	   			statusIcon = "<ylw>rolled</> " // ↪️ rolled back
-	   		} else if st.Status == "skip" {
-	   			statusIcon = "<gray>skipped</>" // ⏭️ skipped
-	   		}
-	   		ccolor.Printf("  %s | %-52s | %s\n", statusIcon, st.Version, formatTime(st.AppliedAt))
-	   	}
-
-	   return nil
-	*/
 }

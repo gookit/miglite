@@ -3,6 +3,7 @@ package runtime
 import (
 	"database/sql"
 	"errors"
+	"github.com/gookit/miglite/internal/database"
 	"github.com/gookit/miglite/pkg/migration"
 )
 
@@ -21,6 +22,7 @@ var ErrCancelled = errors.New("operation cancelled")
 type MigrationResult struct{ Total, Applied, Skipped, Failed int }
 
 type ExecHooks struct {
+	Input           func(sqlText string, fromFile bool)
 	BeforeStatement func(index, total int, statement string) error
 	AfterStatement  func(index, total int, statement string, result sql.Result)
 	QueryResult     func(index, total int, statement string, result QueryResult)
@@ -37,4 +39,9 @@ type StatusOption struct{}
 type ShowOption struct {
 	Tables bool
 	Schema string
+}
+
+type ShowResult struct {
+	Tables  []string
+	Columns []database.ColumnInfo
 }

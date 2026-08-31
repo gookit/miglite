@@ -28,19 +28,39 @@ func HandleDown(o DownOption) error {
 		return e
 	}
 	defer cl()
+	rolledBack := 0
 	h := runtime.MigrationHooks{
 		Start: func(total int) {
-			ccolor.Printf("🚀 Will roll back recent %d migrations:\n", total)
+			if total == 0 {
+				ccolor.Println("🔎  No applied migrations to rollback")
+				return
+			}
+			ccolor.Printf("🚀  Will roll back recent %d migrations:\n\n", total)
 		},
 		Before: func(i, _ int, m *migration.Migration) error {
-			ccolor.Printf("%d. Rolling back migration: <ylw>%s</>\n", i+1, m.FileName)
+			ccolor.Printf("%d. Rolling back migration: <ylw>%s</> (appliedAt %s)\n", i+1, m.FileName, formatTime(m.AppliedAt))
 			if !o.Yes && !cliutil.Confirm("Are you sure you want to roll back the migration?") {
+				ccolor.Warnln("Skipping rollback the migration!")
 				return runtime.ErrCancelled
 			}
 			return nil
 		},
 		After: func(_, _ int, m *migration.Migration) {
+			rolledBack++
 			ccolor.Printf("✅ Success rolled back migration: %s\n", m.FileName)
-		}}
-	return r.DownWithHooks(runtime.DownOption{Number: o.Number, Yes: true}, h)
+		},
+		Skip: func(_, _ int, m *migration.Migration, status string) {
+			if status == "empty_down" {
+				ccolor.Warnf("Skipping empty DOWN migration! %s\n", m.FileName)
+			}
+		},
+		Error: func(_, _ int, m *migration.Migration, err error) {
+			ccolor.Errorf("Failed to roll back migration %s: %v\n", m.FileName, err)
+		},
+	}
+	err := r.DownWithHooks(runtime.DownOption{Number: o.Number, Yes: true}, h)
+	if err == nil && rolledBack > 0 {
+		ccolor.Printf("\n🎉  Successfully rolled back %d migration(s)\n", rolledBack)
+	}
+	return err
 }

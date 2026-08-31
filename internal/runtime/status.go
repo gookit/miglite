@@ -1,6 +1,10 @@
 package runtime
 
-import "github.com/gookit/miglite/pkg/migration"
+import (
+	"errors"
+	"github.com/gookit/miglite/internal/migutil"
+	"github.com/gookit/miglite/pkg/migration"
+)
 
 func (r *Runtime) Status(StatusOption) ([]migration.Record, error) {
 	if err := r.ensureDB(); err != nil {
@@ -10,5 +14,9 @@ func (r *Runtime) Status(StatusOption) ([]migration.Record, error) {
 	if err != nil {
 		return nil, err
 	}
-	return migration.GetMigrationsStatus(r.db, ms)
+	statuses, err := migration.GetMigrationsStatus(r.db, ms)
+	if err != nil && migutil.IsTableNotExists(r.cfg.Database.Driver, err.Error()) {
+		return nil, errors.New("migration table does not exist. please run `miglite init` to create it")
+	}
+	return statuses, err
 }

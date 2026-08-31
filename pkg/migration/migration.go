@@ -18,6 +18,7 @@ type Migration struct {
 	Contents string
 	// time from filename
 	Timestamp time.Time
+	AppliedAt time.Time
 	// SortKey comparable filename prefix, eg: 20260504-100070
 	SortKey string
 	// Version same as filename

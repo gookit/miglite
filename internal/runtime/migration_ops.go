@@ -64,9 +64,11 @@ func (r *Runtime) UpWithHooks(opt UpOption, hooks MigrationHooks) error {
 			}
 		}
 		if err = m.Parse(); err != nil {
-			return err
+			result.Failed++
+			return fmt.Errorf("failed to parse migration %s: %v", m.FileName, err)
 		}
 		if err = e.ExecuteUp(m); err != nil {
+			result.Failed++
 			if hooks.Error != nil {
 				hooks.Error(i, len(ms), m, err)
 			}
@@ -112,23 +114,29 @@ func (r *Runtime) DownWithHooks(opt DownOption, hooks MigrationHooks) error {
 	e := migration.NewExecutor(r.db, r.cfg.Verbose)
 	for i, rec := range recs {
 		found := false
+		cancelled := false
 		for _, m := range ms {
 			if m.Version == rec.Version {
 				found = true
+				m.AppliedAt = rec.AppliedAt
 				if hooks.Before != nil {
 					if err := hooks.Before(i, len(recs), m); err != nil {
+						if errors.Is(err, ErrCancelled) {
+							cancelled = true
+							continue
+						}
 						return err
 					}
 				}
 				if err = m.Parse(); err != nil {
-					return err
+					return fmt.Errorf("failed to parse migration %s: %v", m.FileName, err)
 				}
 				if m.DownSection != "" {
 					if err = e.ExecuteDown(m); err != nil {
 						if hooks.Error != nil {
 							hooks.Error(i, len(recs), m, err)
 						}
-						return err
+						return fmt.Errorf("failed to roll back migration %s: %v", m.FileName, err)
 					}
 				}
 				if m.DownSection == "" && hooks.Skip != nil {
@@ -139,6 +147,9 @@ func (r *Runtime) DownWithHooks(opt DownOption, hooks MigrationHooks) error {
 				}
 				break
 			}
+		}
+		if cancelled {
+			continue
 		}
 		if !found {
 			return fmt.Errorf("migration file not found for version: %s", rec.Version)

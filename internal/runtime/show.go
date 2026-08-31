@@ -4,18 +4,20 @@ import (
 	"fmt"
 )
 
-func (r *Runtime) Show(opt ShowOption) (any, error) {
+func (r *Runtime) Show(opt ShowOption) (ShowResult, error) {
 	if err := r.ensureDB(); err != nil {
-		return nil, err
+		return ShowResult{}, err
 	}
 	if !opt.Tables && opt.Schema == "" {
-		return nil, fmt.Errorf("either --tables or --schema must be provided")
+		return ShowResult{}, fmt.Errorf("either --tables or --schema must be provided")
 	}
 	if opt.Tables && opt.Schema != "" {
-		return nil, fmt.Errorf("--tables and --schema cannot be used together")
+		return ShowResult{}, fmt.Errorf("--tables and --schema cannot be used together")
 	}
 	if opt.Tables {
-		return r.db.ShowTables()
+		tables, err := r.db.ShowTables()
+		return ShowResult{Tables: tables}, err
 	}
-	return r.db.QueryTableSchema(opt.Schema)
+	columns, err := r.db.QueryTableSchema(opt.Schema)
+	return ShowResult{Columns: columns}, err
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/miglite/internal/runtime"
 	"github.com/gookit/miglite/pkg/migration"
+	"time"
 )
 
 type UpOption struct {
@@ -30,20 +31,38 @@ func HandleUp(o UpOption) error {
 		return e
 	}
 	defer cl()
+	start := time.Now()
 	h := runtime.MigrationHooks{
-		Start: func(total int) { ccolor.Printf("🚀 Starting exec migrations(founds=%d)\n", total) },
+		Start: func(total int) {
+			ccolor.Printf("🚀  Starting exec migrations(<green>founds=%d</>). Start at: %s\n\n", total, formatTime(start))
+		},
 		Complete: func(res runtime.MigrationResult) {
-			ccolor.Printf("🎉 All migrations applied successfully! apply:%d, skip:%d\n", res.Applied, res.Skipped)
+			ccolor.Printf("\n🎉  All migrations complete! 📘 apply:%d, skip:%d, failed:%d ⏱️ duration: %s\n", res.Applied, res.Skipped, res.Failed, time.Since(start))
 		},
 		Before: func(i, _ int, m *migration.Migration) error {
 			ccolor.Printf("<green>%d.</> Executing migration: <green>%s</>\n", i+1, m.FileName)
 			if !o.Yes && !cliutil.Confirm("Are you sure you want to execute this migration?") {
+				ccolor.Magentaln("Exiting run migrations!")
 				return runtime.ErrCancelled
 			}
 			return nil
 		},
+		Skip: func(_, _ int, m *migration.Migration, status string) {
+			if !ShowVerbose {
+				ccolor.Print(".")
+				return
+			}
+			if status == migration.StatusSkip {
+				ccolor.Printf("- Migration <gray>%s</> skipped\n", m.FileName)
+			} else {
+				ccolor.Printf("- Migration <gray>%s</> already applied\n", m.FileName)
+			}
+		},
 		After: func(_, _ int, m *migration.Migration) {
 			ccolor.Printf("✅ Successfully executed migration: %s\n", m.FileName)
+		},
+		Error: func(_, _ int, m *migration.Migration, err error) {
+			ccolor.Errorf("❌ Failed migration %s: %v\n", m.FileName, err)
 		},
 	}
 	return r.UpWithHooks(runtime.UpOption{Yes: true, SkipErr: o.SkipErr, Number: o.Number, StartTime: o.StartTime}, h)

@@ -37,29 +37,4 @@ func HandleInit(opt InitOption) error {
 		ccolor.Infoln("🎉  Migration schema initialized successfully.")
 	}
 	return err
-
-	/*
-	   	if err := initConfigAndDB(); err != nil {
-	   		return err
-	   	}
-
-	   defer cleanupDB()
-
-	   // Drop existing schema if needed
-
-	   	if opt.Drop {
-	   		if err := db.DropSchema(); err != nil {
-	   			return fmt.Errorf("failed to drop schema: %v", err)
-	   		}
-	   	}
-
-	   // Initialize schema if needed
-
-	   	if err := db.InitSchema(); err != nil {
-	   		return fmt.Errorf("failed to initialize schema: %v", err)
-	   	}
-
-	   ccolor.Infoln("🎉  Migration schema initialized successfully.")
-	   return nil
-	*/
 }
