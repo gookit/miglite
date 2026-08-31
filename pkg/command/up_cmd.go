@@ -63,6 +63,7 @@ func HandleUp(o UpOption) error {
 		},
 		Error: func(_, _ int, m *migration.Migration, err error) {
 			ccolor.Errorf("❌ Failed migration %s: %v\n", m.FileName, err)
+			ccolor.Printf("UpSQL:\n%s\n", m.UpSection)
 		},
 	}
 	return r.UpWithHooks(runtime.UpOption{Yes: true, SkipErr: o.SkipErr, Number: o.Number, StartTime: o.StartTime}, h)

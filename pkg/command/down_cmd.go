@@ -56,6 +56,7 @@ func HandleDown(o DownOption) error {
 		},
 		Error: func(_, _ int, m *migration.Migration, err error) {
 			ccolor.Errorf("Failed to roll back migration %s: %v\n", m.FileName, err)
+			ccolor.Printf("DownSQL:\n%s\n", m.DownSection)
 		},
 	}
 	err := r.DownWithHooks(runtime.DownOption{Number: o.Number, Yes: true}, h)

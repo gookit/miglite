@@ -64,8 +64,13 @@ func HandleExec(o ExecOption) error {
 		QueryResult: func(_, _ int, _ string, qr runtime.QueryResult) {
 			ccolor.Printf("📘 Query Results(size=%d):\n", len(qr.Rows))
 			ccolor.Printf("  %s\n", strings.Join(qr.Columns, "  | "))
+			ccolor.Println("  ----------------------------------------------")
 			for _, row := range qr.Rows {
-				ccolor.Printf("  %v\n", row)
+				values := make([]string, len(row))
+				for i, value := range row {
+					values[i] = fmt.Sprint(value)
+				}
+				ccolor.Printf("  %s\n", strings.Join(values, "  | "))
 			}
 		},
 	})
