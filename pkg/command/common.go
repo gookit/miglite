@@ -10,7 +10,6 @@ import (
 	"github.com/gookit/miglite/internal/config"
 	"github.com/gookit/miglite/internal/database"
 	runtimepkg "github.com/gookit/miglite/internal/runtime"
-	"github.com/gookit/miglite/pkg/migration"
 )
 
 const TimeLayout = "2006-01-02 15:04:05"
@@ -44,17 +43,6 @@ func SetDB(d *database.DB) {
 		db.SilentClose()
 	}
 	db = d
-	dbOwned = false
-}
-
-func cleanupDB() {
-	if db == nil {
-		return
-	}
-	if dbOwned {
-		db.SilentClose()
-	}
-	db = nil
 	dbOwned = false
 }
 
@@ -128,8 +116,4 @@ func formatTime(t time.Time) string {
 		return "N/A"
 	}
 	return t.Format(TimeLayout)
-}
-
-func findMigrations() ([]*migration.Migration, error) {
-	return migration.FindMigrations(cfg.Migrations.Path, cfg.Migrations.Recursive)
 }
