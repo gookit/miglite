@@ -231,9 +231,12 @@ func main() {
   })
   goutil.PanicIfErr(err) // handle error
 
+  // optional: use your own *sql.DB. miglite never closes it.
+  // mig.SetSqlDB(db)
+
   // run up migrations
   err = mig.Up(command.UpOption{
-    Yes: true, // dont confirm
+    Yes: true, // CLI only option, library calls never ask for confirmation
     // ... options
   })
   goutil.PanicIfErr(err) // handle error
@@ -241,6 +244,17 @@ func main() {
   // run down migrations ...
 }
 ```
+
+> Library notes:
+> - `Migrator` never asks for confirmation: the `Yes` option only affects the CLI.
+> - With `UpOption.SkipErr` a failed migration file is skipped and the run
+>   continues, but `Up` still returns an error listing the failed files (the CLI
+>   exits with a non-zero status).
+> - `SetSqlDB(db)` injects your connection and miglite never closes it; without
+>   it, a connection is opened from the config for the duration of each call.
+> - `SetFS(fs.FS)` is reserved and currently a no-op: migration files are read
+>   from the local filesystem.
+> - Library calls print the same progress output as the CLI.
 
 ### Building Your Own Command Tool
 

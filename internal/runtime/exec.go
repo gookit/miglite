@@ -2,9 +2,11 @@ package runtime
 
 import (
 	"fmt"
-	"github.com/gookit/miglite/internal/migutil"
 	"os"
+	"path/filepath"
 	"strings"
+
+	"github.com/gookit/miglite/internal/migutil"
 )
 
 type ExecOption struct {
@@ -24,12 +26,19 @@ func (r *Runtime) ExecWithHooks(opt ExecOption, hooks ExecHooks) error {
 	fromFile := false
 	if len(sqlText) < 128 && strings.HasSuffix(sqlText, ".sql") {
 		fromFile = true
-		data, err := os.ReadFile(sqlText)
-		if err != nil {
-			return fmt.Errorf("failed to read SQL file: %v", err)
+		absPath, absErr := filepath.Abs(sqlText)
+		if absErr != nil {
+			return fmt.Errorf("failed to read SQL file: invalid file path: %v", absErr)
 		}
-		sqlText = string(data)
-		if strings.TrimSpace(sqlText) == "" {
+		if _, statErr := os.Stat(absPath); os.IsNotExist(statErr) {
+			return fmt.Errorf("failed to read SQL file: file does not exist: %s", absPath)
+		}
+		data, err := os.ReadFile(absPath)
+		if err != nil {
+			return fmt.Errorf("failed to read SQL file: failed to read file: %v", err)
+		}
+		sqlText = strings.TrimSpace(string(data))
+		if sqlText == "" {
 			return fmt.Errorf("no SQL contents in file: %s", opt.SQLOrFile)
 		}
 	}
@@ -71,7 +80,7 @@ func (r *Runtime) ExecWithHooks(opt ExecOption, hooks ExecHooks) error {
 		if migutil.IsQuerySQL(statement) {
 			rows, queryErr := tx.Query(statement)
 			if queryErr != nil {
-				return fmt.Errorf("failed to execute SQL statement %d: %w", i+1, queryErr)
+				return fmt.Errorf("failed to execute SQL statement %d: failed to execute query: %w", i+1, queryErr)
 			}
 			qr := QueryResult{}
 			qr.Columns, err = rows.Columns()

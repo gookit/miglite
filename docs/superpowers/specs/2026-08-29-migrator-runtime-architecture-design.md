@@ -82,11 +82,15 @@ func NewWithConfig(cfg *Config) *Migrator
 
 ```go
 func (m *Migrator) SetSqlDB(db *sql.DB) *Migrator
-func (m *Migrator) SetFS(fsys fs.FS) *Migrator // reserved, implementation later
-func (m *Migrator) Close() error
+func (m *Migrator) SetFS(fsys fs.FS) *Migrator // reserved, no-op until embed FS lands
 ```
 
 不增加各种 DB/FS 组合构造函数；组合场景通过 setter 完成。
+
+不提供 `Migrator.Close()`：每个 `Init/Up/Down/Skip/Status/Show/Exec` 调用的
+runtime 生命周期就是该次调用（自建连接在调用结束时关闭，注入连接始终归调用方），
+实例上没有任何需要 `Close` 释放的资源。后续若引入实例级连接缓存或 embed FS
+句柄，再连同实现一起补上 `Close()`。
 
 `Migrator.Init/Up/Down/Skip/Status/Show/Exec` 直接调用 runtime，不再调用
 `command.Handle*`。Runtime 自己定义运行选项；`command.*Option` 只保留在
@@ -158,8 +162,8 @@ return command.HandleUp(opt)
 - `command` 全局配置只存在于兼容模式；
 - legacy handler 创建 Runtime 时一次性形成最终配置，不能混用旧的全局 flag、
   环境变量和已缓存对象；
-- `SetCfg(nil)`、`SetDB(nil)`、重复 `SetSqlDB`、`Close` 后再次执行和重复 `Close`
-  的行为必须在 API 契约中定义并测试；推荐 nil 返回明确错误，Close 幂等。
+- `SetCfg(nil)`、`SetDB(nil)`、重复 `SetSqlDB` 的行为必须在 API 契约中定义并测试；
+  `SetCfg(nil)` 仍会 panic（旧行为），`SetSqlDB(nil)` 清空注入连接并回退到按配置连接。
 - 本次不把 `fs.FS` 放进 YAML 或环境变量。
 
 ## 分阶段实施
@@ -183,8 +187,9 @@ return command.HandleUp(opt)
 ### 阶段三：收口兼容层
 
 - 统一 `legacyRuntime()`；
-- 为旧 setter 和 handler 增加 deprecated 文档；
-- 保证官方 CLI 行为不变；
+- 旧 setter（`SetCfg/Cfg/SetDB/DB`）与 `Handle*` 保持为兼容入口：`Handle*` 同时
+  是 `NewApp` 注册的官方 CLI handler，因此不标记 `Deprecated`；
+- 官方 CLI 行为与旧版保持一致，仅保留已声明的行为修复（见下）；
 - 明确旧 command API 仍是单例、顺序使用模型。
 
 ### 阶段四：接入 embed FS
@@ -218,15 +223,35 @@ return command.HandleUp(opt)
 
 ## 兼容和迁移策略
 
-现有 CLI 无需修改使用方式。库使用方可以继续调用 `miglite.New` 和
-`Migrator` 方法；行为变化仅包括：外部注入的数据库不再被自动关闭，以及不同
-`Migrator` 实例不再互相覆盖配置。直接依赖 `command.Set*` 的旧代码继续运行，
-但建议迁移到 `miglite.Migrator`。
+现有 CLI 无需修改使用方式，迁移与确认语义保持一致；已修复的行为差异如下。
+
+- 输出适配：`pkg/command/output.go` 提供 `RunInit/RunUp/RunDown/RunSkip/RunStatus/
+  RunShow/RunExec`，CLI handler 与 `miglite.Migrator` 走同一套输出，库调用不再
+  静默，`Status`/`Show` 恢复旧版表格格式（并继续过滤 `z_schema_migrations`）。
+- `up --skip-err`：旧版只接受 flag 但不生效，遇错即中止；现在会跳过失败文件继续
+  执行，但仍返回列出失败文件的错误，CLI 退出码非 0（`broken-skip-err` 场景
+  退出码保持 1）。
+- 确认提示只在 CLI 进行：`UpOption.Yes`/`DownOption.Yes`/`ExecOption.Yes` 对
+  `miglite.Migrator` 无效，库调用永不阻塞等待输入。
+- 空 DOWN 段（无 `-- Migrate:DOWN`）只通过 Skip hook（`runtime.StatusEmptyDown`）
+  上报，不再触发 After hook，也不会被计入 "rolled back N migration(s)"。
+- 失败/取消不再打印成功横幅：`Complete` hook 仅在本次执行自然跑完时触发；有失败
+  时打印 `⚠️ N migration(s) failed!` 汇总。
+- 其余保留差异仅为失败信息结构：先打印 `❌  Failed migration ...` + `UpSQL:`/
+  `DownSQL:` 块，再由 CLI 打印返回错误的 `ERROR:` 行（旧版把两者合并为一行）。
+- 库使用方可以继续调用 `miglite.New` 和 `Migrator` 方法；外部注入的数据库不再
+  被自动关闭，不同 `Migrator` 实例不再互相覆盖配置。直接依赖 `command.Set*` 的
+  旧代码继续运行，但建议迁移到 `miglite.Migrator`。
 
 ## 实施状态
 
 - 已完成数据库连接 ownership 和关闭生命周期修复。
 - 已完成无全局状态 Runtime 的 Init、Up、Down、Skip、Status、Show、Exec 基础实现。
 - 已完成 Migrator 到 Runtime 的直接调用和 command handler 兼容转发。
-- embed FS 仍未实现，保留为后续独立 feature。
-- command 的部分历史终端格式化输出尚未完全恢复为旧版格式；Runtime 返回结构化结果，后续可独立补充输出适配，不影响迁移执行结果。
+- 已完成 Task 2d 输出适配（`pkg/command/output.go`），CLI 与库输出由同一份实现产生。
+- 行为测试位于 `cmd/miglite/testdrv/runtime_ops_test.go`（empty DOWN、skip-err、
+  失败/取消的 Complete 语义、无迁移、runner 输出与 exit-code 契约）。
+- `Migrator.SetFS` 为预留 no-op，embed FS 与实例级 `Close()` 一起留到后续版本。
+- 仍未完成：embed FS 接入（`pkg/migration` 显式 FS API）；
+  以及内部类型的 `command.Run*` 签名（仅为同模块 Migrator 共享输出而导出）。
+

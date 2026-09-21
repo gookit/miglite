@@ -232,9 +232,12 @@ func main() {
   })
   goutil.PanicIfErr(err) // handle error
 
+  // 可选: 使用你自己的 *sql.DB。miglite 不会关闭它。
+  // mig.SetSqlDB(db)
+
   // run up migrations
   err = mig.Up(command.UpOption{
-    Yes: true, // dont confirm
+    Yes: true, // 仅对 CLI 生效，库调用不会询问确认
     // ... options
   })
   goutil.PanicIfErr(err) // handle error
@@ -242,6 +245,15 @@ func main() {
   // run down migrations ...
 }
 ```
+
+> 库使用说明:
+> - `Migrator` 不会询问确认：`Yes` 选项只对 CLI 生效。
+> - 使用 `UpOption.SkipErr` 时，失败的迁移文件会被跳过并继续执行，但 `Up`
+>   仍会返回列出失败文件的错误（CLI 退出码非 0）。
+> - `SetSqlDB(db)` 注入你自己的连接，miglite 不会关闭它；未注入时，每次调用
+>   会按配置创建连接并在调用结束时关闭。
+> - `SetFS(fs.FS)` 为预留 API，当前为空实现：迁移文件仍从本地文件系统读取。
+> - 库调用的输出与 CLI 完全一致。
 
 ### 构建自己的命令工具
 

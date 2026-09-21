@@ -2,8 +2,6 @@ package command
 
 import (
 	"github.com/gookit/goutil/cflag/capp"
-	"github.com/gookit/goutil/x/ccolor"
-	"github.com/gookit/miglite/internal/runtime"
 )
 
 type InitOption struct {
@@ -24,17 +22,12 @@ func InitCommand() *capp.Cmd {
 	return c
 }
 
-// HandleInit handles the init command logic
+// HandleInit initializes the migration schema on db
 func HandleInit(opt InitOption) error {
 	r, cleanup, err := legacyRuntime()
 	if err != nil {
 		return err
 	}
 	defer cleanup()
-
-	err = r.Init(runtime.InitOption{Drop: opt.Drop})
-	if err == nil {
-		ccolor.Infoln("🎉  Migration schema initialized successfully.")
-	}
-	return err
+	return RunInit(r, opt)
 }

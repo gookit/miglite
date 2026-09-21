@@ -2,7 +2,6 @@ package miglite
 
 import (
 	"database/sql"
-	"fmt"
 	"io/fs"
 
 	"github.com/gookit/miglite/internal/config"
@@ -13,10 +12,9 @@ import (
 
 // Migrator manage the migration
 type Migrator struct {
-	cfg   *Config
-	db    *database.DB
-	fsys  fs.FS
-	ownDB bool
+	cfg  *Config
+	db   *database.DB
+	fsys fs.FS
 	// TODO add migrations by go code
 	//
 	// Example:
@@ -50,89 +48,86 @@ func NewWithConfig(cfg *Config) *Migrator {
 	return &Migrator{cfg: cfg}
 }
 
-// SetSqlDB sets the database connection
+// SetSqlDB sets the database connection. The connection stays owned by the
+// caller: Migrator never closes it.
 func (m *Migrator) SetSqlDB(db *sql.DB) *Migrator {
 	if db == nil {
 		m.db = nil
-		m.ownDB = false
 		return m
 	}
 	m.db = database.NewWithSqlDB(m.cfg.Database.Driver, db)
-	m.ownDB = false
 	return m
 }
 
+// SetFS reserves a fs.FS for migration discovery.
+//
+// NOTE: not implemented yet. The value is stored but ignored, migration files
+// are still read from the local filesystem. Planned for the next release.
 func (m *Migrator) SetFS(fsys fs.FS) *Migrator { m.fsys = fsys; return m }
 
 func (m *Migrator) runtime() *runtime.Runtime {
-	r := runtime.NewWithDatabase(m.cfg, m.db, m.ownDB)
+	// injected connections stay owned by the caller; connections opened from the
+	// config are owned and closed by this per-call runtime
+	r := runtime.NewWithDatabase(m.cfg, m.db, false)
 	r.SetFS(m.fsys)
 	return r
-}
-
-func (m *Migrator) Close() error {
-	if m.db == nil || !m.ownDB {
-		return nil
-	}
-	err := m.db.Close()
-	m.db = nil
-	m.ownDB = false
-	return err
 }
 
 // Init initializes the migration schema
 func (m *Migrator) Init(opt command.InitOption) error {
 	r := m.runtime()
 	defer r.Close()
-	return r.Init(runtime.InitOption{Drop: opt.Drop})
+	return command.RunInit(r, opt)
 }
 
 // Up runs the migration up operation.
+//
+// NOTE: UpOption.Yes only affects the CLI; library calls never ask for
+// confirmation. With UpOption.SkipErr failing files are skipped and the run
+// continues, but an error listing them is still returned.
 func (m *Migrator) Up(opt command.UpOption) error {
 	r := m.runtime()
 	defer r.Close()
-	return r.Up(runtime.UpOption{Yes: opt.Yes, SkipErr: opt.SkipErr, Number: opt.Number, StartTime: opt.StartTime})
+	return command.RunUp(r, opt, false)
 }
 
 // Down runs the migration down operation.
+//
+// NOTE: DownOption.Yes only affects the CLI; library calls never ask for
+// confirmation.
 func (m *Migrator) Down(opt command.DownOption) error {
 	r := m.runtime()
 	defer r.Close()
-	return r.Down(runtime.DownOption{Number: opt.Number, Yes: opt.Yes})
+	return command.RunDown(r, opt, false)
 }
 
 // Skip skips some migration files.
 func (m *Migrator) Skip(opt command.SkipOption) error {
 	r := m.runtime()
 	defer r.Close()
-	return r.Skip(runtime.SkipOption{FileNames: opt.FileNames})
+	return command.RunSkip(r, opt)
 }
 
 // Status shows the status of the migrations.
 func (m *Migrator) Status(opt command.StatusOption) error {
 	r := m.runtime()
 	defer r.Close()
-	records, err := r.Status(runtime.StatusOption{})
-	for _, record := range records {
-		fmt.Printf("%s %s\n", record.Status, record.Version)
-	}
-	return err
+	return command.RunStatus(r)
 }
 
 // Show displays all tables in the database.
 func (m *Migrator) Show(opt command.ShowOption) error {
 	r := m.runtime()
 	defer r.Close()
-	result, err := r.Show(runtime.ShowOption{Tables: opt.Tables, Schema: opt.Schema})
-	if err == nil {
-		fmt.Printf("%v\n", result)
-	}
-	return err
+	return command.RunShow(r, opt)
 }
 
 // Exec executes SQL or a SQL file in a transaction.
+//
+// NOTE: ExecOption.Yes only affects the CLI; library calls never ask for
+// confirmation.
 func (m *Migrator) Exec(opt command.ExecOption) error {
 	r := m.runtime()
 	defer r.Close()
-	return r.Exec(runtime.ExecOption{SQLOrFile: opt.SQLOrFile, Yes: opt.Yes})
+	return command.RunExec(r, opt, false)
 }
