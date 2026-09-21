@@ -139,3 +139,29 @@ func BindFS(fsys fs.FS) { command.SetMigrationFS(fsys) }
 - 不在本次工作中重构 command 的全局状态为实例化架构。
 - 不增加第三方依赖。
 
+## 实施状态（2026-09-21 完成）
+
+已实现：
+
+- `pkg/migration`：`ParseFS`、`FindMigrationsFS`、`MigrationsFromFS`，以及供已发现迁移复用的
+  `Migration.LoadFS`；`FilePath` 保存 io/fs 逻辑路径，`Migration` 未增加来源字段。
+- `internal/runtime`：按实例 `fsys` 选择发现、解析与按名加载
+  （`findMigrations` / `migrationsFrom` / `parseMigration`），`nil` 时保持磁盘行为。
+- `Migrator.SetFS` 生效，并新增 `NewWithConfigAndFS(cfg, fsys)`。
+- `command.SetMigrationFS` 与根包 `miglite.BindFS`，由 `legacyRuntime()` 注入 runtime。
+- 测试：`pkg/migration/fs_test.go`（`fstest.MapFS`）、
+  `cmd/miglite/testdrv/embed_fs_test.go`（真实 `embed.FS` + `fs.Sub`，逻辑目录不存在于磁盘，
+  本地回退会让测试失败）。
+
+相对本设计初稿的落地偏差：
+
+1. FS 绑定落在 `internal/runtime` 实例，而非 command 全局：v0.7.0 起 `Migrator` 直连 runtime
+   （见 [Migrator Runtime 架构调整设计](2026-08-29-migrator-runtime-architecture-design.md)），
+   command 只保留 CLI 兼容绑定的注入点。
+2. 设计中的 `command.findMigrations()` 已随该重构移除，改由 runtime 的三个方法承担。
+3. 新增导出方法 `Migration.LoadFS`：设计规定 FS 侧"读取内容 → 调用 `ParseContents()`"，
+   而 up/down 需要按来源重新解析已发现的迁移，故把该步骤抽为方法，调用方决定 FS 或磁盘，
+   `Migration` 仍不保存来源。
+4. `create` 命令仍只写本地磁盘（`embed.FS` 只读），未做拦截或额外提示。
+
+

@@ -192,11 +192,11 @@ return command.HandleUp(opt)
 - 官方 CLI 行为与旧版保持一致，仅保留已声明的行为修复（见下）；
 - 明确旧 command API 仍是单例、顺序使用模型。
 
-### 阶段四：接入 embed FS
+### 阶段四：接入 embed FS（已完成）
 
 - Runtime/Migrator 使用实例级 `fs.FS`；
-- `pkg/migration` 增加显式 FS API；
-- command 增加可选的兼容绑定；
+- `pkg/migration` 增加显式 FS API（`ParseFS`/`FindMigrationsFS`/`MigrationsFromFS`/`LoadFS`）；
+- command 增加可选的兼容绑定（`SetMigrationFS`，根包入口 `miglite.BindFS`）；
 - 增加 `embed.FS` 和 `fstest.MapFS` 测试。
 
 ## 测试要求
@@ -251,7 +251,9 @@ return command.HandleUp(opt)
 - 已完成 Task 2d 输出适配（`pkg/command/output.go`），CLI 与库输出由同一份实现产生。
 - 行为测试位于 `cmd/miglite/testdrv/runtime_ops_test.go`（empty DOWN、skip-err、
   失败/取消的 Complete 语义、无迁移、runner 输出与 exit-code 契约）。
-- `Migrator.SetFS` 为预留 no-op，embed FS 与实例级 `Close()` 一起留到后续版本。
-- 仍未完成：embed FS 接入（`pkg/migration` 显式 FS API）；
-  以及内部类型的 `command.Run*` 签名（仅为同模块 Migrator 共享输出而导出）。
+- 已完成 embed FS 接入（详见 [Embed FS 支持设计](2026-08-29-embed-fs-migrator-design.md) 的实施状态）：
+  runtime 按实例 `fsys` 选择发现与解析，`Migrator.SetFS` / `NewWithConfigAndFS` 生效，
+  `command.SetMigrationFS` 与 `miglite.BindFS` 为 CLI 复用场景提供绑定。
+- 仍未提供实例级 `Close()`：每次调用的 runtime 生命周期即该次调用，无独立资源可释放。
+- 仍未完成：内部类型的 `command.Run*` 签名（仅为同模块 Migrator 共享输出而导出）。
 

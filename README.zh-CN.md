@@ -219,6 +219,7 @@ package main
 
 import (
   "github.com/gookit/miglite"
+  "github.com/gookit/miglite/pkg/command"
 
   // add your database driver
   _ "github.com/go-sql-driver/mysql"
@@ -227,7 +228,7 @@ import (
 )
 
 func main() {
-  mig, err := miglite.NewAuto(func(cfg *config.Config) {
+  mig, err := miglite.NewAuto(func(cfg *miglite.Config) {
     // update config options
   })
   goutil.PanicIfErr(err) // handle error
@@ -246,13 +247,48 @@ func main() {
 }
 ```
 
+#### 嵌入迁移文件
+
+```go
+package main
+
+import (
+  "embed"
+
+  "github.com/gookit/miglite"
+  "github.com/gookit/miglite/pkg/command"
+
+  _ "modernc.org/sqlite"
+)
+
+//go:embed migrations/*.sql
+var migrationFS embed.FS
+
+func main() {
+  mig, err := miglite.NewAuto(func(cfg *miglite.Config) {
+    // migrationFS 内的逻辑目录
+    cfg.Migrations.Path = "migrations"
+  })
+  goutil.PanicIfErr(err) // handle error
+
+  // 也可使用 miglite.NewWithConfigAndFS(cfg, migrationFS)
+  mig.SetFS(migrationFS).SetSqlDB(db) // db: 你自己的 *sql.DB，miglite 不会关闭它
+  goutil.PanicIfErr(mig.Up(command.UpOption{Yes: true}))
+}
+```
+
+自行构建命令工具并复用嵌入迁移：在 `app.Run()` 前调用 `miglite.BindFS(migrationFS)`，
+CLI handler 会从该文件系统解析 `cfg.Migrations.Path`。`create` 仍写入本地磁盘，
+嵌入文件系统为只读。
+
 > 库使用说明:
 > - `Migrator` 不会询问确认：`Yes` 选项只对 CLI 生效。
 > - 使用 `UpOption.SkipErr` 时，失败的迁移文件会被跳过并继续执行，但 `Up`
 >   仍会返回列出失败文件的错误（CLI 退出码非 0）。
 > - `SetSqlDB(db)` 注入你自己的连接，miglite 不会关闭它；未注入时，每次调用
 >   会按配置创建连接并在调用结束时关闭。
-> - `SetFS(fs.FS)` 为预留 API，当前为空实现：迁移文件仍从本地文件系统读取。
+> - `SetFS(fs.FS)` 用于嵌入迁移：`cfg.Migrations.Path` 此时是该文件系统内的 io/fs
+>   逻辑路径（斜杠分隔），`SetFS(nil)` 恢复本地文件系统读取。
 > - 库调用的输出与 CLI 完全一致。
 
 ### 构建自己的命令工具

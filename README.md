@@ -218,6 +218,7 @@ package main
 
 import (
   "github.com/gookit/miglite"
+  "github.com/gookit/miglite/pkg/command"
 
   // add your database driver
   _ "github.com/go-sql-driver/mysql"
@@ -226,7 +227,7 @@ import (
 )
 
 func main() {
-  mig, err := miglite.NewAuto(func(cfg *config.Config) {
+  mig, err := miglite.NewAuto(func(cfg *miglite.Config) {
     // update config options
   })
   goutil.PanicIfErr(err) // handle error
@@ -245,6 +246,41 @@ func main() {
 }
 ```
 
+#### Embedded migrations
+
+```go
+package main
+
+import (
+  "embed"
+
+  "github.com/gookit/miglite"
+  "github.com/gookit/miglite/pkg/command"
+
+  _ "modernc.org/sqlite"
+)
+
+//go:embed migrations/*.sql
+var migrationFS embed.FS
+
+func main() {
+  mig, err := miglite.NewAuto(func(cfg *miglite.Config) {
+    // logical dir inside migrationFS
+    cfg.Migrations.Path = "migrations"
+  })
+  goutil.PanicIfErr(err) // handle error
+
+  // miglite.NewWithConfigAndFS(cfg, migrationFS) also works
+  mig.SetFS(migrationFS).SetSqlDB(db) // db: your own *sql.DB, miglite never closes it
+  goutil.PanicIfErr(mig.Up(command.UpOption{Yes: true}))
+}
+```
+
+Building your own command tool with embedded migrations: call
+`miglite.BindFS(migrationFS)` before `app.Run()`, the CLI handlers then read
+`cfg.Migrations.Path` from that filesystem. `create` still writes to the local
+disk, an embedded filesystem is read only.
+
 > Library notes:
 > - `Migrator` never asks for confirmation: the `Yes` option only affects the CLI.
 > - With `UpOption.SkipErr` a failed migration file is skipped and the run
@@ -252,8 +288,9 @@ func main() {
 >   exits with a non-zero status).
 > - `SetSqlDB(db)` injects your connection and miglite never closes it; without
 >   it, a connection is opened from the config for the duration of each call.
-> - `SetFS(fs.FS)` is reserved and currently a no-op: migration files are read
->   from the local filesystem.
+> - `SetFS(fs.FS)` serves embedded migrations: `cfg.Migrations.Path` is then an
+>   io/fs logical path (slash separated) inside that filesystem, and `SetFS(nil)`
+>   restores local filesystem reading.
 > - Library calls print the same progress output as the CLI.
 
 ### Building Your Own Command Tool
