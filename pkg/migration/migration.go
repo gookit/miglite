@@ -90,8 +90,14 @@ func MigrationsFrom(migPath string, files []string) ([]*Migration, error) {
 
 // NewMigration creates a new Migration instance from a file path
 func NewMigration(filePath string) (*Migration, error) {
+	return newMigration(filepath.Base(filePath), filePath)
+}
+
+// newMigration builds a Migration from the parsed file name, without reading any
+// content. filePath keeps the caller's path convention: a local disk path for
+// NewMigration, or an io/fs logical path for ParseFS.
+func newMigration(fileName, filePath string) (*Migration, error) {
 	// Extract timestamp from filename
-	fileName := filepath.Base(filePath)
 	fi, err := parseFilename(fileName)
 	if err != nil {
 		return nil, err
