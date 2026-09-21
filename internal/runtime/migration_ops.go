@@ -39,7 +39,7 @@ func (r *Runtime) UpWithHooks(opt UpOption, hooks MigrationHooks) error {
 	if err := r.db.InitSchema(); err != nil {
 		return fmt.Errorf("failed to initialize schema: %v", err)
 	}
-	ms, err := migration.FindMigrations(r.cfg.Migrations.Path, r.cfg.Migrations.Recursive)
+	ms, err := r.findMigrations()
 	if err != nil {
 		return err
 	}
@@ -81,7 +81,7 @@ func (r *Runtime) UpWithHooks(opt UpOption, hooks MigrationHooks) error {
 				return err
 			}
 		}
-		if err = m.Parse(); err != nil {
+		if err = r.parseMigration(m); err != nil {
 			result.Failed++
 			return fmt.Errorf("failed to parse migration %s: %v", m.FileName, err)
 		}
@@ -134,7 +134,7 @@ func (r *Runtime) DownWithHooks(opt DownOption, hooks MigrationHooks) error {
 	if err != nil {
 		return err
 	}
-	ms, err := migration.FindMigrations(r.cfg.Migrations.Path, r.cfg.Migrations.Recursive)
+	ms, err := r.findMigrations()
 	if err != nil {
 		return err
 	}
@@ -161,7 +161,7 @@ func (r *Runtime) DownWithHooks(opt DownOption, hooks MigrationHooks) error {
 					return err
 				}
 			}
-			if err = m.Parse(); err != nil {
+			if err = r.parseMigration(m); err != nil {
 				return fmt.Errorf("failed to parse migration %s: %v", m.FileName, err)
 			}
 			if m.DownSection == "" {
@@ -199,7 +199,7 @@ func (r *Runtime) SkipWithHooks(opt SkipOption, hooks MigrationHooks) error {
 	if err := r.ensureDB(); err != nil {
 		return err
 	}
-	ms, err := migration.MigrationsFrom(r.cfg.Migrations.Path, opt.FileNames)
+	ms, err := r.migrationsFrom(opt.FileNames)
 	if err != nil {
 		return err
 	}

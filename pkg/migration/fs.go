@@ -20,21 +20,31 @@ import (
 
 // ParseFS parses one migration file from the given fs.FS.
 func ParseFS(fsys fs.FS, filePath string) (*Migration, error) {
-	contents, err := fs.ReadFile(fsys, filePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read migration file: %s", err)
-	}
-
 	mig, err := newMigration(path.Base(filePath), filePath)
 	if err != nil {
 		return nil, err
 	}
 
-	mig.Contents = string(contents)
-	if err = mig.ParseContents(); err != nil {
+	if err = mig.LoadFS(fsys); err != nil {
 		return nil, err
 	}
 	return mig, nil
+}
+
+// LoadFS reads the migration contents from fsys and parses the UP/DOWN sections,
+// keeping the current FilePath. It is the fs.FS counterpart of Parse, for the
+// case where the file name is already resolved (eg. discovered migrations).
+//
+// NOTE: Migration does not remember its source, the caller decides between
+// LoadFS and Parse.
+func (m *Migration) LoadFS(fsys fs.FS) error {
+	contents, err := fs.ReadFile(fsys, m.FilePath)
+	if err != nil {
+		return fmt.Errorf("failed to read migration file: %s", err)
+	}
+
+	m.Contents = string(contents)
+	return m.ParseContents()
 }
 
 // FindMigrationsFS finds migration files in the given fs.FS directory, sorted by

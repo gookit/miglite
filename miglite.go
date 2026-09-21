@@ -1,8 +1,11 @@
 package miglite
 
 import (
+	"io/fs"
+
 	"github.com/gookit/miglite/internal/config"
 	"github.com/gookit/miglite/internal/database"
+	"github.com/gookit/miglite/pkg/command"
 )
 
 // Config is the configuration struct for the Migrator
@@ -27,4 +30,11 @@ func SetSchemaTableName(tableName string) {
 // AddSqlProvider add database provider
 func AddSqlProvider(driver string, provider SqlProvider) {
 	database.AddProvider(driver, provider)
+}
+
+// BindFS binds a process level migrations filesystem, eg. an embed.FS, for an
+// application built with pkg/command (see command.NewApp). BindFS(nil) restores
+// local filesystem reading. Library callers should prefer Migrator.SetFS.
+func BindFS(fsys fs.FS) {
+	command.SetMigrationFS(fsys)
 }

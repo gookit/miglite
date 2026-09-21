@@ -48,6 +48,13 @@ func NewWithConfig(cfg *Config) *Migrator {
 	return &Migrator{cfg: cfg}
 }
 
+// NewWithConfigAndFS creates a new Migrator instance with a pre-configured
+// Config and an explicit migrations filesystem, eg. an embed.FS. It equals
+// NewWithConfig(cfg).SetFS(fsys).
+func NewWithConfigAndFS(cfg *Config, fsys fs.FS) *Migrator {
+	return NewWithConfig(cfg).SetFS(fsys)
+}
+
 // SetSqlDB sets the database connection. The connection stays owned by the
 // caller: Migrator never closes it.
 func (m *Migrator) SetSqlDB(db *sql.DB) *Migrator {
@@ -59,10 +66,10 @@ func (m *Migrator) SetSqlDB(db *sql.DB) *Migrator {
 	return m
 }
 
-// SetFS reserves a fs.FS for migration discovery.
-//
-// NOTE: not implemented yet. The value is stored but ignored, migration files
-// are still read from the local filesystem. Planned for the next release.
+// SetFS sets the migrations filesystem, so the SQL files can be embedded with
+// Go's embed.FS. cfg.Migrations.Path is then resolved as an io/fs logical path
+// (slash separated, eg: "migrations"). SetFS(nil) restores local filesystem
+// reading.
 func (m *Migrator) SetFS(fsys fs.FS) *Migrator { m.fsys = fsys; return m }
 
 func (m *Migrator) runtime() *runtime.Runtime {

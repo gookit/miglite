@@ -2,6 +2,7 @@ package command
 
 import (
 	"fmt"
+	"io/fs"
 	"time"
 
 	"github.com/gookit/goutil/dump"
@@ -24,6 +25,10 @@ var cfg *config.Config
 var db *database.DB
 var dbOwned bool
 
+// migrationFS is the optional process level migrations filesystem for the CLI
+// compatibility layer, see SetMigrationFS.
+var migrationFS fs.FS
+
 // Cfg get config instance
 func Cfg() *config.Config { return cfg }
 
@@ -33,6 +38,11 @@ func SetCfg(c *config.Config) {
 	ConfigFile = c.ConfigFile
 	ShowVerbose = c.Verbose
 }
+
+// SetMigrationFS binds an optional migrations filesystem, eg. an embed.FS, used
+// by the CLI handlers of this package. SetMigrationFS(nil) restores local
+// filesystem reading. Library callers should prefer miglite.Migrator.SetFS.
+func SetMigrationFS(fsys fs.FS) { migrationFS = fsys }
 
 // DB get database instance
 func DB() *database.DB { return db }
@@ -51,6 +61,7 @@ func legacyRuntime() (*runtimepkg.Runtime, func(), error) {
 		return nil, func() {}, err
 	}
 	r := runtimepkg.NewWithDatabase(cfg, db, dbOwned)
+	r.SetFS(migrationFS)
 	return r, func() { _ = r.Close(); db = nil; dbOwned = false }, nil
 }
 
