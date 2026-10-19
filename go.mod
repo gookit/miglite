@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/goccy/go-yaml v1.13.6
-	github.com/gookit/goutil v0.8.0
+	github.com/gookit/goutil v0.8.3
 )
 
 require (
