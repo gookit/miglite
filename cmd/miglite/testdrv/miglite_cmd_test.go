@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/gookit/goutil/testutil/assert"
+	"github.com/gookit/goutil/x/assert"
 )
 
 func TestCmd_init(t *testing.T) {
