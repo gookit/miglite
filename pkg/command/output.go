@@ -25,6 +25,7 @@ import (
 // command.*Option only affects the CLI.
 
 // RunInit initializes the migration schema and prints the result.
+// The active ccolor output writer controls where the result is written.
 func RunInit(r *runtime.Runtime, opt InitOption) error {
 	if err := r.Init(runtime.InitOption{Drop: opt.Drop}); err != nil {
 		return err
@@ -34,6 +35,7 @@ func RunInit(r *runtime.Runtime, opt InitOption) error {
 }
 
 // RunUp runs pending migrations.
+// The active ccolor output writer controls where progress is written.
 func RunUp(r *runtime.Runtime, opt UpOption, interactive bool) error {
 	start := time.Now()
 	// matches the v0.6.0 CLI: a blank line separates the "Skipping" dots from the
@@ -58,7 +60,7 @@ func RunUp(r *runtime.Runtime, opt UpOption, interactive bool) error {
 		},
 		Before: func(idx, _ int, mig *migration.Migration) error {
 			if skipNewline {
-				fmt.Println()
+				ccolor.Println()
 				skipNewline = false
 			}
 			ccolor.Printf("<green>%d.</> 🔄  Executing migration file: <green>%s</>\n", idx+1, mig.FileName)
@@ -87,6 +89,7 @@ func RunUp(r *runtime.Runtime, opt UpOption, interactive bool) error {
 }
 
 // RunDown rolls back applied migrations.
+// The active ccolor output writer controls where progress is written.
 func RunDown(r *runtime.Runtime, opt DownOption, interactive bool) error {
 	rolledBack := 0
 	err := r.DownWithHooks(runtime.DownOption{Number: opt.Number}, runtime.MigrationHooks{
@@ -126,6 +129,7 @@ func RunDown(r *runtime.Runtime, opt DownOption, interactive bool) error {
 }
 
 // RunSkip marks migration files as skipped.
+// The active ccolor output writer controls where progress is written.
 func RunSkip(r *runtime.Runtime, opt SkipOption) error {
 	return r.SkipWithHooks(runtime.SkipOption{FileNames: opt.FileNames}, runtime.MigrationHooks{
 		Start: func(total int) {
@@ -141,6 +145,7 @@ func RunSkip(r *runtime.Runtime, opt SkipOption) error {
 }
 
 // RunStatus loads the migration status and prints the status table.
+// The active ccolor output writer controls where the table is written.
 func RunStatus(r *runtime.Runtime) error {
 	records, err := r.Status(runtime.StatusOption{})
 	if err != nil {
@@ -151,6 +156,7 @@ func RunStatus(r *runtime.Runtime) error {
 }
 
 // RunShow shows database tables or one table schema.
+// The active ccolor output writer controls where the result is written.
 func RunShow(r *runtime.Runtime, opt ShowOption) error {
 	if err := validateShowOption(opt); err != nil {
 		return err
@@ -173,11 +179,12 @@ func RunShow(r *runtime.Runtime, opt ShowOption) error {
 }
 
 // RunExec executes SQL statements or a SQL file.
+// The active ccolor output writer controls where execution output is written.
 func RunExec(r *runtime.Runtime, opt ExecOption, interactive bool) error {
 	hooks := runtime.ExecHooks{
 		Input: func(sqlText string, _ bool) {
 			ccolor.Infop("📄  Input SQL: ")
-			fmt.Println(sqlText)
+			ccolor.Println(sqlText)
 		},
 		BeforeStatement: func(idx, total int, _ string) error {
 			ccolor.Printf("🚀  Executing SQL statement %d/%d...\n", idx+1, total)
@@ -214,11 +221,12 @@ func RunExec(r *runtime.Runtime, opt ExecOption, interactive bool) error {
 }
 
 // PrintStatusRecords prints the migration status table.
+// The active ccolor output writer controls where the table is written.
 func PrintStatusRecords(records []migration.Record) {
 	ccolor.Cyanf("\n📊  Migrations Status:(total=%d)\n", len(records))
-	fmt.Println(strings.Repeat("==", 44))
+	ccolor.Println(strings.Repeat("==", 44))
 	ccolor.Printf("  <b>Status</>  | %13s<b>Version(migration file)</>%13s    |   <b>Operate Time</> \n", "", "")
-	fmt.Println(strings.Repeat("--", 44))
+	ccolor.Println(strings.Repeat("--", 44))
 	for _, st := range records {
 		statusIcon := "<mga>pending</>"
 		switch st.Status {
@@ -244,6 +252,7 @@ func validateShowOption(opt ShowOption) error {
 }
 
 // printTablesList prints all database tables, hiding the migration schema table.
+// The active ccolor output writer controls where the list is written.
 func printTablesList(tables []string) error {
 	tables = arrutil.Filter(tables, func(s string) bool {
 		return s != database.SchemaTableName
@@ -261,6 +270,7 @@ func printTablesList(tables []string) error {
 }
 
 // printTableSchema prints the columns of one table.
+// The active ccolor output writer controls where the schema is written.
 func printTableSchema(columns []database.ColumnInfo, tableName string) error {
 	if len(columns) == 0 {
 		ccolor.Warnf("No columns found for table: %s\n", tableName)
@@ -269,16 +279,16 @@ func printTableSchema(columns []database.ColumnInfo, tableName string) error {
 
 	hLine := strings.Repeat("-", 110)
 	ccolor.Printf("📋  Table <green>%s</> has <green>%d</> column(s):\n", tableName, len(columns))
-	fmt.Println(hLine)
+	ccolor.Println(hLine)
 	ccolor.Printf(" %-20s | %-30s | %-4s | %-20s | %-10s | %-15s\n", "Name", "Type", "Null", "Default", "Key", "Extra")
-	fmt.Println(hLine)
+	ccolor.Println(hLine)
 	for _, col := range columns {
 		defVal := strutil.OrCond(col.Default.Valid, col.Default.String, "NULL")
-		fmt.Printf(" %-20s | %-30s | %-4s | %-20s | %-10s | %-15s\n",
+		ccolor.Printf(" %-20s | %-30s | %-4s | %-20s | %-10s | %-15s\n",
 			col.Name, col.Type, col.NotNull, defVal, col.Key, col.Extra,
 		)
 	}
-	fmt.Println(hLine)
+	ccolor.Println(hLine)
 
 	return nil
 }
@@ -299,5 +309,5 @@ func printQueryResult(columns []string, rowsData [][]any) {
 		}
 		sb.WriteRune('\n')
 	}
-	fmt.Println(sb.String())
+	ccolor.Println(sb.String())
 }

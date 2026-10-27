@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"regexp"
@@ -75,6 +76,8 @@ type Config struct {
 	ConfigFile string `yaml:"-"`
 	// LogFunc handler
 	LogFunc func(msg string) `yaml:"-"`
+	// Output receives library operation output. A nil writer keeps the default CLI output.
+	Output io.Writer `yaml:"-" json:"-"`
 }
 
 // EnvPrefix prefix for environment variables

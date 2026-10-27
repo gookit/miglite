@@ -3,12 +3,11 @@ package miglite_test
 import (
 	"github.com/gookit/goutil"
 	"github.com/gookit/miglite"
-	"github.com/gookit/miglite/internal/config"
 	"github.com/gookit/miglite/pkg/command"
 )
 
 func ExampleNew() {
-	mig, err := miglite.New("miglite.yml", func(cfg *config.Config) {
+	mig, err := miglite.New("miglite.yml", func(cfg *miglite.Config) {
 		// update config options
 	})
 	goutil.PanicIfErr(err) // handle error

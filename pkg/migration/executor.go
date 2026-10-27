@@ -2,7 +2,6 @@ package migration
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/miglite/internal/database"
@@ -17,6 +16,7 @@ type Executor struct {
 }
 
 // NewExecutor creates a new migration executor
+// Verbose and rollback messages use the active ccolor output writer.
 func NewExecutor(db *database.DB, verbose bool) *Executor {
 	return &Executor{
 		db:      db,
@@ -25,6 +25,7 @@ func NewExecutor(db *database.DB, verbose bool) *Executor {
 }
 
 // ExecuteUp executes the UP part of a migration
+// Verbose and rollback messages use the active ccolor output writer.
 func (e *Executor) ExecuteUp(migration *Migration) error {
 	// Start a transaction
 	tx, err := e.db.Begin()
@@ -34,7 +35,7 @@ func (e *Executor) ExecuteUp(migration *Migration) error {
 	defer func() {
 		if err != nil {
 			if err1 := tx.Rollback(); err1 != nil {
-				log.Printf("[ERROR] Failed to rollback transaction: %v", err1)
+				ccolor.Errorf("[ERROR] Failed to rollback transaction: %v", err1)
 			}
 		}
 	}()
@@ -61,6 +62,7 @@ func (e *Executor) ExecuteUp(migration *Migration) error {
 }
 
 // ExecuteDown executes the DOWN part of a migration
+// Verbose and rollback messages use the active ccolor output writer.
 func (e *Executor) ExecuteDown(migration *Migration) error {
 	// Start a transaction
 	tx, err := e.db.Begin()
@@ -70,7 +72,7 @@ func (e *Executor) ExecuteDown(migration *Migration) error {
 	defer func() {
 		if err != nil {
 			if err1 := tx.Rollback(); err1 != nil {
-				log.Printf("[ERROR] Failed to rollback transaction: %v", err1)
+				ccolor.Errorf("[ERROR] Failed to rollback transaction: %v", err1)
 			}
 		}
 	}()
@@ -94,6 +96,6 @@ func (e *Executor) ExecuteDown(migration *Migration) error {
 		return fmt.Errorf("failed to commit transaction: %v", err)
 	}
 
-	log.Printf("Successfully rolled back migration: %s", migration.FileName)
+	ccolor.Printf("Successfully rolled back migration: %s\n", migration.FileName)
 	return nil
 }

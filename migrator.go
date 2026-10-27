@@ -3,7 +3,9 @@ package miglite
 import (
 	"database/sql"
 	"io/fs"
+	"os"
 
+	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/miglite/internal/config"
 	"github.com/gookit/miglite/internal/database"
 	"github.com/gookit/miglite/internal/runtime"
@@ -81,10 +83,13 @@ func (m *Migrator) runtime() *runtime.Runtime {
 }
 
 // Init initializes the migration schema
+// Library output is redirected to Config.Output when it is set.
 func (m *Migrator) Init(opt command.InitOption) error {
-	r := m.runtime()
-	defer r.Close()
-	return command.RunInit(r, opt)
+	return m.withOutput(func() error {
+		r := m.runtime()
+		defer r.Close()
+		return command.RunInit(r, opt)
+	})
 }
 
 // Up runs the migration up operation.
@@ -92,49 +97,77 @@ func (m *Migrator) Init(opt command.InitOption) error {
 // NOTE: UpOption.Yes only affects the CLI; library calls never ask for
 // confirmation. With UpOption.SkipErr failing files are skipped and the run
 // continues, but an error listing them is still returned.
+// Library output is redirected to Config.Output when it is set.
 func (m *Migrator) Up(opt command.UpOption) error {
-	r := m.runtime()
-	defer r.Close()
-	return command.RunUp(r, opt, false)
+	return m.withOutput(func() error {
+		r := m.runtime()
+		defer r.Close()
+		return command.RunUp(r, opt, false)
+	})
 }
 
 // Down runs the migration down operation.
 //
 // NOTE: DownOption.Yes only affects the CLI; library calls never ask for
 // confirmation.
+// Library output is redirected to Config.Output when it is set.
 func (m *Migrator) Down(opt command.DownOption) error {
-	r := m.runtime()
-	defer r.Close()
-	return command.RunDown(r, opt, false)
+	return m.withOutput(func() error {
+		r := m.runtime()
+		defer r.Close()
+		return command.RunDown(r, opt, false)
+	})
 }
 
 // Skip skips some migration files.
+// Library output is redirected to Config.Output when it is set.
 func (m *Migrator) Skip(opt command.SkipOption) error {
-	r := m.runtime()
-	defer r.Close()
-	return command.RunSkip(r, opt)
+	return m.withOutput(func() error {
+		r := m.runtime()
+		defer r.Close()
+		return command.RunSkip(r, opt)
+	})
 }
 
 // Status shows the status of the migrations.
+// Library output is redirected to Config.Output when it is set.
 func (m *Migrator) Status(opt command.StatusOption) error {
-	r := m.runtime()
-	defer r.Close()
-	return command.RunStatus(r)
+	return m.withOutput(func() error {
+		r := m.runtime()
+		defer r.Close()
+		return command.RunStatus(r)
+	})
 }
 
 // Show displays all tables in the database.
+// Library output is redirected to Config.Output when it is set.
 func (m *Migrator) Show(opt command.ShowOption) error {
-	r := m.runtime()
-	defer r.Close()
-	return command.RunShow(r, opt)
+	return m.withOutput(func() error {
+		r := m.runtime()
+		defer r.Close()
+		return command.RunShow(r, opt)
+	})
 }
 
 // Exec executes SQL or a SQL file in a transaction.
 //
 // NOTE: ExecOption.Yes only affects the CLI; library calls never ask for
 // confirmation.
+// Library output is redirected to Config.Output when it is set.
 func (m *Migrator) Exec(opt command.ExecOption) error {
-	r := m.runtime()
-	defer r.Close()
-	return command.RunExec(r, opt, false)
+	return m.withOutput(func() error {
+		r := m.runtime()
+		defer r.Close()
+		return command.RunExec(r, opt, false)
+	})
+}
+
+func (m *Migrator) withOutput(fn func() error) error {
+	if m.cfg == nil || m.cfg.Output == nil {
+		return fn()
+	}
+
+	ccolor.SetOutput(m.cfg.Output)
+	defer ccolor.SetOutput(os.Stdout)
+	return fn()
 }
