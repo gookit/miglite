@@ -9,7 +9,16 @@ import (
 )
 
 // Config is the configuration struct for the Migrator
+//
+// Use Database and Migrations to construct it from an external module. Set
+// Output to io.Discard when library migration calls must be completely silent.
 type Config = config.Config
+
+// Database is the database configuration used by Config.
+type Database = config.Database
+
+// Migrations is the migration file configuration used by Config.
+type Migrations = config.Migrations
 
 // ConfigFn is a function type for updating the configuration
 type ConfigFn func(c *Config)
