@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/go-sql-driver/mysql v1.10.1
-	github.com/gookit/goutil v0.8.3
+	github.com/gookit/goutil v0.8.4
 	github.com/gookit/miglite v1.0.0
 	github.com/lib/pq v1.12.3
 	modernc.org/sqlite v1.61.0
