@@ -1,4 +1,4 @@
-package miglite_test
+package testdrv_test
 
 import (
 	"bytes"
@@ -15,18 +15,23 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-// The test uses the same embedded migration shape as an external application.
+// The migrations are embedded the way an application embeds its own. The test
+// lives here, next to the other driver tests, so the miglite module itself does
+// not depend on a database driver.
 //
-//go:embed testdata/migrations/sqlite/*.sql
-var embeddedMigrations embed.FS
+//go:embed embedfixtures/mig_one/*.sql
+var libraryMigrations embed.FS
 
-func TestExternalConfigAndEmbeddedSQLite(t *testing.T) {
+// TestLibraryConfigAndOutput uses only the exported API, as an application
+// would: it builds the config, runs embedded SQLite migrations, and checks that
+// Output receives the progress text and that io.Discard silences it.
+func TestLibraryConfigAndOutput(t *testing.T) {
 	dbPath := filepath.Join(t.TempDir(), "embedded.db")
 	sqlDB, err := sql.Open("sqlite", dbPath)
 	assert.Require(t, assert.NoErr(t, err))
 	t.Cleanup(func() { assert.NoErr(t, sqlDB.Close()) })
 
-	migrationFS, err := fs.Sub(embeddedMigrations, "testdata/migrations/sqlite")
+	migrationFS, err := fs.Sub(libraryMigrations, "embedfixtures/mig_one")
 	assert.Require(t, assert.NoErr(t, err))
 
 	output := new(bytes.Buffer)
@@ -47,6 +52,6 @@ func TestExternalConfigAndEmbeddedSQLite(t *testing.T) {
 	assert.Eq(t, outputLen, output.Len())
 
 	var tableName string
-	assert.NoErr(t, sqlDB.QueryRow("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'users'").Scan(&tableName))
-	assert.Eq(t, "users", tableName)
+	assert.NoErr(t, sqlDB.QueryRow("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'embed_widgets'").Scan(&tableName))
+	assert.Eq(t, "embed_widgets", tableName)
 }
