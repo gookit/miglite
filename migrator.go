@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"io/fs"
 	"os"
+	"sync"
 
 	"github.com/gookit/goutil/x/ccolor"
 	"github.com/gookit/miglite/internal/config"
@@ -162,12 +163,21 @@ func (m *Migrator) Exec(opt command.ExecOption) error {
 	})
 }
 
+// outputMu serializes the library calls that redirect output: ccolor's writer
+// is process global, so two Migrators with their own Output running at once
+// would otherwise swap each other's writer mid-run.
+var outputMu sync.Mutex
+
 func (m *Migrator) withOutput(fn func() error) error {
 	if m.cfg == nil || m.cfg.Output == nil {
 		return fn()
 	}
 
+	outputMu.Lock()
+	defer outputMu.Unlock()
 	ccolor.SetOutput(m.cfg.Output)
+	// ccolor has no getter for its current writer, so the default os.Stdout is
+	// restored; output redirected elsewhere by the host is not preserved.
 	defer ccolor.SetOutput(os.Stdout)
 	return fn()
 }

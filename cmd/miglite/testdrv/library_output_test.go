@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"embed"
+	"fmt"
 	"io"
 	"io/fs"
 	"path/filepath"
@@ -54,4 +55,44 @@ func TestLibraryConfigAndOutput(t *testing.T) {
 	var tableName string
 	assert.NoErr(t, sqlDB.QueryRow("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'embed_widgets'").Scan(&tableName))
 	assert.Eq(t, "embed_widgets", tableName)
+}
+
+// TestLibraryOutputConcurrentMigrators runs two migrators with their own Output
+// at the same time: ccolor's writer is process global, so the redirect is
+// serialized and each run's progress text lands in its own buffer.
+func TestLibraryOutputConcurrentMigrators(t *testing.T) {
+	migrationFS, err := fs.Sub(libraryMigrations, "embedfixtures/mig_one")
+	assert.Require(t, assert.NoErr(t, err))
+
+	run := func(name string, output *bytes.Buffer) error {
+		dbPath := filepath.Join(t.TempDir(), name+".db")
+		sqlDB, err := sql.Open("sqlite", dbPath)
+		if err != nil {
+			return err
+		}
+		defer sqlDB.Close()
+		cfg := &miglite.Config{
+			Database:   miglite.Database{Driver: "sqlite", SqlDriver: "sqlite", DSN: dbPath},
+			Migrations: miglite.Migrations{Path: "."},
+			Output:     output,
+		}
+		migrator := miglite.NewWithConfigAndFS(cfg, migrationFS).SetSqlDB(sqlDB)
+		if err := migrator.Init(command.InitOption{}); err != nil {
+			return err
+		}
+		return migrator.Up(command.UpOption{Yes: true, Number: 1})
+	}
+
+	outputs := []*bytes.Buffer{new(bytes.Buffer), new(bytes.Buffer)}
+	errs := make(chan error, len(outputs))
+	for i, output := range outputs {
+		go func(i int, output *bytes.Buffer) { errs <- run(fmt.Sprintf("db%d", i), output) }(i, output)
+	}
+	for range outputs {
+		assert.NoErr(t, <-errs)
+	}
+	for _, output := range outputs {
+		assert.StrContains(t, output.String(), "Migration schema initialized")
+		assert.StrContains(t, output.String(), "create-embed-widgets.sql")
+	}
 }
