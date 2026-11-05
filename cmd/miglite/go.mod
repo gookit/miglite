@@ -7,7 +7,7 @@ require (
 	github.com/gookit/goutil v0.8.4
 	github.com/gookit/miglite v1.0.0
 	github.com/lib/pq v1.12.3
-	modernc.org/sqlite v1.61.0
+	modernc.org/sqlite v1.61.1
 )
 
 require (
